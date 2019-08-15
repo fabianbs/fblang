@@ -1,7 +1,10 @@
 # FB language
 This repository contains the compiler and language-runtime for my own programming language.
 
-Note: I will upload the code soon.
+News
+--------
+- I will upload the code soon.
+- The TODOs will be converted to [issues](https://github.com/fabianbs/fblang/issues)
 
 What is FB?
 ----------
