@@ -27,7 +27,7 @@ While the first three components are C# projects which run with .Net Core 2.1, t
 + boost 1.70.0
 + Boehm GC 8.0.2
 + LLVM 7.0.0
-+ (Clang >= 7.0.0) optional
++ (Clang >= 7.0.0) optional: when this is missing, the `--native` compiler flag cannot be used
 
 All these dependencies should be installed, before compiling the project.
 #### Implicit dependencies
@@ -62,7 +62,7 @@ It can be parametrized with one or more source-files, which should be compiled a
  | --force-loop-vectorize  |  (Default: false) Tries to vectorize all loops. This can result in a much larger output-file|
  | --disable-range-checks   | (Default: false) Disables all array-bounds checks|
   |--disable-null-checks   |  (Default: false) Disables all null-dereference checks|
- | -L, --Lib               |  (Default: false) Generate a library instead on an executable application|
+ | -L, --Lib               |  (Default: false) Generate a library instead of an executable application|
  | --help                  |  Display this help screen.|
   |--version                | Display version information.
   
