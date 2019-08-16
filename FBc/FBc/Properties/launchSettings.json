@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "FBc": {
+      "commandName": "Project",
+      "commandLineArgs": "VarArgsTest2.fbs --emit-llvm -O3",
+      "workingDirectory": "D:\\Besitzer\\Desktop"
+    }
+  }
+}

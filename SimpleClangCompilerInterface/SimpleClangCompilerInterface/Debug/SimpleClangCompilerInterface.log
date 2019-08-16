@@ -1,0 +1,64 @@
+﻿  SimpleClangCompilerInterface.cpp
+c:\program files\llvm\install\include\llvm\support\mathextras.h(380): error C4146: Einem vorzeichenlosen Typ wurde ein unärer Minus-Operator zugewiesen. Das Ergebnis ist weiterhin vorzeichenlos.
+c:\program files\llvm\install\include\llvm\adt\stringref.h(898): warning C4141: "inline": mehrmals verwendet
+c:\program files\llvm\install\include\llvm\adt\stringref.h(903): warning C4141: "inline": mehrmals verwendet
+c:\program files\llvm\install\include\llvm\adt\hashing.h(572): warning C4244: "Argument": Konvertierung von "uint64_t" in "size_t", möglicher Datenverlust
+c:\program files\llvm\install\include\llvm\adt\hashing.h(584): warning C4244: "Argument": Konvertierung von "uint64_t" in "size_t", möglicher Datenverlust
+c:\program files\llvm\install\include\llvm\adt\hashing.h(623): warning C4244: "Argument": Konvertierung von "uint64_t" in "size_t", möglicher Datenverlust
+c:\program files\llvm\install\include\llvm\option\arglist.h(136): error C4146: Einem vorzeichenlosen Typ wurde ein unärer Minus-Operator zugewiesen. Das Ergebnis ist weiterhin vorzeichenlos.
+c:\program files\llvm\install\include\llvm\support\chrono.h(37): warning C4141: "inline": mehrmals verwendet
+c:\program files\llvm\install\include\llvm\support\chrono.h(44): warning C4141: "inline": mehrmals verwendet
+c:\program files\llvm\install\include\llvm\adt\stringextras.h(73): error C4146: Einem vorzeichenlosen Typ wurde ein unärer Minus-Operator zugewiesen. Das Ergebnis ist weiterhin vorzeichenlos.
+c:\program files\llvm\install\include\llvm\adt\stringextras.h(80): error C4146: Einem vorzeichenlosen Typ wurde ein unärer Minus-Operator zugewiesen. Das Ergebnis ist weiterhin vorzeichenlos.
+c:\program files\llvm\install\include\llvm\adt\stringextras.h(163): error C4146: Einem vorzeichenlosen Typ wurde ein unärer Minus-Operator zugewiesen. Das Ergebnis ist weiterhin vorzeichenlos.
+c:\program files\llvm\install\include\llvm\adt\densemap.h(358): warning C4244: "return": Konvertierung von "uint64_t" in "unsigned int", möglicher Datenverlust
+  c:\program files\llvm\install\include\llvm\adt\densemap.h(352): note: Bei der Kompilierung von Klasse Vorlage der unsigned int llvm::DenseMapBase<llvm::DenseMap<unsigned int,llvm::opt::ArgList::OptRange,llvm::DenseMapInfo<unsigned int>,llvm::detail::DenseMapPair<KeyT,ValueT>>,KeyT,ValueT,KeyInfoT,BucketT>::getMinBucketToReserveForEntries(unsigned int)-Memberfunktion
+          with
+          [
+              KeyT=unsigned int,
+              ValueT=llvm::opt::ArgList::OptRange,
+              KeyInfoT=llvm::DenseMapInfo<unsigned int>,
+              BucketT=llvm::detail::DenseMapPair<unsigned int,llvm::opt::ArgList::OptRange>
+          ]
+  c:\program files\llvm\install\include\llvm\adt\densemap.h(719): note: Siehe Verweis auf die Instanziierung der gerade kompilierten Funktions-Vorlage "unsigned int llvm::DenseMapBase<llvm::DenseMap<unsigned int,llvm::opt::ArgList::OptRange,llvm::DenseMapInfo<unsigned int>,llvm::detail::DenseMapPair<KeyT,ValueT>>,KeyT,ValueT,KeyInfoT,BucketT>::getMinBucketToReserveForEntries(unsigned int)".
+          with
+          [
+              KeyT=unsigned int,
+              ValueT=llvm::opt::ArgList::OptRange,
+              KeyInfoT=llvm::DenseMapInfo<unsigned int>,
+              BucketT=llvm::detail::DenseMapPair<unsigned int,llvm::opt::ArgList::OptRange>
+          ]
+  c:\program files\llvm\install\include\llvm\adt\densemap.h(646): note: Siehe Verweis auf die Klasse Vorlage-Instanziierung "llvm::DenseMapBase<llvm::DenseMap<unsigned int,llvm::opt::ArgList::OptRange,llvm::DenseMapInfo<unsigned int>,llvm::detail::DenseMapPair<KeyT,ValueT>>,KeyT,ValueT,KeyInfoT,BucketT>", die kompiliert wird.
+          with
+          [
+              KeyT=unsigned int,
+              ValueT=llvm::opt::ArgList::OptRange,
+              KeyInfoT=llvm::DenseMapInfo<unsigned int>,
+              BucketT=llvm::detail::DenseMapPair<unsigned int,llvm::opt::ArgList::OptRange>
+          ]
+  c:\program files\llvm\install\include\llvm\option\arglist.h(139): note: Siehe Verweis auf die Klasse Vorlage-Instanziierung "llvm::DenseMap<unsigned int,llvm::opt::ArgList::OptRange,llvm::DenseMapInfo<unsigned int>,llvm::detail::DenseMapPair<KeyT,ValueT>>", die kompiliert wird.
+          with
+          [
+              KeyT=unsigned int,
+              ValueT=llvm::opt::ArgList::OptRange
+          ]
+c:\program files\llvm\install\include\llvm\adt\stringref.h(516): warning C4244: "=": Konvertierung von "unsigned __int64" in "T", möglicher Datenverlust
+          with
+          [
+              T=size_t
+          ]
+  c:\program files\llvm\install\include\llvm\support\formatproviders.h(68): note: Siehe Verweis auf die Instanziierung der gerade kompilierten Funktions-Vorlage "bool llvm::StringRef::getAsInteger<size_t>(unsigned int,T &) const".
+          with
+          [
+              T=size_t
+          ]
+c:\program files\llvm\install\include\llvm\adt\stringref.h(547): warning C4244: "=": Konvertierung von "unsigned __int64" in "T", möglicher Datenverlust
+          with
+          [
+              T=size_t
+          ]
+  c:\program files\llvm\install\include\llvm\support\formatproviders.h(95): note: Siehe Verweis auf die Instanziierung der gerade kompilierten Funktions-Vorlage "bool llvm::StringRef::consumeInteger<size_t>(unsigned int,T &)".
+          with
+          [
+              T=size_t
+          ]

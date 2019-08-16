@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ManagedContext.NativeAPI.cs" />
+    <Compile Remove="ManagedContext_.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\..\Visual Studio 2017\Projects\LLVMInterface\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="CompilerInfrastructure">
+      <HintPath>..\..\CompilerInfrastructure\CompilerInfrastructure\bin\Debug\netstandard2.0\CompilerInfrastructure.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
