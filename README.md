@@ -3,7 +3,7 @@ This repository contains the compiler and language-runtime for my own programmin
 
 News
 --------
-- I will upload the code soon.
+- The current version of the code is uploaded.
 - The TODOs will be converted to [issues](https://github.com/fabianbs/fblang/issues)
 
 What is FB?
