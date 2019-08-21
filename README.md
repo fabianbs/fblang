@@ -15,12 +15,13 @@ Soon I will upload a brief overview on the language.
 
 Getting Started
 ---------------
-The project consists of 5 different Visual Studio projects:
+The project consists of 6 different Visual Studio projects:
 + CompilerInfrastructure - Contains the abstract syntax model, the type system and some useful utility functions/classes
 + FBc - The main component, which defines the compiler and depends on each other component
 + LLVMCodeGenerator - Implements the CodeGenerator-interface from the CompilerInfrastructure to generate LLVM-IR code from an abstract syntax tree (AST)
 + LLVMInterface - Wraps commonly used functions from the LLVM IRBuilder, such that they can be used from the LLVMCodeGenerator using platform invoke
 + BasicBitcodeJIT - Contains both the language runtime-library and a wrapper over the LLVM MCJIT compiler
++ SimpleClangCompilerInterface - Contains a simple interface for invoking the clang-compiler from FBc
 
 While the first three components are C# projects which run with .Net Core 2.1, the latter two are C/C++ projects which need at least C++14.
 
@@ -30,7 +31,7 @@ While the first three components are C# projects which run with .Net Core 2.1, t
 + boost 1.70.0
 + Boehm GC 8.0.2
 + LLVM 7.0.0
-+ (Clang >= 7.0.0) optional: when this is missing, the `--native` compiler flag cannot be used
++ (Clang >= 7.0.0) optional: when this is missing, the `--native` compiler flag cannot be used. Note: Make sure, that the C++ include files are available, otherwise the SimpleClangCompilerInterface will not compile
 
 All these dependencies should be installed, before compiling the project.
 #### Implicit dependencies
@@ -46,13 +47,13 @@ Currently FB runs only on windows systems as the language runtime uses some func
 You can compile all components using Visual Studio (I used VS 17 for the C# components and VS 19 for the C/C++ components).
 Due to the dependencies, please compile them in the following order:
 
-1. LLVMInterface, BasicBitcodeJIT, CompilerInfrastructure
+1. LLVMInterface, BasicBitcodeJIT, CompilerInfrastructure, SimpleClangCompilerInterface
 2. LLVMCodeGenerator
 3. FBc
 
 
 ### Using the FB compiler
-For compiling a script called `fbc` is provided.
+For compiling a script called `fbc.cmd` is provided (Note, that currently only the debug build is used).
 It can be parametrized with one or more source-files, which should be compiled and the following list of options:
 
 |option|description|

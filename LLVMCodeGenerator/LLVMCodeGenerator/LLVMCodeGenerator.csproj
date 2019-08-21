@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
@@ -9,13 +9,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="ManagedContext.NativeAPI.cs" />
     <Compile Remove="ManagedContext_.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\..\Visual Studio 2017\Projects\LLVMInterface\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
+    <Content Include="..\..\LLVMInterface\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

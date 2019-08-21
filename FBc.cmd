@@ -1,0 +1,1 @@
+dotnet "FBc\FBc\bin\Debug\netcoreapp2.1\FBc.dll" %*
