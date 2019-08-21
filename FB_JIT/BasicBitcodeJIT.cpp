@@ -1,3 +1,10 @@
+/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
 #include <cstdio>
 #include <cstdlib>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
@@ -127,7 +134,7 @@ int main(int argc, char** argv, char *const* envp) {
 			res = EE->runFunctionAsMain(cmdLineArgsMain, actualArgv, envp);
 		}
 		else
-			errs() << "Ungültiges Modul!" << "\r\n";
+			errs() << "Ungï¿½ltiges Modul!" << "\r\n";
 		errs() << "Press any key to continue...\r\n";
 		getchar();
 		return res;

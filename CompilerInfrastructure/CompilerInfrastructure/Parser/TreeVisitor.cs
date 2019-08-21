@@ -1,4 +1,11 @@
-﻿using Antlr4.Runtime.Tree;
+/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
+using Antlr4.Runtime.Tree;
 using CompilerInfrastructure.Utils;
 using System;
 using System.Collections.Generic;

@@ -1,3 +1,10 @@
+/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
 #pragma once
 #include <llvm/Pass.h>
 #include <llvm/IR/Function.h>
@@ -37,7 +44,7 @@ namespace {
             mallocName = name.str();
         }
 
-        // Geerbt über FunctionPass
+        // Geerbt ï¿½ber FunctionPass
         virtual bool runOnFunction(Function& F) override {
             bool ret = false;
             //AliasAnalysis *AA = &getAnalysis<AAResultsWrapperPass>().getAAResults();

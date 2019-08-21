@@ -1,3 +1,10 @@
+/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
 #include "SimpleGC.h"
 #include <queue>
 
@@ -189,7 +196,7 @@ FB_INTERNAL(void) endFunction(void* protect)
 
 FB_INTERNAL(void) gc_cleanup()
 {
-	//TODO Beachte Abhängigkeiten!!
+	//TODO Beachte Abhï¿½ngigkeiten!!
 
 	for (auto akt : gc_objects) {
 

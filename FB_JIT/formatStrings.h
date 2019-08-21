@@ -1,3 +1,10 @@
+/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
 #pragma once
 // code for this file copied from "https://stackoverflow.com/questions/40159892/using-asprintf-on-windows", 10.12.2018;18:41
 #if defined(__GNUC__) && ! defined(_GNU_SOURCE)
