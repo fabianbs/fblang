@@ -44,7 +44,10 @@ There are some NuGet packages, which are included by default:
 Currently FB runs only on windows systems as the language runtime uses some functionality from the WinAPI. This may change later.
 
 ### Building the project
-You can compile all components using Visual Studio (I used VS 17 for the C# components and VS 19 for the C/C++ components).
+For building now a separate VS19 solution "FB_Language.sln" is available. It preserves the recommended build order and should 
+work fine in Release x64 configuration (The configuration may differ on other machines).
+
+You can also compile all components manually using Visual Studio (I used VS 17 for the C# components and VS 19 for the C/C++ components).
 Due to the dependencies, please compile them in the following order:
 
 1. LLVMInterface, BasicBitcodeJIT, CompilerInfrastructure, SimpleClangCompilerInterface

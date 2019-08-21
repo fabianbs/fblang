@@ -19,3 +19,7 @@ FBc/UnitTestProject1/obj/
 LLVMInterface/.vs/
 LLVMInterface/LLVMInterface/x64/
 LLVMInterface/x64/
+.vs/
+FB_JIT/FB_JIT/Debug/
+FB_JIT/FB_JIT/x64/
+x64/
