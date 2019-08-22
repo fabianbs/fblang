@@ -15,7 +15,7 @@
 #include <sstream>
 #include <unordered_set>
 #include <unordered_map>
-
+#include "StringHelper.h"
 namespace {
     using namespace llvm;
     class ToStringRemovingPass :public FunctionPass {
@@ -76,20 +76,7 @@ namespace {
             ret = std::string();
             return false;
         }
-        llvm::Constant *CreateIntSZ(Module &M, size_t val) {
-            switch (sizeof(size_t)) {
-                case 1:
-                    return Constant::getIntegerValue(Type::getInt8Ty(M.getContext()), APInt(8, val));
-                case 2:
-                    return Constant::getIntegerValue(Type::getInt16Ty(M.getContext()), APInt(16, val));
-                case 8:
-                    return Constant::getIntegerValue(Type::getInt64Ty(M.getContext()), APInt(64, val));
-                case 16:
-                    return Constant::getIntegerValue(Type::getInt128Ty(M.getContext()), APInt(128, val));
-                default:
-                    return Constant::getIntegerValue(Type::getInt32Ty(M.getContext()), APInt(32, val));
-            }
-        }
+        
         void InsertConstantString(std::string &str, Module &M, IRBuilder<> &builder, Value *stringAlloca) {
             auto strVal = builder.CreateGlobalStringPtr(str);
             auto strLen = CreateIntSZ(M, str.size());

@@ -15,11 +15,12 @@
 #include <sstream>
 #include <utility>
 #include <tuple>
+#include "StringHelper.h"
 namespace {
     using namespace llvm;
     class StrMulRemovingPass :public FunctionPass {
         static char id;
-        bool GetConstantStringFromGep(Value* gep, StringRef& ret) {
+        bool GetConstantStringFromGep(Value *gep, StringRef &ret) {
             if (auto strGep = dyn_cast<ConstantExpr>(gep)) {
                 if (auto glob = dyn_cast<GlobalVariable>(strGep->getOperand(0))) {
                     if (glob->hasInitializer()) {
@@ -53,20 +54,24 @@ namespace {
         StrMulRemovingPass() :FunctionPass(id) {
 
         }
-        ~StrMulRemovingPass() {}
-        virtual bool runOnFunction(Function& F)override {
+        ~StrMulRemovingPass() { }
+        virtual bool runOnFunction(Function &F)override {
             //errs() << "strmulreplace on " << F.getName() << "\r\n";
             //toReplace-array
-            llvm::SmallVector<std::tuple<CallInst*, StringRef, uint32_t>, 5> strmulReplace;
-            llvm::SmallVector<std::tuple<CallInst*, StringRef, StringRef>, 5> strconcatReplace;
-            llvm::SmallVector<std::tuple<CallInst*, uint8_t>, 5> strconcatRemove;
+            llvm::SmallVector<std::tuple<CallInst *, StringRef, uint32_t>, 5> strmulReplace;
+            llvm::SmallVector<std::tuple<CallInst *, StringRef, StringRef>, 5> strconcatReplace;
+            llvm::SmallVector<std::tuple<CallInst *, uint8_t>, 5> strconcatRemove;
 
-            for (auto& bb : F.getBasicBlockList()) {
-                for (auto& inst : bb) {
+            llvm::SmallVector<std::tuple<CallInst *, StringRef, uint32_t>, 5> strmulRetReplace;
+            llvm::SmallVector<std::tuple<CallInst *, StringRef, StringRef>, 5> strconcatRetReplace;
+            llvm::SmallVector<std::tuple<CallInst *, uint8_t>, 5> strconcatRetRemove;
+
+            for (auto &bb : F.getBasicBlockList()) {
+                for (auto &inst : bb) {
                     if (auto call = dyn_cast<CallInst>(&inst)) {
                         if (!call->getCalledFunction())
                             continue;
-                        if (call->getCalledFunction()->getName() == "strmul") {
+                        if (call->getCalledFunction()->getName() == "strmul" || call->getCalledFunction()->getName() == "strmul_ret") {
                             //errs() << "Found StrMul\r\n";
                             StringRef str;
                             uint64_t strLen, factor;
@@ -82,10 +87,13 @@ namespace {
                                 continue;
                             if (GetConstantStringFromGep(call->getArgOperand(0), str)) {
                                 str = str.slice(0, strLen);
-                                strmulReplace.emplace_back(call, str, factor);
+                                if (call->getCalledFunction()->getName() == "strmul")
+                                    strmulReplace.emplace_back(call, str, factor);
+                                else
+                                    strmulRetReplace.emplace_back(call, str, factor);
                             }
                         }
-                        else if (call->getCalledFunction()->getName() == "strconcat") {
+                        else if (call->getCalledFunction()->getName() == "strconcat" || call->getCalledFunction()->getName() == "strconcat") {
                             //errs() << "FoundStrConcat\r\n";
                             StringRef lhs, rhs;
                             uint64_t lhsLen = 0, rhsLen = 0;
@@ -108,12 +116,19 @@ namespace {
                                 if (GetConstantStringFromGep(call->getArgOperand(0), lhs) && GetConstantStringFromGep(call->getArgOperand(2), rhs)) {
                                     lhs = lhs.slice(0, lhsLen);
                                     rhs = rhs.slice(0, rhsLen);
-                                    strconcatReplace.emplace_back(call, lhs, rhs);
+                                    if (call->getCalledFunction()->getName() == "strconcat")
+                                        strconcatReplace.emplace_back(call, lhs, rhs);
+                                    else
+                                        strconcatRetReplace.emplace_back(call, lhs, rhs);
                                 }
                             }
                             else {
-                                if (index == 2 && lhsLen == 0 || index == 0 && rhsLen == 0)
-                                    strconcatRemove.emplace_back(call, index);
+                                if (index == 2 && lhsLen == 0 || index == 0 && rhsLen == 0) {
+                                    if (call->getCalledFunction()->getName() == "strconcat")
+                                        strconcatRemove.emplace_back(call, index);
+                                    else
+                                        strconcatRetRemove.emplace_back(call, index);
+                                }
                             }
                         }
                         //else errs() << "no strmul: " << *call << "\r\n";
@@ -121,10 +136,10 @@ namespace {
                 }
             }
 
-            for (auto& kvp : strmulReplace) {
+            for (auto &kvp : strmulReplace) {
                 uint32_t factor;
                 StringRef str;
-                CallInst* call;
+                CallInst *call;
 
                 std::tie(call, str, factor) = kvp;
 
@@ -134,7 +149,7 @@ namespace {
                     s << str;
                 }
                 s.flush();
-                auto& ctx = F.getContext();
+                auto &ctx = F.getContext();
                 /*auto dataTy = ArrayType::get(Type::getInt8Ty(ctx), retStr.size());
                 auto initializer = ConstantDataArray::getString(ctx, retStr);
 
@@ -154,13 +169,33 @@ namespace {
                 //BasicBlock::iterator ii(call);
                 //ReplaceInstWithInst(ii->getParent()->getInstList(), ii, repl);
             }
+            for (auto &kvp : strmulRetReplace) {
+                uint32_t factor;
+                StringRef str;
+                CallInst *call;
+
+                std::tie(call, str, factor) = kvp;
+
+                std::string retStr;
+                raw_string_ostream s(retStr);
+                for (uint64_t i = 0; i < factor; ++i) {
+                    s << str;
+                }
+                s.flush();
+                IRBuilder<> inserter(call);
+                auto strVal = CreateString(*F.getParent(), str);
+
+                BasicBlock::iterator ii(call);
+                //ReplaceInstWithInst(ii->getParent()->getInstList(), ii, allocaInst);
+                ReplaceInstWithValue(ii->getParent()->getInstList(), ii, strVal);
+            }
             for (auto kvp : strconcatReplace) {
                 StringRef lhs, rhs;
-                CallInst* call;
+                CallInst *call;
                 std::tie(call, lhs, rhs) = kvp;
                 auto retStr = (lhs + rhs).str();
 
-                auto & ctx = F.getContext();
+                auto &ctx = F.getContext();
                 /*auto dataTy = ArrayType::get(Type::getInt8Ty(ctx), retStr.size());
                 auto initializer = ConstantDataArray::getString(ctx, retStr);
 
@@ -180,8 +215,19 @@ namespace {
                 //BasicBlock::iterator ii(call);
                 //ReplaceInstWithInst(ii->getParent()->getInstList(), ii, repl);
             }
+            for (auto kvp : strconcatRetReplace) {
+                StringRef lhs, rhs;
+                CallInst *call;
+                std::tie(call, lhs, rhs) = kvp;
+                auto retStr = (lhs + rhs).str();
+                IRBuilder<> inserter(call);
+                auto strVal = CreateString(*F.getParent(), retStr);
+
+                BasicBlock::iterator ii(call);
+                ReplaceInstWithValue(ii->getParent()->getInstList(), ii, strVal);
+            }
             for (auto kvp : strconcatRemove) {
-                CallInst* call;
+                CallInst *call;
                 uint8_t index;
                 std::tie(call, index) = kvp;
 
@@ -194,6 +240,21 @@ namespace {
                 inserter.CreateStore(strVal, strRetVal);
                 inserter.CreateStore(strLen, strRetLen);
                 call->eraseFromParent();
+            }
+            for (auto kvp : strconcatRetRemove) {
+                CallInst *call;
+                uint8_t index;
+                std::tie(call, index) = kvp;
+                auto strVal = call->getArgOperand(index);
+                auto strLen = call->getArgOperand(index + 1);
+                Value *retStr;
+                {
+                    IRBuilder<> inserter(call);
+                    retStr = CreateString(*F.getParent(), strVal, strLen, inserter);
+                }
+                BasicBlock::iterator ii(call);
+                ReplaceInstWithValue(ii->getParent()->getInstList(), ii, retStr);
+
             }
             return !strmulReplace.empty() || !strconcatReplace.empty() || !strconcatRemove.empty();
         }

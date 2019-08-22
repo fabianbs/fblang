@@ -24,9 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\FB_Language\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="..\..\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll" />
   </ItemGroup>
 
   <ItemGroup>

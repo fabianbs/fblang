@@ -234,13 +234,17 @@
   <ItemGroup>
     <ClCompile Include="LLVMInterface.cpp" />
     <ClCompile Include="ManagedContext.cpp" />
+    <ClCompile Include="StringHelper.cpp" />
     <ClCompile Include="StrMulRemovingPass.cpp" />
+    <ClCompile Include="StrMultiConcatOptPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AllocationRemovingPass.h" />
     <ClInclude Include="importdef.h" />
     <ClInclude Include="ManagedContext.h" />
+    <ClInclude Include="StringHelper.h" />
     <ClInclude Include="StrMulRemovingPass.h" />
+    <ClInclude Include="StrMultiConcatOptPass.h" />
     <ClInclude Include="ThrowIfRemovingPass.h" />
     <ClInclude Include="ToStringRemovingPass.h" />
   </ItemGroup>

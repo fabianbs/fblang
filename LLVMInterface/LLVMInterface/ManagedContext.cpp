@@ -39,8 +39,7 @@
 #include "StrMulRemovingPass.h"
 #include "ManagedContext.h"
 
-ManagedContext::ManagedContext(const char* name)
-{
+ManagedContext::ManagedContext(const char *name) {
     context = new llvm::LLVMContext();
     M = new llvm::Module(name, *context);
     M->setSourceFileName(name);
@@ -48,8 +47,7 @@ ManagedContext::ManagedContext(const char* name)
     builder = new llvm::IRBuilder<>(*context);
 }
 
-ManagedContext::~ManagedContext()
-{
+ManagedContext::~ManagedContext() {
     if (builder != nullptr) {
         delete builder;
         builder = nullptr;
@@ -65,7 +63,7 @@ ManagedContext::~ManagedContext()
 }
 
 
-llvm::Value* primitiveUpCast(llvm::Value* val, llvm::Type* dest, bool isUnsigned, llvm::IRBuilder<>* irb) {
+llvm::Value *primitiveUpCast(llvm::Value *val, llvm::Type *dest, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (isUnsigned)
         return irb->CreateZExtOrBitCast(val, dest);
     else
@@ -74,7 +72,7 @@ llvm::Value* primitiveUpCast(llvm::Value* val, llvm::Type* dest, bool isUnsigned
 
 // lhs, rhs: primitives (integers or floats)
 // ret: isFloatingpoint
-bool bringToCommonSupertype(ManagedContext* ctx, llvm::Value*& lhs, llvm::Value*& rhs, llvm::IRBuilder<>* irb, bool isUnsigned = false) {
+bool bringToCommonSupertype(ManagedContext *ctx, llvm::Value *&lhs, llvm::Value *&rhs, llvm::IRBuilder<> *irb, bool isUnsigned = false) {
     if (lhs->getType()->isFloatingPointTy()) {
         if (rhs->getType() != lhs->getType()) {
             rhs = primitiveUpCast(rhs, llvm::Type::getDoubleTy(*ctx->context), isUnsigned, irb);
@@ -108,20 +106,17 @@ bool bringToCommonSupertype(ManagedContext* ctx, llvm::Value*& lhs, llvm::Value*
     return lhs->getType()->isFloatingPointTy();
 }
 
-ManagedContext* CreateManagedContext(const char* name)
-{
+ManagedContext *CreateManagedContext(const char *name) {
 
     return new ManagedContext(name);
 }
 
-void DisposeManagedContext(ManagedContext* ctx)
-{
+void DisposeManagedContext(ManagedContext *ctx) {
     if (ctx != nullptr)
         delete ctx;
 }
 
-void Save(ManagedContext* ctx, const char* filename)
-{
+void Save(ManagedContext *ctx, const char *filename) {
     //llvm::errs() << *ctx->M;
     std::error_code ec;
     llvm::raw_fd_ostream os(filename, ec);
@@ -129,8 +124,7 @@ void Save(ManagedContext* ctx, const char* filename)
     os.flush();
 }
 
-void DumpModule(ManagedContext* ctx, const char* filename)
-{
+void DumpModule(ManagedContext *ctx, const char *filename) {
     std::error_code ec;
     llvm::raw_fd_ostream os(filename, ec);
 
@@ -139,122 +133,100 @@ void DumpModule(ManagedContext* ctx, const char* filename)
     os.flush();
 }
 
-EXTERN_API(void) PrintValueDump(ManagedContext* ctx, llvm::Value* val)
-{
+EXTERN_API(void) PrintValueDump(ManagedContext *ctx, llvm::Value *val) {
     llvm::errs() << *val << "\r\n";
 }
 
-EXTERN_API(void) PrintTypeDump(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(void) PrintTypeDump(ManagedContext *ctx, llvm::Type *ty) {
     llvm::errs() << *ty << "\r\n";
 }
 
-EXTERN_API(void) PrintFunctionDump(ManagedContext* ctx, llvm::Function* fn)
-{
+EXTERN_API(void) PrintFunctionDump(ManagedContext *ctx, llvm::Function *fn) {
     llvm::errs() << *fn << "\r\n";
 }
 
-EXTERN_API(void) PrintBasicBlockDump(ManagedContext* ctx, llvm::BasicBlock* bb)
-{
+EXTERN_API(void) PrintBasicBlockDump(ManagedContext *ctx, llvm::BasicBlock *bb) {
     llvm::errs() << *bb << "\r\n";
 }
 
 
 
-llvm::Type* getStruct(ManagedContext* ctx, const char* name)
-{
+llvm::Type *getStruct(ManagedContext *ctx, const char *name) {
     return llvm::StructType::create(*ctx->context, name);
 }
 
-void completeStruct(ManagedContext* ctx, llvm::Type* str, llvm::Type* const* body, uint32_t bodyLen)
-{
+void completeStruct(ManagedContext *ctx, llvm::Type *str, llvm::Type *const *body, uint32_t bodyLen) {
 
     if (bodyLen < 32) {
-        ((llvm::StructType*)str)->setBody(llvm::ArrayRef<llvm::Type*>(body, body + bodyLen), false);
+        ((llvm::StructType *)str)->setBody(llvm::ArrayRef<llvm::Type *>(body, body + bodyLen), false);
     }
 }
 
-llvm::Type* getUnnamedStruct(ManagedContext* ctx, llvm::Type* const* body, uint32_t bodyLen)
-{
-    return llvm::StructType::get(*ctx->context, llvm::ArrayRef<llvm::Type*>(body, body + bodyLen), false);
+llvm::Type *getUnnamedStruct(ManagedContext *ctx, llvm::Type *const *body, uint32_t bodyLen) {
+    return llvm::StructType::get(*ctx->context, llvm::ArrayRef<llvm::Type *>(body, body + bodyLen), false);
 }
 
-llvm::Type* getBoolType(ManagedContext* ctx)
-{
+llvm::Type *getBoolType(ManagedContext *ctx) {
     return llvm::Type::getInt1Ty(*ctx->context);
 }
 
-llvm::Type* getByteType(ManagedContext* ctx)
-{
+llvm::Type *getByteType(ManagedContext *ctx) {
     return llvm::Type::getInt8Ty(*ctx->context);
 }
 
-llvm::Type* getShortType(ManagedContext* ctx)
-{
+llvm::Type *getShortType(ManagedContext *ctx) {
     return llvm::Type::getInt16Ty(*ctx->context);
 }
 
-llvm::Type* getIntType(ManagedContext* ctx)
-{
+llvm::Type *getIntType(ManagedContext *ctx) {
     return llvm::Type::getInt32Ty(*ctx->context);
 }
 
-llvm::Type* getLongType(ManagedContext* ctx)
-{
+llvm::Type *getLongType(ManagedContext *ctx) {
     return llvm::Type::getInt64Ty(*ctx->context);
 }
 
-llvm::Type* getBiglongType(ManagedContext* ctx)
-{
+llvm::Type *getBiglongType(ManagedContext *ctx) {
     return llvm::Type::getInt128Ty(*ctx->context);
 }
 
-llvm::Type* getFloatType(ManagedContext* ctx)
-{
+llvm::Type *getFloatType(ManagedContext *ctx) {
     return llvm::Type::getFloatTy(*ctx->context);
 }
 
-llvm::Type* getDoubleType(ManagedContext* ctx)
-{
+llvm::Type *getDoubleType(ManagedContext *ctx) {
     return llvm::Type::getDoubleTy(*ctx->context);
 }
 
-llvm::Type* getStringType(ManagedContext* ctx)
-{
+llvm::Type *getStringType(ManagedContext *ctx) {
     if (ctx->stringTy == nullptr) {
         ctx->stringTy = llvm::StructType::create({ llvm::PointerType::getInt8PtrTy(*ctx->context), getSizeTType(ctx) }, "string", false);
     }
     return ctx->stringTy;
 }
 
-llvm::Type* getArrayType(ManagedContext* ctx, llvm::Type* elem, uint32_t count)
-{
+llvm::Type *getArrayType(ManagedContext *ctx, llvm::Type *elem, uint32_t count) {
     return llvm::ArrayType::get(elem, count);
 }
 
-llvm::Type* getPointerType(ManagedContext* ctx, llvm::Type* pointsTo)
-{
+llvm::Type *getPointerType(ManagedContext *ctx, llvm::Type *pointsTo) {
     return llvm::PointerType::get(pointsTo, 0);
 }
 
-llvm::Type* getVoidPtr(ManagedContext* ctx)
-{
+llvm::Type *getVoidPtr(ManagedContext *ctx) {
     return llvm::PointerType::getInt8PtrTy(*ctx->context);
 }
 
-llvm::Type* getVoidType(ManagedContext* ctx)
-{
+llvm::Type *getVoidType(ManagedContext *ctx) {
     return llvm::Type::getVoidTy(*ctx->context);
 }
 
-EXTERN_API(llvm::Type)* getOpaqueType(ManagedContext* ctx, const char* name)
-{
+EXTERN_API(llvm::Type) *getOpaqueType(ManagedContext *ctx, const char *name) {
     return llvm::StructType::create(*ctx->context, name);
 }
 
-EXTERN_API(llvm::Type)* getSizeTType(ManagedContext* ctx)
-{
-    switch (sizeof(void*)) {
+EXTERN_API(llvm::Type) *getSizeTType(ManagedContext *ctx) {
+    switch (sizeof(void *)) {
         case 1:
             return getByteType(ctx);
         case 2:
@@ -270,17 +242,15 @@ EXTERN_API(llvm::Type)* getSizeTType(ManagedContext* ctx)
     }
 }
 
-EXTERN_API(llvm::Type)* getTypeFromValue(ManagedContext* ctx, llvm::Value* val)
-{
+EXTERN_API(llvm::Type) *getTypeFromValue(ManagedContext *ctx, llvm::Value *val) {
     if (val == nullptr || !llvm::isa<llvm::Value>(val))
         return nullptr;
     return val->getType();
 }
 
-llvm::Function* declareFunction(ManagedContext* ctx, const char* name, llvm::Type* retTy, llvm::Type* const* argTys, uint32_t argc, const char** argNames, uint32_t argNamec, bool isPublic)
-{
-    
-    auto fnTy = llvm::FunctionType::get(retTy, llvm::ArrayRef<llvm::Type*>(argTys, argTys + argc), false);
+llvm::Function *declareFunction(ManagedContext *ctx, const char *name, llvm::Type *retTy, llvm::Type *const *argTys, uint32_t argc, const char **argNames, uint32_t argNamec, bool isPublic) {
+
+    auto fnTy = llvm::FunctionType::get(retTy, llvm::ArrayRef<llvm::Type *>(argTys, argTys + argc), false);
     auto ret = llvm::Function::Create(fnTy, isPublic ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage, name, ctx->M);
     uint32_t skip;
     if (argc > argNamec)
@@ -288,7 +258,7 @@ llvm::Function* declareFunction(ManagedContext* ctx, const char* name, llvm::Typ
     else
         skip = 0;
     uint32_t ind = 0;
-    for (auto& arg : ret->args()) {
+    for (auto &arg : ret->args()) {
         if (!skip)
             arg.setName(argNames[ind++]);
         else {
@@ -300,8 +270,7 @@ llvm::Function* declareFunction(ManagedContext* ctx, const char* name, llvm::Typ
     return ret;
 }
 
-EXTERN_API(llvm::Function)* declareFunctionOfType(ManagedContext* ctx, const char* name, llvm::Type* fnPtrTy, bool isPublic)
-{
+EXTERN_API(llvm::Function) *declareFunctionOfType(ManagedContext *ctx, const char *name, llvm::Type *fnPtrTy, bool isPublic) {
     assert(llvm::isa<llvm::PointerType>(fnPtrTy));
     auto fnTy = fnPtrTy->getPointerElementType();
     assert(llvm::isa<llvm::FunctionType>(fnTy));
@@ -309,7 +278,7 @@ EXTERN_API(llvm::Function)* declareFunctionOfType(ManagedContext* ctx, const cha
     auto ret = llvm::Function::Create(llvm::cast<llvm::FunctionType>(fnTy), isPublic ? llvm::GlobalValue::LinkageTypes::ExternalLinkage : llvm::GlobalValue::LinkageTypes::InternalLinkage, name, ctx->M);
     return ret;
 }
-llvm::Attribute getAttribute(ManagedContext* ctx, const char* name) {
+llvm::Attribute getAttribute(ManagedContext *ctx, const char *name) {
     using namespace llvm;
     auto kind = StringSwitch<llvm::Attribute::AttrKind>(name)
         .Case("align", Attribute::Alignment)
@@ -378,8 +347,7 @@ llvm::Attribute getAttribute(ManagedContext* ctx, const char* name) {
         return Attribute::get(*ctx->context, kind);
     }
 }
-EXTERN_API(void) addFunctionAttributes(ManagedContext* ctx, llvm::Function* fn, const char** atts, uint32_t attc)
-{
+EXTERN_API(void) addFunctionAttributes(ManagedContext *ctx, llvm::Function *fn, const char **atts, uint32_t attc) {
     llvm::AttrBuilder abuilder;
     for (uint32_t i = 0; i < attc; ++i) {
         abuilder.addAttribute(getAttribute(ctx, atts[i]));
@@ -387,8 +355,7 @@ EXTERN_API(void) addFunctionAttributes(ManagedContext* ctx, llvm::Function* fn, 
     fn->addAttributes(llvm::AttributeList::FunctionIndex, abuilder);
 }
 
-EXTERN_API(void) addParamAttributes(ManagedContext* ctx, llvm::Function* fn, const char** atts, uint32_t attc, uint32_t paramIdx)
-{
+EXTERN_API(void) addParamAttributes(ManagedContext *ctx, llvm::Function *fn, const char **atts, uint32_t attc, uint32_t paramIdx) {
     llvm::AttrBuilder abuilder;
     for (uint32_t i = 0; i < attc; ++i) {
         abuilder.addAttribute(getAttribute(ctx, atts[i]));
@@ -397,20 +364,17 @@ EXTERN_API(void) addParamAttributes(ManagedContext* ctx, llvm::Function* fn, con
 }
 
 
-EXTERN_API(void) addReturnNoAliasAttribute(ManagedContext* ctx, llvm::Function* fn)
-{
+EXTERN_API(void) addReturnNoAliasAttribute(ManagedContext *ctx, llvm::Function *fn) {
     fn->setReturnDoesNotAlias();
 }
 
-EXTERN_API(void) addReturnNotNullAttribute(ManagedContext* ctx, llvm::Function* fn)
-{
+EXTERN_API(void) addReturnNotNullAttribute(ManagedContext *ctx, llvm::Function *fn) {
     fn->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::get(*ctx->context, llvm::Attribute::NonNull));
 }
 
 
-EXTERN_API(llvm::Function)* declareMallocFunction(ManagedContext* ctx, const char* name, llvm::Type* const* argTys, uint32_t argc, bool resultNotNull)
-{
-    auto fnTy = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*ctx->context), llvm::ArrayRef<llvm::Type*>(argTys, argTys + argc), false);
+EXTERN_API(llvm::Function) *declareMallocFunction(ManagedContext *ctx, const char *name, llvm::Type *const *argTys, uint32_t argc, bool resultNotNull) {
+    auto fnTy = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*ctx->context), llvm::ArrayRef<llvm::Type *>(argTys, argTys + argc), false);
 
     auto ret = llvm::cast<llvm::Function>(ctx->M->getOrInsertFunction(name, fnTy));
     llvm::AttrBuilder abuilder;
@@ -425,46 +389,39 @@ EXTERN_API(llvm::Function)* declareMallocFunction(ManagedContext* ctx, const cha
     return ret;
 }
 
-EXTERN_API(llvm::Type)* getFunctionPtrTypeFromFunction(ManagedContext* ctx, llvm::Function* fn)
-{
+EXTERN_API(llvm::Type) *getFunctionPtrTypeFromFunction(ManagedContext *ctx, llvm::Function *fn) {
     return fn == nullptr ? nullptr : fn->getType();
 }
 
-EXTERN_API(llvm::Type)* getFunctionPtrType(ManagedContext* ctx, llvm::Type* retTy, llvm::Type** argTys, uint32_t argc)
-{
-    auto fnTy = llvm::FunctionType::get(retTy, llvm::ArrayRef<llvm::Type*>(argTys, argc), false);
+EXTERN_API(llvm::Type) *getFunctionPtrType(ManagedContext *ctx, llvm::Type *retTy, llvm::Type **argTys, uint32_t argc) {
+    auto fnTy = llvm::FunctionType::get(retTy, llvm::ArrayRef<llvm::Type *>(argTys, argc), false);
     return fnTy->getPointerTo();
 }
 
-llvm::BasicBlock* createBasicBlock(ManagedContext* ctx, const char* name, llvm::Function* fn)
-{
+llvm::BasicBlock *createBasicBlock(ManagedContext *ctx, const char *name, llvm::Function *fn) {
     return llvm::BasicBlock::Create(*ctx->context, name, fn);
 }
 
-EXTERN_API(void) resetInsertPoint(ManagedContext* ctx, llvm::BasicBlock* bb, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) resetInsertPoint(ManagedContext *ctx, llvm::BasicBlock *bb, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     irb->SetInsertPoint(bb);
 }
 
-EXTERN_API(llvm::Value)* defineAlloca(ManagedContext* ctx, llvm::Function* fn, llvm::Type* ty, const char* name)
-{
+EXTERN_API(llvm::Value) *defineAlloca(ManagedContext *ctx, llvm::Function *fn, llvm::Type *ty, const char *name) {
     llvm::IRBuilder<> inserter(&fn->getEntryBlock(), fn->getEntryBlock().begin());
 
     return inserter.CreateAlloca(ty, nullptr, name);
 }
 
-EXTERN_API(llvm::Value)* defineZeroinitializedAlloca(ManagedContext* ctx, llvm::Function* fn, llvm::Type* ty, const char* name, llvm::IRBuilder<>* irb, bool addlifetime)
-{
+EXTERN_API(llvm::Value) *defineZeroinitializedAlloca(ManagedContext *ctx, llvm::Function *fn, llvm::Type *ty, const char *name, llvm::IRBuilder<> *irb, bool addlifetime) {
     return defineInitializedAlloca(ctx, fn, ty, llvm::Constant::getNullValue(ty), name, irb, addlifetime);
 }
 
-EXTERN_API(llvm::Value)* defineInitializedAlloca(ManagedContext* ctx, llvm::Function* fn, llvm::Type* ty, llvm::Value* initVal, const char* name, llvm::IRBuilder<>* irb, bool addlifetime)
-{
+EXTERN_API(llvm::Value) *defineInitializedAlloca(ManagedContext *ctx, llvm::Function *fn, llvm::Type *ty, llvm::Value *initVal, const char *name, llvm::IRBuilder<> *irb, bool addlifetime) {
     if (irb == nullptr)
         irb = ctx->builder;
-    llvm::Value* ret;
+    llvm::Value *ret;
     {
         llvm::IRBuilder<> inserter(&fn->getEntryBlock(), fn->getEntryBlock().begin());
         ret = inserter.CreateAlloca(ty, nullptr, name);
@@ -479,32 +436,27 @@ EXTERN_API(llvm::Value)* defineInitializedAlloca(ManagedContext* ctx, llvm::Func
     return ret;
 }
 
-EXTERN_API(llvm::Value)* defineTypeInferredInitializedAlloca(ManagedContext* ctx, llvm::Function* fn, llvm::Value* initVal, const char* name, llvm::IRBuilder<>* irb, bool addlifetime)
-{
+EXTERN_API(llvm::Value) *defineTypeInferredInitializedAlloca(ManagedContext *ctx, llvm::Function *fn, llvm::Value *initVal, const char *name, llvm::IRBuilder<> *irb, bool addlifetime) {
     return defineInitializedAlloca(ctx, fn, initVal->getType(), initVal, name, irb, addlifetime);
 }
 
-EXTERN_API(void) endLifeTime(ManagedContext* ctx, llvm::Value* ptr, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) endLifeTime(ManagedContext *ctx, llvm::Value *ptr, llvm::IRBuilder<> *irb) {
     assert(ptr && llvm::isa<llvm::PointerType>(ptr->getType()));
     if (irb == nullptr)
         irb = ctx->builder;
     irb->CreateLifetimeEnd(ptr);
 }
 
-EXTERN_API(llvm::IRBuilder<>)* CreateIRBuilder(ManagedContext* ctx)
-{
+EXTERN_API(llvm::IRBuilder<>) *CreateIRBuilder(ManagedContext *ctx) {
     return new llvm::IRBuilder<>(*ctx->context);
 }
 
-EXTERN_API(void) DisposeIRBuilder(llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) DisposeIRBuilder(llvm::IRBuilder<> *irb) {
     delete(irb);
 }
 
 
-EXTERN_API(llvm::Value)* loadField(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value** gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *loadField(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value **gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     /*llvm::errs() << "GEP: " << *basePtr << " ";
@@ -517,28 +469,25 @@ EXTERN_API(llvm::Value)* loadField(ManagedContext* ctx, llvm::Value* basePtr, ll
         llvm::errs() << *gepIdx[i]->getType() << ", ";
     }
     llvm::errs() << ":\n:::END\n";*/
-    auto fldPtr = irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value*>(gepIdx, gepIdxCount));
+    auto fldPtr = irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value *>(gepIdx, gepIdxCount));
     return irb->CreateLoad(fldPtr);
 }
 
-EXTERN_API(llvm::Value)* loadFieldConstIdx(ManagedContext* ctx, llvm::Value* basePtr, uint32_t* gepIdx, uint32_t geIdxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *loadFieldConstIdx(ManagedContext *ctx, llvm::Value *basePtr, uint32_t *gepIdx, uint32_t geIdxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto fldPtr = GetElementPtrConstIdx(ctx, basePtr, gepIdx, geIdxCount, irb);
     return irb->CreateLoad(fldPtr);
 }
 
-EXTERN_API(void) storeField(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value** gepIdx, uint32_t gepIdxCount, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) storeField(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value **gepIdx, uint32_t gepIdxCount, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
-    auto fldPtr = irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value*>(gepIdx, gepIdxCount));
+    auto fldPtr = irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value *>(gepIdx, gepIdxCount));
     store(ctx, fldPtr, nwVal, irb);
 }
 
-EXTERN_API(void) storeFieldConstIdx(ManagedContext* ctx, llvm::Value* basePtr, uint32_t* gepIdx, uint32_t gepIdxCount, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) storeFieldConstIdx(ManagedContext *ctx, llvm::Value *basePtr, uint32_t *gepIdx, uint32_t gepIdxCount, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto fldPtr = GetElementPtrConstIdx(ctx, basePtr, gepIdx, gepIdxCount, irb);
@@ -546,8 +495,7 @@ EXTERN_API(void) storeFieldConstIdx(ManagedContext* ctx, llvm::Value* basePtr, u
     store(ctx, fldPtr, nwVal, irb);
 }
 
-EXTERN_API(llvm::Value)* GetElementPtr(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value** gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *GetElementPtr(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value **gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
 
@@ -558,18 +506,17 @@ EXTERN_API(llvm::Value)* GetElementPtr(ManagedContext* ctx, llvm::Value* basePtr
     //}
     //llvm::errs() << ":::end\r\n";
 
-    return irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value*>(gepIdx, gepIdxCount));
+    return irb->CreateGEP(basePtr, llvm::ArrayRef<llvm::Value *>(gepIdx, gepIdxCount));
 }
 
-EXTERN_API(llvm::Value)* GetElementPtrConstIdx(ManagedContext* ctx, llvm::Value* basePtr, uint32_t* gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *GetElementPtrConstIdx(ManagedContext *ctx, llvm::Value *basePtr, uint32_t *gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     //assert(llvm::isa<llvm::PointerType>(basePtr->getType()));
     //llvm::errs() << "GEP Value from (type: " << *basePtr->getType()->getPointerElementType() << " = *" << *basePtr->getType() << ") " << *basePtr << " at ";
 
     auto pointeeTy = llvm::cast<llvm::PointerType>(basePtr->getType())->getElementType();
-    llvm::SmallVector<llvm::Value*, 5> idx;
+    llvm::SmallVector<llvm::Value *, 5> idx;
     auto intTy = llvm::Type::getInt32Ty(*ctx->context);
     //llvm::errs() << "GEP " << *pointeeTy << " => " << *basePtr << ":::";
     for (uint32_t i = 0; i < gepIdxCount; ++i) {
@@ -583,11 +530,10 @@ EXTERN_API(llvm::Value)* GetElementPtrConstIdx(ManagedContext* ctx, llvm::Value*
     return ret;
 }
 
-EXTERN_API(llvm::Value)* GetElementPtrConstIdxWithType(ManagedContext* ctx, llvm::Type* pointeeTy, llvm::Value* basePtr, uint32_t* gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *GetElementPtrConstIdxWithType(ManagedContext *ctx, llvm::Type *pointeeTy, llvm::Value *basePtr, uint32_t *gepIdx, uint32_t gepIdxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
-    llvm::SmallVector<llvm::Value*, 5> idx;
+    llvm::SmallVector<llvm::Value *, 5> idx;
     auto intTy = llvm::Type::getInt32Ty(*ctx->context);
     //llvm::errs() << "GEP " << *pointeeTy << " => " << *basePtr << ":::";
 
@@ -602,15 +548,13 @@ EXTERN_API(llvm::Value)* GetElementPtrConstIdxWithType(ManagedContext* ctx, llvm
     return ret;
 }
 
-EXTERN_API(llvm::Value)* load(ManagedContext* ctx, llvm::Value* basePtr, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *load(ManagedContext *ctx, llvm::Value *basePtr, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreateLoad(basePtr);
 }
 
-EXTERN_API(llvm::Value)* loadAcquire(ManagedContext* ctx, llvm::Value* basePtr, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *loadAcquire(ManagedContext *ctx, llvm::Value *basePtr, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto ret = irb->CreateLoad(basePtr);
@@ -618,8 +562,7 @@ EXTERN_API(llvm::Value)* loadAcquire(ManagedContext* ctx, llvm::Value* basePtr, 
     return ret;
 }
 
-EXTERN_API(void) store(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) store(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     assert(llvm::isa<llvm::Value>(nwVal));
@@ -627,8 +570,7 @@ EXTERN_API(void) store(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* n
     tryCast(ctx, nwVal, basePtr->getType()->getPointerElementType(), nwVal, false, irb);
     irb->CreateStore(nwVal, basePtr);
 }
-EXTERN_API(void) storeRelease(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) storeRelease(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     assert(llvm::isa<llvm::Value>(nwVal));
@@ -637,8 +579,7 @@ EXTERN_API(void) storeRelease(ManagedContext* ctx, llvm::Value* basePtr, llvm::V
     auto st = irb->CreateStore(nwVal, basePtr);
     st->setAtomic(llvm::AtomicOrdering::Release);
 }
-EXTERN_API(llvm::Value)* compareExchangeAcqRel(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* cmp, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *compareExchangeAcqRel(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *cmp, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto vCmp = irb->CreateLoad(cmp);
@@ -649,25 +590,23 @@ EXTERN_API(llvm::Value)* compareExchangeAcqRel(ManagedContext* ctx, llvm::Value*
     irb->CreateStore(oldVal, cmp);
     return ret;
 }
-EXTERN_API(llvm::Value)* exchangeAcqRel(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* nwVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *exchangeAcqRel(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *nwVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreateAtomicRMW(llvm::AtomicRMWInst::BinOp::Xchg, basePtr, nwVal, llvm::AtomicOrdering::AcquireRelease);
 }
-EXTERN_API(llvm::Value)* getArgument(ManagedContext* ctx, llvm::Function* fn, uint32_t index)
-{
+EXTERN_API(llvm::Value) *getArgument(ManagedContext *ctx, llvm::Function *fn, uint32_t index) {
     if (fn->arg_size() > index)
         return &fn->args().begin()[index];
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* negate(ManagedContext* ctx, llvm::Value* subEx, char op, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *negate(ManagedContext *ctx, llvm::Value *subEx, char op, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     switch (op) {
-        case '-': {
+        case '-':
+        {
             if (subEx->getType()->isFloatingPointTy()) {
                 return irb->CreateFNeg(subEx);
             }
@@ -683,8 +622,7 @@ EXTERN_API(llvm::Value)* negate(ManagedContext* ctx, llvm::Value* subEx, char op
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* arithmeticBinOp(ManagedContext* ctx, llvm::Value* lhs, llvm::Value* rhs, char op, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *arithmeticBinOp(ManagedContext *ctx, llvm::Value *lhs, llvm::Value *rhs, char op, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     //llvm::errs() << "Process " << *lhs << " " << op << " " << *rhs << "\r\n";
@@ -717,13 +655,12 @@ EXTERN_API(llvm::Value)* arithmeticBinOp(ManagedContext* ctx, llvm::Value* lhs, 
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* arithmeticUpdateAcqRel(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* rhs, char op, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *arithmeticUpdateAcqRel(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *rhs, char op, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     //llvm::errs() << "Process " << *lhs << " atomic " << op << " " << *rhs << "\r\n";
     assert(llvm::isa<llvm::PointerType>(basePtr->getType()));
-    auto type = ((llvm::PointerType*)basePtr->getType())->getPointerElementType();
+    auto type = ((llvm::PointerType *)basePtr->getType())->getPointerElementType();
     tryCast(ctx, rhs, type, rhs, isUnsigned, irb);
     bool isFloatingPoint = type->isFloatingPointTy();
 
@@ -739,8 +676,7 @@ EXTERN_API(llvm::Value)* arithmeticUpdateAcqRel(ManagedContext* ctx, llvm::Value
 
 }
 
-EXTERN_API(llvm::Value)* bitwiseBinop(ManagedContext* ctx, llvm::Value* lhs, llvm::Value* rhs, char op, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *bitwiseBinop(ManagedContext *ctx, llvm::Value *lhs, llvm::Value *rhs, char op, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     bool isFloatingPoint = bringToCommonSupertype(ctx, lhs, rhs, irb, isUnsigned);
@@ -755,12 +691,11 @@ EXTERN_API(llvm::Value)* bitwiseBinop(ManagedContext* ctx, llvm::Value* lhs, llv
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* bitwiseUpdateAcqRel(ManagedContext* ctx, llvm::Value* basePtr, llvm::Value* rhs, char op, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *bitwiseUpdateAcqRel(ManagedContext *ctx, llvm::Value *basePtr, llvm::Value *rhs, char op, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     assert(llvm::isa<llvm::PointerType>(basePtr->getType()));
-    auto type = ((llvm::PointerType*)basePtr->getType())->getPointerElementType();
+    auto type = ((llvm::PointerType *)basePtr->getType())->getPointerElementType();
     tryCast(ctx, rhs, type, rhs, isUnsigned, irb);
     bool isFloatingPoint = type->isFloatingPointTy();
     if (isFloatingPoint)
@@ -779,8 +714,7 @@ EXTERN_API(llvm::Value)* bitwiseUpdateAcqRel(ManagedContext* ctx, llvm::Value* b
     return irb->CreateAtomicRMW(inst, basePtr, rhs, llvm::AtomicOrdering::AcquireRelease);
 }
 
-EXTERN_API(llvm::Value)* shiftOp(ManagedContext* ctx, llvm::Value* lhs, llvm::Value* rhs, bool leftShift, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *shiftOp(ManagedContext *ctx, llvm::Value *lhs, llvm::Value *rhs, bool leftShift, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     bool isFloatingPoint = bringToCommonSupertype(ctx, lhs, rhs, irb, isUnsigned);
@@ -792,8 +726,7 @@ EXTERN_API(llvm::Value)* shiftOp(ManagedContext* ctx, llvm::Value* lhs, llvm::Va
     }
 }
 
-EXTERN_API(llvm::Value)* compareOp(ManagedContext* ctx, llvm::Value* lhs, llvm::Value* rhs, char op, bool orEqual, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *compareOp(ManagedContext *ctx, llvm::Value *lhs, llvm::Value *rhs, char op, bool orEqual, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     //llvm::errs() << "compare " << *lhs << " " << op << " " << *rhs << "\r\n";
@@ -865,8 +798,7 @@ EXTERN_API(llvm::Value)* compareOp(ManagedContext* ctx, llvm::Value* lhs, llvm::
     }
 }
 
-EXTERN_API(llvm::Value)* ptrDiff(ManagedContext* ctx, llvm::Value* lhs, llvm::Value* rhs, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *ptrDiff(ManagedContext *ctx, llvm::Value *lhs, llvm::Value *rhs, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto voidPtrTy = getVoidPtr(ctx);
@@ -875,8 +807,7 @@ EXTERN_API(llvm::Value)* ptrDiff(ManagedContext* ctx, llvm::Value* lhs, llvm::Va
     return irb->CreatePtrDiff(lhs, rhs);
 }
 
-EXTERN_API(bool) tryCast(ManagedContext* ctx, llvm::Value* val, llvm::Type* dest, llvm::Value*& _ret, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(bool) tryCast(ManagedContext *ctx, llvm::Value *val, llvm::Type *dest, llvm::Value *&_ret, bool isUnsigned, llvm::IRBuilder<> *irb) {
     auto ret = &_ret;
     if (irb == nullptr)
         irb = ctx->builder;
@@ -908,7 +839,7 @@ EXTERN_API(bool) tryCast(ManagedContext* ctx, llvm::Value* val, llvm::Type* dest
         }
         else if (dest->isFloatingPointTy()) {
             if (isUnsigned)
-                * ret = irb->CreateUIToFP(val, dest);
+                *ret = irb->CreateUIToFP(val, dest);
             else
                 *ret = irb->CreateSIToFP(val, dest);
             return true;
@@ -939,7 +870,7 @@ EXTERN_API(bool) tryCast(ManagedContext* ctx, llvm::Value* val, llvm::Type* dest
         }
         else if (dest->isIntegerTy()) {
             if (isUnsigned)
-                * ret = irb->CreateFPToSI(val, dest);
+                *ret = irb->CreateFPToSI(val, dest);
             else
                 *ret = irb->CreateFPToUI(val, dest);
             return true;
@@ -959,9 +890,8 @@ EXTERN_API(bool) tryCast(ManagedContext* ctx, llvm::Value* val, llvm::Type* dest
     return false;
 }
 
-EXTERN_API(llvm::Value)* forceCast(ManagedContext* ctx, llvm::Value* val, llvm::Type* dest, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
-    llvm::Value* ret;
+EXTERN_API(llvm::Value) *forceCast(ManagedContext *ctx, llvm::Value *val, llvm::Type *dest, bool isUnsigned, llvm::IRBuilder<> *irb) {
+    llvm::Value *ret;
     //llvm::errs() << "Force cast " << *val << " to " << *dest << "\r\n";
     if (!tryCast(ctx, val, dest, ret, isUnsigned, irb)) {
         if (irb == nullptr)
@@ -975,15 +905,13 @@ EXTERN_API(llvm::Value)* forceCast(ManagedContext* ctx, llvm::Value* val, llvm::
     return ret;
 }
 
-EXTERN_API(void) returnVoid(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) returnVoid(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     irb->CreateRetVoid();
 }
 
-EXTERN_API(void) returnValue(ManagedContext* ctx, llvm::Value* retVal, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) returnValue(ManagedContext *ctx, llvm::Value *retVal, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto retTy = irb->getCurrentFunctionReturnType();
@@ -992,82 +920,69 @@ EXTERN_API(void) returnValue(ManagedContext* ctx, llvm::Value* retVal, llvm::IRB
     irb->CreateRet(retVal);
 }
 
-EXTERN_API(void) integerSwitch(ManagedContext* ctx, llvm::Value* compareInt, llvm::BasicBlock* defaultTarget, llvm::BasicBlock** conditionalTargets, uint32_t numCondTargets, llvm::Value** conditions, uint32_t numConditions, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) integerSwitch(ManagedContext *ctx, llvm::Value *compareInt, llvm::BasicBlock *defaultTarget, llvm::BasicBlock **conditionalTargets, uint32_t numCondTargets, llvm::Value **conditions, uint32_t numConditions, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto numCases = std::min(numConditions, numCondTargets);
     auto sw = irb->CreateSwitch(compareInt, defaultTarget, numCases);
     for (uint32_t i = 0; i < numCases; ++i) {
         if (llvm::isa<llvm::ConstantInt>(conditions[i])) {
-            sw->addCase((llvm::ConstantInt*)conditions[i], conditionalTargets[i]);
+            sw->addCase((llvm::ConstantInt *)conditions[i], conditionalTargets[i]);
         }
     }
 }
 
-EXTERN_API(llvm::Constant)* getInt32(ManagedContext* ctx, uint32_t val)
-{
+EXTERN_API(llvm::Constant) *getInt32(ManagedContext *ctx, uint32_t val) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(*ctx->context), llvm::APInt(32, val));
 }
 
-EXTERN_API(llvm::Constant)* getInt16(ManagedContext* ctx, uint16_t val)
-{
+EXTERN_API(llvm::Constant) *getInt16(ManagedContext *ctx, uint16_t val) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt16Ty(*ctx->context), llvm::APInt(16, val));
 }
 
-EXTERN_API(llvm::Constant)* getInt8(ManagedContext* ctx, uint8_t val)
-{
+EXTERN_API(llvm::Constant) *getInt8(ManagedContext *ctx, uint8_t val) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt8Ty(*ctx->context), llvm::APInt(8, val));
 }
 
-EXTERN_API(llvm::Constant)* getString(ManagedContext* ctx, const char* strlit, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Constant) *getString(ManagedContext *ctx, const char *strlit, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto strVal = irb->CreateGlobalStringPtr(strlit);
     auto strLen = llvm::Constant::getIntegerValue(getIntType(ctx), llvm::APInt(sizeof(size_t) << 3, ::strnlen_s(strlit, 1 << 16)));
-    return llvm::ConstantStruct::get((llvm::StructType*)getStringType(ctx), { strVal, strLen });
+    return llvm::ConstantStruct::get((llvm::StructType *)getStringType(ctx), { strVal, strLen });
 }
 
 
 
-EXTERN_API(llvm::Constant)* True(ManagedContext* ctx)
-{
+EXTERN_API(llvm::Constant) *True(ManagedContext *ctx) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt1Ty(*ctx->context), llvm::APInt(1, 1));
 }
 
-EXTERN_API(llvm::Constant)* False(ManagedContext* ctx)
-{
+EXTERN_API(llvm::Constant) *False(ManagedContext *ctx) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt1Ty(*ctx->context), llvm::APInt(1, 0));
 }
 
-EXTERN_API(llvm::Constant)* getFloat(ManagedContext* ctx, float val)
-{
+EXTERN_API(llvm::Constant) *getFloat(ManagedContext *ctx, float val) {
     return llvm::ConstantFP::get(*ctx->context, llvm::APFloat(val));
 }
 
-EXTERN_API(llvm::Constant)* getDouble(ManagedContext* ctx, double val)
-{
+EXTERN_API(llvm::Constant) *getDouble(ManagedContext *ctx, double val) {
     return llvm::ConstantFP::get(*ctx->context, llvm::APFloat(val));
 }
 
-EXTERN_API(llvm::Constant)* getNullPtr(ManagedContext* ctx)
-{
+EXTERN_API(llvm::Constant) *getNullPtr(ManagedContext *ctx) {
     return llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(*ctx->context));
 }
 
-EXTERN_API(llvm::Constant)* getAllZeroValue(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(llvm::Constant) *getAllZeroValue(ManagedContext *ctx, llvm::Type *ty) {
     return Constant::getNullValue(ty);
 }
 
-EXTERN_API(llvm::Constant)* getAllOnesValue(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(llvm::Constant) *getAllOnesValue(ManagedContext *ctx, llvm::Type *ty) {
     return Constant::getAllOnesValue(ty);
 }
 
-EXTERN_API(llvm::Constant)* getConstantStruct(ManagedContext* ctx, llvm::Type* ty, llvm::Constant** values, uint32_t valuec)
-{
+EXTERN_API(llvm::Constant) *getConstantStruct(ManagedContext *ctx, llvm::Type *ty, llvm::Constant **values, uint32_t valuec) {
     assert(ctx && ty && values);
     assert(llvm::isa<llvm::StructType>(ty));
     for (uint32_t i = 0; i < valuec; ++i) {
@@ -1077,17 +992,16 @@ EXTERN_API(llvm::Constant)* getConstantStruct(ManagedContext* ctx, llvm::Type* t
         }
     }
 
-    return llvm::ConstantStruct::get(llvm::cast<llvm::StructType>(ty), llvm::ArrayRef<llvm::Constant*>(values, valuec));
+    return llvm::ConstantStruct::get(llvm::cast<llvm::StructType>(ty), llvm::ArrayRef<llvm::Constant *>(values, valuec));
 }
 
-EXTERN_API(llvm::Value)* getStructValue(ManagedContext* ctx, llvm::Type* ty, llvm::Value** values, uint32_t valuec, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *getStructValue(ManagedContext *ctx, llvm::Type *ty, llvm::Value **values, uint32_t valuec, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     assert(ctx && ty && values);
     assert(llvm::isa<llvm::StructType>(ty));
 
-    llvm::Value* ret = llvm::UndefValue::get(ty);
+    llvm::Value *ret = llvm::UndefValue::get(ty);
 
     for (uint32_t i = 0; i < valuec; ++i) {
         assert(llvm::isa<llvm::Value>(values[i]));
@@ -1101,8 +1015,7 @@ EXTERN_API(llvm::Value)* getStructValue(ManagedContext* ctx, llvm::Type* ty, llv
 
 }
 
-EXTERN_API(llvm::Value)* getCall(ManagedContext* ctx, llvm::Function* fn, llvm::Value** args, uint32_t argc, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *getCall(ManagedContext *ctx, llvm::Function *fn, llvm::Value **args, uint32_t argc, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     if (!llvm::isa<llvm::Function>(fn)) {
@@ -1126,104 +1039,91 @@ EXTERN_API(llvm::Value)* getCall(ManagedContext* ctx, llvm::Function* fn, llvm::
         i++;
     }
     //llvm::errs() << "createCall\r\n";
-    auto ret = llvm::CallInst::Create(fnTy, fn, llvm::ArrayRef<llvm::Value*>(args, argc));
+    auto ret = llvm::CallInst::Create(fnTy, fn, llvm::ArrayRef<llvm::Value *>(args, argc));
     //llvm::errs() << ":::end\r\n";
     irb->Insert(ret);
     return// irb->CreateCall(fn, llvm::ArrayRef<llvm::Value*>(args, argc));
         ret;
 }
 
-EXTERN_API(void) branch(ManagedContext* ctx, llvm::BasicBlock* dest, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) branch(ManagedContext *ctx, llvm::BasicBlock *dest, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     irb->CreateBr(dest);
 }
-llvm::Value* NotNull(llvm::Value* val, llvm::IRBuilder<>* irb) {
+llvm::Value *NotNull(llvm::Value *val, llvm::IRBuilder<> *irb) {
     if (val->getType()->isIntegerTy() && val->getType()->getIntegerBitWidth() == 1)
         return val;
     else
         return irb->CreateIsNotNull(val);
 }
-EXTERN_API(void) conditionalBranch(ManagedContext* ctx, llvm::BasicBlock* destTrue, llvm::BasicBlock* destFalse, llvm::Value* cond, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) conditionalBranch(ManagedContext *ctx, llvm::BasicBlock *destTrue, llvm::BasicBlock *destFalse, llvm::Value *cond, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     irb->CreateCondBr(NotNull(cond, irb), destTrue, destFalse);
 }
 
-EXTERN_API(void) unreachable(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(void) unreachable(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     irb->CreateUnreachable();
 }
 
-EXTERN_API(llvm::Value)* conditionalSelect(ManagedContext* ctx, llvm::Value* valTrue, llvm::Value* valFalse, llvm::Value* cond, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *conditionalSelect(ManagedContext *ctx, llvm::Value *valTrue, llvm::Value *valFalse, llvm::Value *cond, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreateSelect(NotNull(cond, irb), valTrue, valFalse);
 }
 
-EXTERN_API(llvm::Value)* extractValue(ManagedContext* ctx, llvm::Value* aggregate, uint32_t index, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *extractValue(ManagedContext *ctx, llvm::Value *aggregate, uint32_t index, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
 
     return irb->CreateExtractValue(aggregate, { index });
 }
 
-EXTERN_API(llvm::Value)* extractNestedValue(ManagedContext* ctx, llvm::Value* aggregate, uint32_t* indices, uint32_t idxCount, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *extractNestedValue(ManagedContext *ctx, llvm::Value *aggregate, uint32_t *indices, uint32_t idxCount, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreateExtractValue(aggregate, llvm::ArrayRef<uint32_t>(indices, idxCount));
 }
 
-EXTERN_API(llvm::PHINode)* createPHINode(ManagedContext* ctx, llvm::Type* ty, uint32_t numCases, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::PHINode) *createPHINode(ManagedContext *ctx, llvm::Type *ty, uint32_t numCases, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreatePHI(ty, numCases);
 }
 
-EXTERN_API(void) addMergePoint(llvm::PHINode* phi, llvm::Value* val, llvm::BasicBlock* prev)
-{
+EXTERN_API(void) addMergePoint(llvm::PHINode *phi, llvm::Value *val, llvm::BasicBlock *prev) {
     phi->addIncoming(val, prev);
 }
 
-EXTERN_API(llvm::Value)* isNotNull(ManagedContext* ctx, llvm::Value* val, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *isNotNull(ManagedContext *ctx, llvm::Value *val, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return NotNull(val, irb);
 }
 
-EXTERN_API(llvm::Value)* getSizeOf(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(llvm::Value) *getSizeOf(ManagedContext *ctx, llvm::Type *ty) {
     return llvm::ConstantExpr::getSizeOf(ty);
 }
 
-EXTERN_API(llvm::Value)* getI32SizeOf(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(llvm::Value) *getI32SizeOf(ManagedContext *ctx, llvm::Type *ty) {
     return llvm::ConstantExpr::getTruncOrBitCast(llvm::ConstantExpr::getSizeOf(ty), llvm::Type::getInt32Ty(*ctx->context));
 }
 
-EXTERN_API(llvm::Value)* getI64SizeOf(ManagedContext* ctx, llvm::Type* ty)
-{
+EXTERN_API(llvm::Value) *getI64SizeOf(ManagedContext *ctx, llvm::Type *ty) {
     return llvm::ConstantExpr::getZExtOrBitCast(llvm::ConstantExpr::getSizeOf(ty), llvm::Type::getInt64Ty(*ctx->context));
 }
 
-EXTERN_API(llvm::Value)* getMin(ManagedContext* ctx, llvm::Value* v1, llvm::Value* v2, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *getMin(ManagedContext *ctx, llvm::Value *v1, llvm::Value *v2, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     bringToCommonSupertype(ctx, v1, v2, irb, isUnsigned);
     if (v1->getType()->isFloatingPointTy())
         return irb->CreateMinNum(v1, v2);
     else if (v1->getType()->isIntegerTy()) {
-        llvm::Value* cmp;
+        llvm::Value *cmp;
         if (isUnsigned) {
             cmp = irb->CreateICmpULT(v1, v2);
         }
@@ -1235,15 +1135,14 @@ EXTERN_API(llvm::Value)* getMin(ManagedContext* ctx, llvm::Value* v1, llvm::Valu
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* getMax(ManagedContext* ctx, llvm::Value* v1, llvm::Value* v2, bool isUnsigned, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *getMax(ManagedContext *ctx, llvm::Value *v1, llvm::Value *v2, bool isUnsigned, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     bringToCommonSupertype(ctx, v1, v2, irb, isUnsigned);
     if (v1->getType()->isFloatingPointTy())
         return irb->CreateMaxNum(v1, v2);
     else if (v1->getType()->isIntegerTy()) {
-        llvm::Value* cmp;
+        llvm::Value *cmp;
         if (isUnsigned) {
             cmp = irb->CreateICmpULT(v1, v2);
         }
@@ -1255,23 +1154,20 @@ EXTERN_API(llvm::Value)* getMax(ManagedContext* ctx, llvm::Value* v1, llvm::Valu
     return nullptr;
 }
 
-EXTERN_API(llvm::Value)* memoryCopy(ManagedContext* ctx, llvm::Value* dest, llvm::Value* src, llvm::Value* byteCount, bool isVolatile, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *memoryCopy(ManagedContext *ctx, llvm::Value *dest, llvm::Value *src, llvm::Value *byteCount, bool isVolatile, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->CreateMemCpy(dest, 0, src, 0, byteCount, isVolatile);
 }
 
-EXTERN_API(llvm::Value)* memoryMove(ManagedContext* ctx, llvm::Value* dest, llvm::Value* src, llvm::Value* byteCount, bool isVolatile, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *memoryMove(ManagedContext *ctx, llvm::Value *dest, llvm::Value *src, llvm::Value *byteCount, bool isVolatile, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
 
     return irb->CreateMemMove(dest, 0, src, 0, byteCount, isVolatile);
 }
 
-EXTERN_API(bool) currentBlockIsTerminated(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(bool) currentBlockIsTerminated(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     assert(irb->GetInsertBlock() != nullptr);
@@ -1280,13 +1176,11 @@ EXTERN_API(bool) currentBlockIsTerminated(ManagedContext* ctx, llvm::IRBuilder<>
     return irb->GetInsertBlock()->getTerminator() != nullptr;
 }
 
-EXTERN_API(bool) isTerminated(llvm::BasicBlock* bb)
-{
+EXTERN_API(bool) isTerminated(llvm::BasicBlock *bb) {
     return bb->getTerminator() != nullptr;
 }
 
-EXTERN_API(bool) hasPredecessor(llvm::BasicBlock* bb)
-{
+EXTERN_API(bool) hasPredecessor(llvm::BasicBlock *bb) {
     //auto it = llvm::predecessors(bb);
     //return it.begin() != it.end(); 
     for (auto pred : predecessors(bb)) {
@@ -1295,22 +1189,19 @@ EXTERN_API(bool) hasPredecessor(llvm::BasicBlock* bb)
     return false;
 }
 
-EXTERN_API(bool) currentBlockHasPredecessor(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(bool) currentBlockHasPredecessor(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return hasPredecessor(irb->GetInsertBlock());
 }
 
-EXTERN_API(uint32_t) currentBlockCountPredecessors(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(uint32_t) currentBlockCountPredecessors(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return countPredecessors(irb->GetInsertBlock());
 }
 
-EXTERN_API(uint32_t) countPredecessors(llvm::BasicBlock* bb)
-{
+EXTERN_API(uint32_t) countPredecessors(llvm::BasicBlock *bb) {
     uint32_t ret = 0;
     for (auto pred : predecessors(bb)) {
         ret++;
@@ -1318,46 +1209,41 @@ EXTERN_API(uint32_t) countPredecessors(llvm::BasicBlock* bb)
     return ret;
 }
 
-EXTERN_API(void) currentBlockGetPredecessors(ManagedContext* ctx, llvm::IRBuilder<>* irb, llvm::BasicBlock** bbs, uint32_t bbc)
-{
+EXTERN_API(void) currentBlockGetPredecessors(ManagedContext *ctx, llvm::IRBuilder<> *irb, llvm::BasicBlock **bbs, uint32_t bbc) {
     if (irb == nullptr)
         irb = ctx->builder;
     return getPredecessors(irb->GetInsertBlock(), bbs, bbc);
 }
 
-EXTERN_API(void) removeBasicBlock(llvm::BasicBlock* bb)
-{
+EXTERN_API(void) removeBasicBlock(llvm::BasicBlock *bb) {
     bb->removeFromParent();
 }
 
-EXTERN_API(void) getPredecessors(llvm::BasicBlock* curr, llvm::BasicBlock** bbs, uint32_t bbc)
-{
+EXTERN_API(void) getPredecessors(llvm::BasicBlock *curr, llvm::BasicBlock **bbs, uint32_t bbc) {
     for (auto it = llvm::pred_begin(curr); bbc > 0 && it != llvm::pred_end(curr); it++, bbc--) {
         bbs[bbc - 1] = *it;
     }
 }
 
-EXTERN_API(llvm::BasicBlock)* getCurrentBasicBlock(ManagedContext* ctx, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::BasicBlock) *getCurrentBasicBlock(ManagedContext *ctx, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     return irb->GetInsertBlock();
 }
 
-llvm::Value* one(ManagedContext* ctx) {
+llvm::Value *one(ManagedContext *ctx) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(*ctx->context), llvm::APInt(32, 1));
 }
-llvm::Value* zero(ManagedContext* ctx) {
+llvm::Value *zero(ManagedContext *ctx) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(*ctx->context), llvm::APInt(32, 0));
 }
 
-EXTERN_API(llvm::Value)* marshalMainMethodCMDLineArgs(ManagedContext* ctx, llvm::Function* managedMain, llvm::Function* fn, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *marshalMainMethodCMDLineArgs(ManagedContext *ctx, llvm::Function *managedMain, llvm::Function *fn, llvm::IRBuilder<> *irb) {
     int counter = 0;
     // loop over all argv and create string {i32, i8*} from them; then call managedMain
     if (irb == nullptr)
         irb = ctx->builder;
-    llvm::Value* argc, * argv;
+    llvm::Value *argc, *argv;
 
 
     if (fn->arg_size() < 2) {
@@ -1371,11 +1257,11 @@ EXTERN_API(llvm::Value)* marshalMainMethodCMDLineArgs(ManagedContext* ctx, llvm:
     auto doEnterLoop = irb->CreateICmpSGT(argc, one(ctx), "enter_marshal_loop");
 
     //llvm::BasicBlock * beforeLoop = llvm::BasicBlock::Create(*ctx->context, "before_loop", fn);
-    llvm::BasicBlock* entry = irb->GetInsertBlock();
-    llvm::BasicBlock* loop = llvm::BasicBlock::Create(*ctx->context, "marshal_loop", fn);
-    llvm::BasicBlock* loopEnd = llvm::BasicBlock::Create(*ctx->context, "marshal_loop_end", fn);
+    llvm::BasicBlock *entry = irb->GetInsertBlock();
+    llvm::BasicBlock *loop = llvm::BasicBlock::Create(*ctx->context, "marshal_loop", fn);
+    llvm::BasicBlock *loopEnd = llvm::BasicBlock::Create(*ctx->context, "marshal_loop_end", fn);
 
-    llvm::BasicBlock* startingBlock = irb->GetInsertBlock();
+    llvm::BasicBlock *startingBlock = irb->GetInsertBlock();
 
     //irb->CreateCondBr(doEnterLoop, beforeLoop, loopEnd);
 
@@ -1383,23 +1269,23 @@ EXTERN_API(llvm::Value)* marshalMainMethodCMDLineArgs(ManagedContext* ctx, llvm:
 
     auto intTy = llvm::Type::getInt32Ty(*ctx->context);
     auto charPtrTy = llvm::Type::getInt8PtrTy(*ctx->context);
-    llvm::FunctionType* fn_strlen_ty = llvm::FunctionType::get(intTy, { charPtrTy }, false);
-    llvm::Function* fn_strlen = llvm::cast<llvm::Function>(ctx->M->getOrInsertFunction("strlen", fn_strlen_ty));
+    llvm::FunctionType *fn_strlen_ty = llvm::FunctionType::get(intTy, { charPtrTy }, false);
+    llvm::Function *fn_strlen = llvm::cast<llvm::Function>(ctx->M->getOrInsertFunction("strlen", fn_strlen_ty));
 
     auto fn_gcnew_ty = llvm::FunctionType::get(llvm::Type::getInt8PtrTy(*ctx->context), { intTy }, false);
     auto fn_gcnew = llvm::cast<llvm::Function>(ctx->M->getOrInsertFunction("gc_new", fn_gcnew_ty));
     auto string_ty = getStringType(ctx);
     auto stringArray = llvm::StructType::get(*ctx->context, { intTy, llvm::ArrayType::get(string_ty, 0) });
 
-    llvm::Value* argcM1 = getMax(ctx, zero(ctx), irb->CreateSub(argc, one(ctx)), false, irb);
-    llvm::Value* retLen;
+    llvm::Value *argcM1 = getMax(ctx, zero(ctx), irb->CreateSub(argc, one(ctx)), false, irb);
+    llvm::Value *retLen;
     {
         auto string_sz = irb->CreateTruncOrBitCast(llvm::ConstantExpr::getSizeOf(string_ty), intTy);
         auto stringArray_sz = irb->CreateTruncOrBitCast(llvm::ConstantExpr::getSizeOf(stringArray), intTy);
         //llvm::errs() << *stringArray_sz;
         retLen = irb->CreateAdd(stringArray_sz, irb->CreateMul(string_sz, argcM1));
     }
-    llvm::Value* ret = irb->CreateCall(fn_gcnew, { retLen }, "new_string(argc-1)");
+    llvm::Value *ret = irb->CreateCall(fn_gcnew, { retLen }, "new_string(argc-1)");
     ret = irb->CreatePointerCast(ret, stringArray->getPointerTo());
     auto retLenPtr = irb->CreateGEP(ret, { zero(ctx), zero(ctx) });
 
@@ -1429,23 +1315,20 @@ EXTERN_API(llvm::Value)* marshalMainMethodCMDLineArgs(ManagedContext* ctx, llvm:
     //args->addIncoming(llvm::Constant::getNullValue(stringArray->getPointerTo()), startingBlock);
     return irb->CreateCall(managedMain, { ret });
 }
-EXTERN_API(llvm::Constant)* getInt128(ManagedContext* ctx, uint64_t hi, uint64_t lo)
-{
+EXTERN_API(llvm::Constant) *getInt128(ManagedContext *ctx, uint64_t hi, uint64_t lo) {
     short test = 1;
-    char* testp = (char*)& test;
+    char *testp = (char *)& test;
     bool isBigEndian = testp[0] == 0;
     if (isBigEndian)
         return llvm::Constant::getIntegerValue(llvm::Type::getInt128Ty(*ctx->context), llvm::APInt(128, { hi, lo }));
     else
         return llvm::Constant::getIntegerValue(llvm::Type::getInt128Ty(*ctx->context), llvm::APInt(128, { lo ,hi }));
 }
-EXTERN_API(llvm::Constant)* getInt64(ManagedContext* ctx, uint64_t val)
-{
+EXTERN_API(llvm::Constant) *getInt64(ManagedContext *ctx, uint64_t val) {
     return llvm::Constant::getIntegerValue(llvm::Type::getInt64Ty(*ctx->context), llvm::APInt(64, val));
 }
 
-EXTERN_API(llvm::Constant)* getIntSZ(ManagedContext* ctx, uint64_t val)
-{
+EXTERN_API(llvm::Constant) *getIntSZ(ManagedContext *ctx, uint64_t val) {
     switch (sizeof(size_t)) {
         case 1:
             return getInt8(ctx, (uint8_t)val);
@@ -1462,23 +1345,22 @@ EXTERN_API(llvm::Constant)* getIntSZ(ManagedContext* ctx, uint64_t val)
     }
 }
 
-EXTERN_API(bool) VerifyModule(ManagedContext* ctx)
-{
+EXTERN_API(bool) VerifyModule(ManagedContext *ctx) {
     return !llvm::verifyModule(*ctx->M, &llvm::errs());
 }
-static void optExtension(const llvm::PassManagerBuilder& builder, llvm::legacy::PassManagerBase& pm) {
+static void optExtension(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
     if (builder.OptLevel > 0) {
         pm.add(llvm::createInductiveRangeCheckEliminationPass());
 
     }
 }
 
-static void optExtensionAllocationRemoving(const llvm::PassManagerBuilder& builder, llvm::legacy::PassManagerBase& pm) {
+static void optExtensionAllocationRemoving(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
     if (builder.OptLevel > 2) {
         pm.add(new AllocationRemovingPass("gc_new"));
     }
 }
-static void optExtensionToStringRemoving(const llvm::PassManagerBuilder& builder, llvm::legacy::PassManagerBase& pm) {
+static void optExtensionToStringRemoving(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
     if (builder.OptLevel > 1) {
         std::unordered_map<std::string, char> m;
 
@@ -1492,13 +1374,11 @@ static void optExtensionToStringRemoving(const llvm::PassManagerBuilder& builder
     }
 
 }
-EXTERN_API(void) optimize(ManagedContext* ctx, uint8_t optLvl, uint8_t maxIterations)
-{
+EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterations) {
     bool changed, repeat;
     uint8_t it = 0;
 
-    do
-    {
+    do {
         changed = false;
 
         llvm::PassManagerBuilder builder;
@@ -1517,8 +1397,8 @@ EXTERN_API(void) optimize(ManagedContext* ctx, uint8_t optLvl, uint8_t maxIterat
         }
 
 
-        builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it](const llvm::PassManagerBuilder& builder, llvm::legacy::PassManagerBase& pm) {
-            
+        builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
+
             pm.add(llvm::createTailCallEliminationPass());
             pm.add(llvm::createMemCpyOptPass());
             pm.add(llvm::createPartialInliningPass());
@@ -1556,7 +1436,7 @@ EXTERN_API(void) optimize(ManagedContext* ctx, uint8_t optLvl, uint8_t maxIterat
             llvm::legacy::FunctionPassManager fpm(ctx->M);
             builder.populateFunctionPassManager(fpm);
             //fpm.doInitialization();
-            for (auto& fn : ctx->M->functions()) {
+            for (auto &fn : ctx->M->functions()) {
                 changed |= fpm.run(fn);
             }
             //fpm.doFinalization();
@@ -1583,8 +1463,18 @@ EXTERN_API(void) optimize(ManagedContext* ctx, uint8_t optLvl, uint8_t maxIterat
             llvm::errs() << ">>done arg-changedInLastRuns\r\n";
         }*/
         repeat = optLvl > 2 && changed && it < maxIterations;
-
-    } while (repeat);
+        if (repeat && it == 2) {
+            if (auto strconcat_ret = ctx->M->getFunction("strconcat_ret")) {
+                strconcat_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
+                strconcat_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+            }
+            if (auto strmul_ret = ctx->M->getFunction("strmul_ret")) {
+                strmul_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
+                strmul_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+            }
+        }
+    }
+    while (repeat);
     // automatic deallocation inside of the passmanager, so set ctx->arp to null to avoid misuse
     ctx->arp = nullptr;
     //llvm::errs() << "optimize ended\r\n";
@@ -1592,16 +1482,14 @@ EXTERN_API(void) optimize(ManagedContext* ctx, uint8_t optLvl, uint8_t maxIterat
         llvm::errs() << "There might be still potential to optimize further\r\n";
 }
 
-EXTERN_API(void) linkTimeOptimization(ManagedContext* ctx)
-{
+EXTERN_API(void) linkTimeOptimization(ManagedContext *ctx) {
     llvm::errs() << "perform LTO\r\n";
     llvm::legacy::PassManager pm;
     pm.add(llvm::createLowerTypeTestsPass(nullptr, nullptr));
     pm.run(*ctx->M);
 }
 
-EXTERN_API(void) forceVectorizationForAllLoops(ManagedContext* ctx, llvm::Function* fn)
-{
+EXTERN_API(void) forceVectorizationForAllLoops(ManagedContext *ctx, llvm::Function *fn) {
     assert(fn && llvm::isa<llvm::Function>(fn));
     //llvm::errs() << "Vectorize all loops for function " << fn->getName() << "\r\n";
 
@@ -1621,8 +1509,7 @@ EXTERN_API(void) forceVectorizationForAllLoops(ManagedContext* ctx, llvm::Functi
     //llvm::errs() << "::end\r\n";
 }
 
-EXTERN_API(bool) forceVectorizationForCurrentLoop(ManagedContext* ctx, llvm::BasicBlock* loopBB, llvm::Function* fn)
-{
+EXTERN_API(bool) forceVectorizationForCurrentLoop(ManagedContext *ctx, llvm::BasicBlock *loopBB, llvm::Function *fn) {
     assert(loopBB && llvm::isa<llvm::BasicBlock>(loopBB));
 
     llvm::DominatorTree dt;
@@ -1639,7 +1526,7 @@ EXTERN_API(bool) forceVectorizationForCurrentLoop(ManagedContext* ctx, llvm::Bas
     return true;
 }
 
-llvm::GlobalVariable* createGlobalVTable(ManagedContext* ctx, const char* typeName, llvm::Type* _vtableTy, llvm::Function** virtualMethods, uint32_t virtualMethodc) {
+llvm::GlobalVariable *createGlobalVTable(ManagedContext *ctx, const char *typeName, llvm::Type *_vtableTy, llvm::Function **virtualMethods, uint32_t virtualMethodc) {
     if (!llvm::isa<llvm::StructType>(_vtableTy)) {
         llvm::errs() << *_vtableTy << " is not a structtype";
         //getchar();
@@ -1649,7 +1536,7 @@ llvm::GlobalVariable* createGlobalVTable(ManagedContext* ctx, const char* typeNa
         llvm::errs() << "the vtable is of a structtype\r\n";
     }*/
     auto vtableTy = llvm::cast<llvm::StructType>(_vtableTy);
-    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant*>((llvm::Constant * *)virtualMethods, virtualMethodc));
+    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtualMethods, virtualMethodc));
 
     auto glob = llvm::dyn_cast<llvm::GlobalVariable>(ctx->M->getOrInsertGlobal((llvm::StringRef(typeName) + "_vtable").str(), vtableTy));
     if (!glob) {
@@ -1664,8 +1551,7 @@ llvm::GlobalVariable* createGlobalVTable(ManagedContext* ctx, const char* typeNa
     glob->setInitializer(vtableVal);
 }
 
-EXTERN_API(llvm::Value)* createVTable(ManagedContext* ctx, const char* typeName, llvm::Type* _vtableTy, llvm::Function** virtualMethods, uint32_t virtualMethodc)
-{
+EXTERN_API(llvm::Value) *createVTable(ManagedContext *ctx, const char *typeName, llvm::Type *_vtableTy, llvm::Function **virtualMethods, uint32_t virtualMethodc) {
 
     if (!llvm::isa<llvm::StructType>(_vtableTy)) {
         llvm::errs() << *_vtableTy << " is not a structtype";
@@ -1676,7 +1562,7 @@ EXTERN_API(llvm::Value)* createVTable(ManagedContext* ctx, const char* typeName,
         llvm::errs() << "the vtable is of a structtype\r\n";
     }*/
     auto vtableTy = llvm::cast<llvm::StructType>(_vtableTy);
-    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant*>((llvm::Constant * *)virtualMethods, virtualMethodc));
+    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtualMethods, virtualMethodc));
 
     auto glob = llvm::dyn_cast<llvm::GlobalVariable>(ctx->M->getOrInsertGlobal((llvm::StringRef(typeName) + "_vtable").str(), vtableTy));
     if (!glob) {
@@ -1694,8 +1580,7 @@ EXTERN_API(llvm::Value)* createVTable(ManagedContext* ctx, const char* typeName,
     return glob;
 }
 
-EXTERN_API(llvm::Value)* getVTable(ManagedContext* ctx, const char* typeName, llvm::Type* _vtableTy, llvm::Function** virtualMethods, uint32_t virtualMethodc, llvm::Value* superVtable)
-{
+EXTERN_API(llvm::Value) *getVTable(ManagedContext *ctx, const char *typeName, llvm::Type *_vtableTy, llvm::Function **virtualMethods, uint32_t virtualMethodc, llvm::Value *superVtable) {
     if (!llvm::isa<llvm::StructType>(_vtableTy) && virtualMethodc > 0) {
 
         llvm::errs() << *_vtableTy << " is not a structtype";
@@ -1705,7 +1590,7 @@ EXTERN_API(llvm::Value)* getVTable(ManagedContext* ctx, const char* typeName, ll
     /*else {
         llvm::errs() << "the vtable is of a structtype\r\n";
     }*/
-    llvm::Constant* vtableVal;
+    llvm::Constant *vtableVal;
     if (auto vtableTy = llvm::dyn_cast<llvm::StructType>(_vtableTy)) {
 
 
@@ -1720,7 +1605,7 @@ EXTERN_API(llvm::Value)* getVTable(ManagedContext* ctx, const char* typeName, ll
                 ind++;
             }
         }
-        vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant*>((llvm::Constant * *)virtMetConstants, virtualMethodc));
+        vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtMetConstants, virtualMethodc));
     }
     else {
         vtableVal = getNullPtr(ctx);
@@ -1752,13 +1637,12 @@ EXTERN_API(llvm::Value)* getVTable(ManagedContext* ctx, const char* typeName, ll
     return glob;
 }
 
-EXTERN_API(llvm::Type)* getImplicitVTableType(ManagedContext* ctx, const char* name, llvm::Function** virtualMethods, uint32_t virtualMethodc)
-{
+EXTERN_API(llvm::Type) *getImplicitVTableType(ManagedContext *ctx, const char *name, llvm::Function **virtualMethods, uint32_t virtualMethodc) {
     //llvm::errs() << "GetVTableType::virtualMethodc=" << virtualMethodc << "\r\n";
     if (virtualMethodc == 0)
         return llvm::Type::getInt8PtrTy(*ctx->context);
 
-    std::vector<llvm::Type*> fnTys(virtualMethodc);
+    std::vector<llvm::Type *> fnTys(virtualMethodc);
 
     for (uint32_t i = 0; i < virtualMethodc; ++i) {
         auto ty = virtualMethods[i]->getType();
@@ -1780,17 +1664,15 @@ EXTERN_API(llvm::Type)* getImplicitVTableType(ManagedContext* ctx, const char* n
     return ret;
 }
 
-EXTERN_API(llvm::Type)* getVTableType(ManagedContext* ctx, const char* name, llvm::Type** fnTypes, uint32_t fnTypec)
-{
+EXTERN_API(llvm::Type) *getVTableType(ManagedContext *ctx, const char *name, llvm::Type **fnTypes, uint32_t fnTypec) {
     if (fnTypec == 0)
         return llvm::Type::getInt8PtrTy(*ctx->context);
-    auto ret = llvm::StructType::get(*ctx->context, llvm::ArrayRef<llvm::Type*>(fnTypes, fnTypec));
+    auto ret = llvm::StructType::get(*ctx->context, llvm::ArrayRef<llvm::Type *>(fnTypes, fnTypec));
     ret->setName((llvm::StringRef(name) + "_vtableTy").str());
     return ret;
 }
 
-EXTERN_API(llvm::Value)* isInst(ManagedContext* ctx, llvm::Value* vtablePtr, const char* typeName, llvm::IRBuilder<>* irb)
-{
+EXTERN_API(llvm::Value) *isInst(ManagedContext *ctx, llvm::Value *vtablePtr, const char *typeName, llvm::IRBuilder<> *irb) {
     if (irb == nullptr)
         irb = ctx->builder;
     auto asVoidPtr = irb->CreateBitOrPointerCast(vtablePtr, llvm::Type::getInt8PtrTy(*ctx->context));
