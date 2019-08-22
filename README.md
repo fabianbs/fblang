@@ -28,17 +28,18 @@ While the first three components are C# projects which run with .Net Core 2.1, t
 ### Dependencies
 #### External dependencies
 + .Net Core 2.1
-+ boost 1.70.0
-+ Boehm GC 8.0.2
-+ LLVM 7.0.0
-+ (Clang >= 7.0.0) optional: when this is missing, the `--native` compiler flag cannot be used. Note: Make sure, that the C++ include files are available, otherwise the SimpleClangCompilerInterface will not compile
++ [boost 1.70.0](https://www.boost.org/users/history/version_1_70_0.html)
++ [Boehm GC 8.0.2](https://www.hboehm.info/gc/)
++ [UTF8-CPP](https://github.com/ledger/utfcpp)
++ [LLVM 7.0.0](https://releases.llvm.org/download.html#7.0.0)
++ ([Clang](https://clang.llvm.org/) >= 7.0.0) optional: when this is missing, the `--native` compiler flag cannot be used. Note: Make sure, that the C++ include files are available, otherwise the SimpleClangCompilerInterface will not compile
 
 All these dependencies should be installed, before compiling the project.
 #### Implicit dependencies
 There are some NuGet packages, which are included by default:
-+ Antlr4.CodeGenerator v4.6.5
-+ Antlr4.Runtime v4.6.5
-+ CommandLineParser v2.3.0
++ [Antlr4.CodeGenerator v4.6.5](https://www.nuget.org/packages/Antlr4.CodeGenerator/)
++ [Antlr4.Runtime v4.6.5](https://www.nuget.org/packages/Antlr4.Runtime/)
++ [CommandLineParser v2.3.0](https://www.nuget.org/packages/CommandLineParser/)
 
 ### Compatibility
 Currently FB runs only on windows systems as the language runtime uses some functionality from the WinAPI. This may change later.
