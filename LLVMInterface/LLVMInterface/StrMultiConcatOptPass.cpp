@@ -86,7 +86,7 @@ namespace {
         }
         // TODO: handle the roots (check, whether or not the whole subtree can be replaced, or only parts of it) 
         // (replace the subtree from root by an array of the leaves + strmulticoncat call)
-
+        return true;
     }
 
 }

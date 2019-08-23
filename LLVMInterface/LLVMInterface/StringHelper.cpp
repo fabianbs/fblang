@@ -1,6 +1,6 @@
 #include "StringHelper.h"
 #include <llvm/IR/IRBuilder.h>
-namespace {
+namespace StringHelper {
     using namespace llvm;
     llvm::Constant *CreateIntSZ(Module &M, size_t val) {
         switch (sizeof(size_t)) {

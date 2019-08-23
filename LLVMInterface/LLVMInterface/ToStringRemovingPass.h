@@ -18,6 +18,7 @@
 #include "StringHelper.h"
 namespace {
     using namespace llvm;
+    using namespace StringHelper;
     class ToStringRemovingPass :public FunctionPass {
         static char id;
         // toStrName -> type

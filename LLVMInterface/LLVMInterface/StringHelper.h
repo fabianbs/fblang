@@ -1,6 +1,7 @@
 #pragma once
 #include <llvm/IR/Module.h>
-namespace {
+#include <llvm/IR/IRBuilder.h>
+namespace StringHelper{
     llvm::Constant *CreateIntSZ(llvm::Module &M, size_t val);
     llvm::Type *GetSizeType(llvm::Module &M);
     llvm::Constant *CreateString(llvm::Module& M, llvm::StringRef strVal);
