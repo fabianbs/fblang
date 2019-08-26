@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LLVMCodeGenerator": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

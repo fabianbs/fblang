@@ -16,6 +16,9 @@ namespace StringHelper {
                 return Constant::getIntegerValue(Type::getInt32Ty(M.getContext()), APInt(32, val));
         }
     }
+    llvm::Constant *CreateInt32(llvm::Module &M, int val) {
+        return Constant::getIntegerValue(Type::getInt32Ty(M.getContext()), APInt(32, val));
+    }
     llvm::Type *GetSizeType(llvm::Module &M) {
         switch (sizeof(size_t)) {
             case 1:
@@ -45,6 +48,9 @@ namespace StringHelper {
         return ret;
     }
     llvm::Type *CreateStringType(llvm::Module &M) {
-        return llvm::StructType::create({ llvm::PointerType::getInt8PtrTy(M.getContext()), GetSizeType(M) }, "string", false);
+        auto ret = M.getTypeByName("string");
+        if (!ret)
+            ret = llvm::StructType::create({ llvm::PointerType::getInt8PtrTy(M.getContext()), GetSizeType(M) }, "string", false);
+        return ret;
     }
 }

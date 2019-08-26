@@ -1463,7 +1463,7 @@ namespace FBc {
                     return false;
                 }
                 else
-                    expectedReturnType = expectedReturnType.UnWrapAll();
+                    expectedReturnType = expectedReturnType.UnWrapNatural();
             }
             ret = Module.CreateNewObjectExpression(ex.Position(fileName), expectedReturnType, args, err);
 

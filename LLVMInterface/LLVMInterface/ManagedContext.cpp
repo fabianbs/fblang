@@ -29,6 +29,8 @@
 #include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <llvm/Transforms/IPO/PartialInlining.h>
 #include <llvm/Transforms/Instrumentation/PGOInstrumentation.h>
 
 #include <llvm/IR/Verifier.h>
@@ -37,6 +39,7 @@
 #include "ToStringRemovingPass.h"
 #include "ThrowIfRemovingPass.h"
 #include "StrMulRemovingPass.h"
+#include "StrMultiConcatOptPass.h"
 #include "ManagedContext.h"
 
 ManagedContext::ManagedContext(const char *name) {
@@ -1348,33 +1351,11 @@ EXTERN_API(llvm::Constant) *getIntSZ(ManagedContext *ctx, uint64_t val) {
 EXTERN_API(bool) VerifyModule(ManagedContext *ctx) {
     return !llvm::verifyModule(*ctx->M, &llvm::errs());
 }
-static void optExtension(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
-    if (builder.OptLevel > 0) {
-        pm.add(llvm::createInductiveRangeCheckEliminationPass());
 
-    }
-}
-
-static void optExtensionAllocationRemoving(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
-    if (builder.OptLevel > 2) {
-        pm.add(new AllocationRemovingPass("gc_new"));
-    }
-}
-static void optExtensionToStringRemoving(const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
-    if (builder.OptLevel > 1) {
-        std::unordered_map<std::string, char> m;
-
-        m["to_str"] = 'i';
-        m["uto_str"] = 'u';
-        m["lto_str"] = 'l';
-        m["ulto_str"] = 'U';
-        m["llto_str"] = 'L';
-        m["fto_str"] = 'f';
-        pm.add(new ToStringRemovingPass(std::move(m)));
-    }
-
-}
 EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterations) {
+   
+#if 1
+    
     bool changed, repeat;
     uint8_t it = 0;
 
@@ -1392,8 +1373,6 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
         //builder.NewGVN = it == 0;
         if (it == 0) {
             builder.Inliner = llvm::createFunctionInliningPass(optLvl, 0, false);
-            builder.addExtension(llvm::PassManagerBuilder::EP_LoopOptimizerEnd, optExtension);
-
         }
 
 
@@ -1402,7 +1381,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             pm.add(llvm::createTailCallEliminationPass());
             pm.add(llvm::createMemCpyOptPass());
             pm.add(llvm::createPartialInliningPass());
-
+            pm.add(llvm::createInductiveRangeCheckEliminationPass());
 
             if (builder.OptLevel > 1) {
                 std::unordered_map<std::string, char> m;
@@ -1419,8 +1398,24 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                 pm.add(new ThrowIfRemovingPass(*ctx->M));
                 pm.add(llvm::createPartiallyInlineLibCallsPass());
             }
-            if (builder.OptLevel > 2 && it > 1)
-                pm.add(llvm::createLoadStoreVectorizerPass());
+            if (builder.OptLevel > 2 && it > 3) {
+                if (it == 4)
+                    pm.add(new StrOpt::StrMultiConcatOptPass());
+                else {
+                    if (it == 5) {
+                        if (auto strconcat_ret = ctx->M->getFunction("strconcat_ret")) {
+                            strconcat_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
+                            strconcat_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+                        }
+                        if (auto strmul_ret = ctx->M->getFunction("strmul_ret")) {
+                            strmul_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
+                            strmul_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+                        }
+                        pm.add(llvm::createAlwaysInlinerLegacyPass());
+                    }
+                    pm.add(llvm::createLoadStoreVectorizerPass());
+                }
+            }
             if (it == 0) {
                 if (builder.OptLevel > 2) {
                     pm.add(ctx->arp = new AllocationRemovingPass("gc_new"));
@@ -1430,16 +1425,21 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
 
 
         llvm::errs() << "optimize O" << (int)optLvl << "\r\n";
-
+        //if (!llvm::verifyModule(*ctx->M, &llvm::errs())) {
+        //    llvm::errs() << "verified module\n";
+        //}
+        //else {
+        //    llvm::errs() << "errors in module\n";
+        //}
 
         {
             llvm::legacy::FunctionPassManager fpm(ctx->M);
             builder.populateFunctionPassManager(fpm);
-            //fpm.doInitialization();
+            fpm.doInitialization();
             for (auto &fn : ctx->M->functions()) {
                 changed |= fpm.run(fn);
             }
-            //fpm.doFinalization();
+            fpm.doFinalization();
         }
         //llvm::errs() << ">>optimize functions done\r\n";
         {
@@ -1463,23 +1463,15 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             llvm::errs() << ">>done arg-changedInLastRuns\r\n";
         }*/
         repeat = optLvl > 2 && changed && it < maxIterations;
-        if (repeat && it == 2) {
-            if (auto strconcat_ret = ctx->M->getFunction("strconcat_ret")) {
-                strconcat_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
-                strconcat_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
-            }
-            if (auto strmul_ret = ctx->M->getFunction("strmul_ret")) {
-                strmul_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
-                strmul_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
-            }
-        }
+        
     }
     while (repeat);
-    // automatic deallocation inside of the passmanager, so set ctx->arp to null to avoid misuse
-    ctx->arp = nullptr;
-    //llvm::errs() << "optimize ended\r\n";
-    if (changed && optLvl > 2)
-        llvm::errs() << "There might be still potential to optimize further\r\n";
+// automatic deallocation inside of the passmanager, so set ctx->arp to null to avoid misuse
+ctx->arp = nullptr;
+//llvm::errs() << "optimize ended\r\n";
+if (changed && optLvl > 2)
+llvm::errs() << "There might be still potential to optimize further\r\n";
+#endif
 }
 
 EXTERN_API(void) linkTimeOptimization(ManagedContext *ctx) {

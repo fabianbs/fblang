@@ -369,6 +369,11 @@ namespace CompilerInfrastructure {
                 tp = mtp.UnderlyingType;
             return tp;
         }
+        public static IType UnWrapNatural(this IType tp) {
+            while (tp is ModifierType mtp && !(mtp is ReferenceValueType))
+                tp = mtp.UnderlyingType;
+            return tp;
+        }
         public static bool OverloadsOperator(this IType tp, OverloadableOperator op, out IEnumerable<IDeclaredMethod> overloads,
             SimpleMethodContext.VisibleMembers vis = SimpleMethodContext.VisibleMembers.Both) {
             var suffix = op.OperatorName();

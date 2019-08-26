@@ -3,7 +3,8 @@
     "FBc": {
       "commandName": "Project",
       "commandLineArgs": "Complex.fbs --emit-llvm -O3",
-      "workingDirectory": "D:\\Besitzer\\Desktop"
+      "workingDirectory": "D:\\Besitzer\\Desktop",
+      "nativeDebugging": true
     }
   }
 }

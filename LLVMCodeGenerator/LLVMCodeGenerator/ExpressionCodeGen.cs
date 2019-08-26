@@ -1067,7 +1067,7 @@ namespace LLVMCodeGenerator {
                 if (parentTy != (callee.NestedIn as ITypeContext).Type) {
                     succ &= gen.TryGetReferenceType((callee.NestedIn as ITypeContext).Type, out var thisTy);
                     //succ &= ctx.TryCast(par, thisTy, ref par, false, irb);
-                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type, out ret, false);
+                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type.ReceiverType(callee), out ret, false);
                 }
                 if (isCallVirt) {
                     if (gen.TryGetVirtualMethodSlot(callee, out var slot, irb)) {
@@ -1123,7 +1123,7 @@ namespace LLVMCodeGenerator {
                 if (parentTy != (callee.NestedIn as ITypeContext).Type) {
                     succ &= gen.TryGetReferenceType((callee.NestedIn as ITypeContext).Type, out var thisTy);
                     //succ &= ctx.TryCast(par, thisTy, ref par, false, irb);
-                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type, out ret, false);
+                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type.ReceiverType(callee), out ret, false);
                 }
                 if (isCallVirt) {
                     if (gen.TryGetVirtualMethodSlot(callee, out var slot, irb)) {

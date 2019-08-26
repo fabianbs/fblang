@@ -21,10 +21,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\LLVMCodeGenerator\LLVMCodeGenerator\bin\Debug\netcoreapp2.1\LLVMInterface.dll" Link="LLVMInterface.dll">
+    <None Include="..\..\SimpleClangCompilerInterface\x64\Release\SimpleClangCompilerInterface.dll" Link="SimpleClangCompilerInterface.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\SimpleClangCompilerInterface\x64\Release\SimpleClangCompilerInterface.dll" Link="SimpleClangCompilerInterface.dll">
+    <None Include="..\..\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

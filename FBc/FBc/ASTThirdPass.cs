@@ -710,6 +710,11 @@ namespace FBc {
             var name = VisitMethodName(context.methodName(), out var isOperatorOverload);
             var vis = context.visibility().GetVisibility(globalCtx ? Visibility.Internal : Visibility.Private);
             var specs = Method.Specifier.None;
+
+            //TODO do static analysis for determining Method::HasUniqueThis
+            specs |= Method.Specifier.UniqueThis;
+
+
             if (context.Abstract() != null)
                 specs |= Method.Specifier.Abstract;
             else if (context.Virtual() != null)
