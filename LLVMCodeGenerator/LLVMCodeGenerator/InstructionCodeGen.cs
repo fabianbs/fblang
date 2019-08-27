@@ -97,6 +97,7 @@ namespace LLVMCodeGenerator {
         protected readonly ManagedContext ctx;
         protected readonly LLVMCodeGenerator gen;
         protected readonly Dictionary<IVariable, IntPtr> variables = new Dictionary<IVariable, IntPtr>();
+        protected readonly Vector <Vector<IntPtr>> locallyDefinedVariables = new Vector<Vector<IntPtr>>();
         protected readonly Dictionary<IStatement, RedirectTarget> breakableStmts = new Dictionary<IStatement, RedirectTarget>();
         protected readonly IntPtr fn;
         protected readonly IntPtr irb;
@@ -114,6 +115,7 @@ namespace LLVMCodeGenerator {
             methodTp = _methodTp;
             method = _met;
             entryBlock = ctx.GetCurrentBasicBlock(irb);
+            locallyDefinedVariables.PushBack(new Vector<IntPtr>());
         }
         public InstructionGenerator(LLVMCodeGenerator _gen, ManagedContext _ctx, IntPtr function, FunctionType _methodTp, uint numSuspendPoints, CoroutineInfo.Kind coroType, IDictionary<IVariable, uint> localGEP, uint thisGEP, uint stateGEP, IDictionary<IExpression, uint> otherGEP, uint mutArgsInd, IntPtr irBuilder = default)
             : this(_gen, _ctx, function, _methodTp, irBuilder) {
@@ -167,6 +169,7 @@ namespace LLVMCodeGenerator {
         public bool DoBoundsChecks { get; set; } = true;
         public bool DoNullChecks { get; set; } = true;
         public bool AddVariable(IVariable vr, IntPtr vrmem) {
+            locallyDefinedVariables.Back().PushBack(vrmem);
             return variables.TryAdd(vr, vrmem);
         }
         bool TryGetVariable(IVariable vr, IntPtr parent, out IntPtr vrmem) {
@@ -201,12 +204,20 @@ namespace LLVMCodeGenerator {
                     return TryReturnCodeGen(retStmt);
                 }
                 case BlockStatement block: {
+                    locallyDefinedVariables.PushBack(default);
                     foreach (var nested in block.Statements) {
                         succ &= TryInstructionCodeGen(nested);
                         if (ctx.CurrentBlockIsTerminated(irb))
                             break;
                     }
+                    if (!ctx.CurrentBlockIsTerminated(irb)) {
+                        foreach (var alloca in locallyDefinedVariables.Back()) {
+                            ctx.EndLifeTime(alloca, irb);
+                        }
+                    }
+                    locallyDefinedVariables.PopBack();
                     return succ;
+
                 }
                 case InstructionBox box: {
                     if (box.HasValue) {
@@ -274,7 +285,7 @@ namespace LLVMCodeGenerator {
                                 ctx.Store(mem, dflt, irb);
                             }
                             else
-                                variables[vr] = ctx.DefineInitializedAlloca(fn, vrTp, dflt, vr.Signature.Name, irb, false);
+                                AddVariable(vr, ctx.DefineInitializedAlloca(fn, vrTp, dflt, vr.Signature.Name, irb, true));
                         }
                         else {
                             defaultValue = null;
@@ -283,7 +294,7 @@ namespace LLVMCodeGenerator {
                                 ctx.Store(mem, ctx.GetAllZeroValue(vrTp), irb);
                             }
                             else
-                                variables[vr] = ctx.DefineZeroinitializedAlloca(fn, vrTp, vr.Signature.Name, irb, false);
+                                AddVariable(vr, ctx.DefineZeroinitializedAlloca(fn, vrTp, vr.Signature.Name, irb, true));
                         }
 
                         return ret;

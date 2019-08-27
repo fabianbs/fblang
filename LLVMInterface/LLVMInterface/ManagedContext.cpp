@@ -427,14 +427,17 @@ EXTERN_API(llvm::Value) *defineInitializedAlloca(ManagedContext *ctx, llvm::Func
     llvm::Value *ret;
     {
         llvm::IRBuilder<> inserter(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+
         ret = inserter.CreateAlloca(ty, nullptr, name);
     }
     if (initVal->getType() != ty) {
         //assume, that this only happens for pointers such that unsigned is always false
         initVal = forceCast(ctx, initVal, ty, false, irb);
     }
-    if (addlifetime)
-        irb->CreateLifetimeStart(ret);
+    if (addlifetime) {
+        auto sz = irb->getInt64(ctx->M->getDataLayout().getTypeAllocSize(ty));
+        irb->CreateLifetimeStart(ret, sz);
+    }
     irb->CreateStore(initVal, ret);
     return ret;
 }
@@ -447,7 +450,8 @@ EXTERN_API(void) endLifeTime(ManagedContext *ctx, llvm::Value *ptr, llvm::IRBuil
     assert(ptr && llvm::isa<llvm::PointerType>(ptr->getType()));
     if (irb == nullptr)
         irb = ctx->builder;
-    irb->CreateLifetimeEnd(ptr);
+    auto sz = irb->getInt64(ctx->M->getDataLayout().getTypeAllocSize(ptr->getType()));
+    irb->CreateLifetimeEnd(ptr, sz);
 }
 
 EXTERN_API(llvm::IRBuilder<>) *CreateIRBuilder(ManagedContext *ctx) {
@@ -1353,9 +1357,9 @@ EXTERN_API(bool) VerifyModule(ManagedContext *ctx) {
 }
 
 EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterations) {
-   
+
 #if 1
-    
+
     bool changed, repeat;
     uint8_t it = 0;
 
@@ -1375,8 +1379,13 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             builder.Inliner = llvm::createFunctionInliningPass(optLvl, 0, false);
         }
 
-
-        builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
+        builder.addExtension(llvm::PassManagerBuilder::EP_LateLoopOptimizations, [] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) { 
+            pm.add(llvm::createLoopDataPrefetchPass());
+            pm.add(llvm::createLoopInterchangePass());
+            pm.add(llvm::createIndVarSimplifyPass());
+            pm.add(llvm::createLoopUnswitchPass());
+        });
+        builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it, maxIterations] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
 
             pm.add(llvm::createTailCallEliminationPass());
             pm.add(llvm::createMemCpyOptPass());
@@ -1413,7 +1422,8 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                         }
                         pm.add(llvm::createAlwaysInlinerLegacyPass());
                     }
-                    pm.add(llvm::createLoadStoreVectorizerPass());
+                    else if (it != maxIterations - 1)
+                        pm.add(llvm::createLoadStoreVectorizerPass());
                 }
             }
             if (it == 0) {
@@ -1463,14 +1473,14 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             llvm::errs() << ">>done arg-changedInLastRuns\r\n";
         }*/
         repeat = optLvl > 2 && changed && it < maxIterations;
-        
+
     }
     while (repeat);
-// automatic deallocation inside of the passmanager, so set ctx->arp to null to avoid misuse
-ctx->arp = nullptr;
-//llvm::errs() << "optimize ended\r\n";
-if (changed && optLvl > 2)
-llvm::errs() << "There might be still potential to optimize further\r\n";
+    // automatic deallocation inside of the passmanager, so set ctx->arp to null to avoid misuse
+    ctx->arp = nullptr;
+    //llvm::errs() << "optimize ended\r\n";
+    if (changed && optLvl > 2)
+        llvm::errs() << "There might be still potential to optimize further\r\n";
 #endif
 }
 

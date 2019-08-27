@@ -123,6 +123,8 @@ namespace StrOpt {
 
     void ReplaceStringConcat(Function &F, StringConcatNode const *root, const llvm::SmallVector<StringNode const *, 5> & leaves) {
 
+        //TODO: constant folding
+
         //llvm::errs() << "ReplaceStringConcat with " << leaves.size() << " leaves\n";
         auto stringTy = StringHelper::CreateStringType(*F.getParent());
         llvm::Function *strmulticoncat = F.getParent()->getFunction("strmulticoncat");
@@ -145,7 +147,9 @@ namespace StrOpt {
         llvm::Value *arrPtr;
         llvm::Value *retPtr;
         llvm::Instruction *ret;
-        llvm::Value *sizeVal;
+        llvm::Constant *sizeVal;
+        
+        
         {
             llvm::IRBuilder<> inserter(&F.getEntryBlock(), F.getEntryBlock().begin());
             arrPtr = inserter.CreateAlloca(stringTy, sizeVal = StringHelper::CreateIntSZ(*F.getParent(), leaves.size()));
@@ -153,9 +157,16 @@ namespace StrOpt {
         }
         {
             llvm::IRBuilder<> irb(root->Call);
+
+            auto strSz = irb.getInt64(F.getParent()->getDataLayout().getTypeAllocSize(stringTy));
+            auto strArrSz = irb.getInt64(F.getParent()->getDataLayout().getTypeAllocSize(ArrayType::get(stringTy, leaves.size())));
+
+            irb.CreateLifetimeStart(arrPtr, strArrSz);
+
             auto zero = StringHelper::CreateInt32(*F.getParent(), 0);
             auto one = StringHelper::CreateInt32(*F.getParent(), 1);
 
+            
             for (size_t i = 0; i < leaves.size(); ++i) {
 
                 auto strVal = leaves[i]->asStringValueNode() ? leaves[i]->asStringValueNode()->Val : irb.CreateExtractValue(leaves[i]->asStringConcatNode()->Call, { 0 });
@@ -171,8 +182,12 @@ namespace StrOpt {
                 irb.CreateStore(strLen, lenGep);
 
             }
+            irb.CreateLifetimeStart(retPtr, strSz);
             irb.CreateCall(strmulticoncat, { arrPtr, sizeVal, retPtr });
             ret = irb.CreateLoad(retPtr);
+            
+            irb.CreateLifetimeEnd(retPtr, strSz);
+            irb.CreateLifetimeEnd(arrPtr, strArrSz);
         }
         BasicBlock::iterator ii(root->Call);
         for (auto &use : root->Call->uses()) {
