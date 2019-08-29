@@ -208,7 +208,8 @@ namespace {
                 auto strValueGEP = inserter.CreateGEP(strAlloca, { zero, zero });
                 inserter.CreateStore(gep, strValueGEP);
                 auto strLenGEP = inserter.CreateGEP(strAlloca, { zero, one });
-                inserter.CreateStore(ConstantInt::get(Type::getInt32Ty(ctx), APInt(32, retStr.size())), strLenGEP);
+                //inserter.CreateStore(ConstantInt::get(Type::getInt32Ty(ctx), APInt(32, retStr.size())), strLenGEP);
+                inserter.CreateStore(StringHelper::CreateIntSZ(*F.getParent(), retStr.size()), strLenGEP);
 
                 call->eraseFromParent();
                 //auto repl = GetElementPtrInst::CreateInBounds(dataTy, nwGlob, { zero, zero });

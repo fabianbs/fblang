@@ -1391,6 +1391,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             pm.add(llvm::createMemCpyOptPass());
             pm.add(llvm::createPartialInliningPass());
             pm.add(llvm::createInductiveRangeCheckEliminationPass());
+            
 
             if (builder.OptLevel > 1) {
                 std::unordered_map<std::string, char> m;
@@ -1431,6 +1432,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                     pm.add(ctx->arp = new AllocationRemovingPass("gc_new"));
                 }
             }
+            pm.add(llvm::createGlobalDCEPass());
         });
 
 
