@@ -831,10 +831,11 @@ namespace LLVMCodeGenerator {
             RestoreSavedValue(bo.Right, ref rhs);
             switch (bo.Operator) {
                 case BinOp.OperatorKind.ADD:
-                    if (bo.Left is BinOp lbo && lbo.Operator == BinOp.OperatorKind.ADD && lbo.ReturnType.IsString()) {
+                    // leave multiconcat to the optimizer
+                    /*if (bo.Left is BinOp lbo && lbo.Operator == BinOp.OperatorKind.ADD && lbo.ReturnType.IsString()) {
                         return TryStringMultiConcat(bo, out ret);
-                    }
-                    llFn = GetOrCreateInternalFunction(ctx, InternalFunction.strconcat);
+                    }*/
+                    llFn = GetOrCreateInternalFunction(ctx, InternalFunction.strconcat_ret);
                     succ &=
                         TryCast(bo.Left.Position, lhs, bo.Left.ReturnType, PrimitiveType.String, out lhs)
                         && TryCast(bo.Right.Position, rhs, bo.Right.ReturnType, PrimitiveType.String, out rhs);
@@ -870,12 +871,7 @@ namespace LLVMCodeGenerator {
                     return $"The operator {bo.Operator} cannot be applied to strings".Report(bo.Position, false);
             }
             if (succ) {
-                var mem = GetMemory(bo);
-
-                llArgs.Add(mem);
-                ctx.GetCall(llFn, llArgs.AsArray(), irb);
-
-                ret = ctx.Load(mem, irb);
+                ret = ctx.GetCall(llFn, llArgs.AsArray(), irb);
             }
             else
                 ret = default;
@@ -1071,7 +1067,7 @@ namespace LLVMCodeGenerator {
                 if (parentTy != (callee.NestedIn as ITypeContext).Type) {
                     succ &= gen.TryGetReferenceType((callee.NestedIn as ITypeContext).Type, out var thisTy);
                     //succ &= ctx.TryCast(par, thisTy, ref par, false, irb);
-                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type, out ret, false);
+                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type.ReceiverType(callee), out ret, false);
                 }
                 if (isCallVirt) {
                     if (gen.TryGetVirtualMethodSlot(callee, out var slot, irb)) {
@@ -1127,7 +1123,7 @@ namespace LLVMCodeGenerator {
                 if (parentTy != (callee.NestedIn as ITypeContext).Type) {
                     succ &= gen.TryGetReferenceType((callee.NestedIn as ITypeContext).Type, out var thisTy);
                     //succ &= ctx.TryCast(par, thisTy, ref par, false, irb);
-                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type, out ret, false);
+                    succ &= TryCast(pos, par, parentTy, (callee.NestedIn as ITypeContext).Type.ReceiverType(callee), out ret, false);
                 }
                 if (isCallVirt) {
                     if (gen.TryGetVirtualMethodSlot(callee, out var slot, irb)) {
@@ -1928,7 +1924,7 @@ namespace LLVMCodeGenerator {
                 return;
             ThrowIfNull(lengthPtr);
             ThrowIfGreaterEqual(index, ctx.Load(lengthPtr, irb), is64Bit);
-            
+
             //var throwFn = GetOrCreateInternalFunction(ctx, is64Bit ? InternalFunction.throwIfNullOrOutOfBounds64 : InternalFunction.throwIfNullOrOutOfBounds);
             //ctx.GetCall(throwFn, new[] { index, lengthPtr }, irb);
         }

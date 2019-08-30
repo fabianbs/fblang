@@ -73,6 +73,16 @@ namespace CompilerInfrastructure.Utils {
             }
             return default;
         }
+        public ref T Back() {
+            if (size > 0)
+                return ref arrVal[size - 1];
+            throw new IndexOutOfRangeException();
+        }
+        public ref T Front() {
+            if (size > 0)
+                return ref arrVal[0];
+            throw new IndexOutOfRangeException();
+        }
         public void PushBack(in T val) {
             EnsureCapacity(checked(size + 1));
             arrVal[size++] = val;

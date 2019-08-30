@@ -32,8 +32,10 @@ namespace LLVMCodeGenerator {
             dto_str,
             fto_str,
             strconcat,
+            strconcat_ret,
             strmulticoncat,
             strmul,
+            strmul_ret,
             gc_init,
             gc_new,
             gcnewActorContext,
@@ -195,6 +197,35 @@ namespace LLVMCodeGenerator {
                     ctx.AddParamAttributes(ret, new[] { "nocapture", "writeonly" }, 4);
                     break;
                 }
+                case strconcat_ret: {
+                    var stringTy = ctx.GetStringType();
+                    var cstrTy = ctx.GetVoidPtr();
+                    var intTy= ctx.GetSizeTType();
+                    ret = ctx.DeclareFunction("strconcat_ret", stringTy, new[] { cstrTy, intTy, cstrTy, intTy }, new[] { "str1Val", "str1Len", "str2Val", "str2Len" }, false);
+                    // noinline for better behaviour in custom optimizer pass
+                    ctx.AddFunctionAttributes(ret, new[] { "noinline" });
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 0);
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 2);
+                    var irb = IntPtr.Zero;
+
+                    var currBB = ctx.GetCurrentBasicBlock(irb);
+                    var entry = new BasicBlock(ctx, "entry", ret);
+                    ctx.ResetInsertPoint(entry, irb);
+
+                    var retPtr = ctx.DefineAlloca(ret,stringTy,"retPtr");
+
+                    var concatFn = GetOrCreateInternalFunction(ctx, strconcat);
+                    ctx.GetCall(concatFn, new[] {
+                        ctx.GetArgument(ret, 0),
+                        ctx.GetArgument(ret, 1),
+                        ctx.GetArgument(ret, 2),
+                        ctx.GetArgument(ret, 3),
+                        retPtr }, irb);
+                    var retVal = ctx.Load(retPtr, irb);
+                    ctx.ReturnValue(retVal, irb);
+                    ctx.ResetInsertPoint(currBB, irb);
+                    break;
+                }
                 case strmulticoncat: {
                     var retTy = ctx.GetPointerType(ctx.GetStringType());
                     var intty = ctx.GetSizeTType();
@@ -213,6 +244,31 @@ namespace LLVMCodeGenerator {
                     ret = ctx.DeclareFunction("strmul", voidTy, new[] { cptrTy, szTy, intty, retTy }, new[] { "strVal", "strLen", "factor", "ret" }, true);
                     ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 0);
                     ctx.AddParamAttributes(ret, new[] { "nocapture", "writeonly" }, 3);
+                    break;
+                }
+                case strmul_ret: {
+                    var stringTy = ctx.GetStringType();
+                    var intTy = ctx.GetIntType();
+                    var sizeTy = ctx.GetSizeTType();
+                    var cstrTy = ctx.GetVoidPtr();
+                    ret = ctx.DeclareFunction("strmul_ret", stringTy, new[] { cstrTy, sizeTy, intTy }, new[] { "strVal", "strLen", "factor" }, false);
+                    // noinline for better behaviour in custom optimizer pass
+                    ctx.AddFunctionAttributes(ret, new[] { "noinline" });
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 0);
+
+                    var irb = IntPtr.Zero;
+
+                    var currBB = ctx.GetCurrentBasicBlock(irb);
+                    var entry = new BasicBlock(ctx, "entry", ret);
+                    ctx.ResetInsertPoint(entry, irb);
+
+                    var retPtr = ctx.DefineAlloca(ret,stringTy,"retPtr");
+
+                    var mulFn = GetOrCreateInternalFunction(ctx, strmul);
+                    ctx.GetCall(mulFn, new[] { ctx.GetArgument(ret, 0), ctx.GetArgument(ret, 1), ctx.GetArgument(ret, 2), retPtr }, irb);
+                    var retVal = ctx.Load(retPtr, irb);
+                    ctx.ReturnValue(retVal, irb);
+                    ctx.ResetInsertPoint(currBB, irb);
                     break;
                 }
                 case gc_init: {
