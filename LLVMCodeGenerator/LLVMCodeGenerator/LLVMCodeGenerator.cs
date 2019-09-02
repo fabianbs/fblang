@@ -128,7 +128,7 @@ namespace LLVMCodeGenerator {
             vtables[ty] = vt;
         }
         public override void InitCodeGen(Module mod) {
-            ctx = new ManagedContext(mod.ModuleName);
+            ctx = new ManagedContext(mod.ModuleName, mod.Filename);
         }
         public override void FinalizeCodeGen() {
             if (ctx.VerifyModule()) {

@@ -26,7 +26,7 @@ namespace FBc {
         readonly Dictionary<EquatableLList<string>, IContext> namespaces = new Dictionary<EquatableLList<string>, IContext>();
         readonly Dictionary<IContext, EquatableLList<string>> namespaceCtxs = new Dictionary<IContext, EquatableLList<string>>();
         readonly Dictionary<string, IMethod> internalMethods = new Dictionary<string, IMethod>();
-        public FBModule(string moduleName = "the global context") : base(moduleName) {
+        public FBModule(string moduleName = "the global context", string filename = "") : base(moduleName, filename) {
             var cprintln = new BasicMethod(("", 0, 0), "cprintln", Visibility.Public, PrimitiveType.Void, PrimitiveType.String) {
                 ReturnType = PrimitiveType.Void,
                 Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.String, Variable.Specifier.LocalVariable, "msg", null) },

@@ -37,11 +37,11 @@ struct ManagedContext
     llvm::IRBuilder<>* builder = 0;
     AllocationRemovingPass* arp = 0;
 
-    ManagedContext(const char* name);
+    ManagedContext(const char* name, const char* filename );
     ~ManagedContext();
 
 };
-EXTERN_API(ManagedContext)* CreateManagedContext(const char* name);
+EXTERN_API(ManagedContext)* CreateManagedContext(const char* name, const char* filename);
 EXTERN_API(void) DisposeManagedContext(ManagedContext* ctx);
 
 EXTERN_API(void) Save(ManagedContext* ctx, const char* filename);

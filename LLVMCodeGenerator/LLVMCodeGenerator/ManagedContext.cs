@@ -17,9 +17,9 @@ public static unsafe class NativeManagedContext {
         private bool isDisposed = false;
 
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr CreateManagedContext (string name);
-        public  ManagedContext (string name) {
-            Instance = CreateManagedContext(name);
+        private static extern IntPtr CreateManagedContext (string name, string filename);
+        public  ManagedContext (string name, string filename) {
+            Instance = CreateManagedContext(name, filename);
         }
         ~ManagedContext() {
             Dispose();

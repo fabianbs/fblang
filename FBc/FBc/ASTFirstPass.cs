@@ -33,7 +33,7 @@ namespace FBc {
         readonly List<(ITypeTemplate<IType>, FBlangParser.TypeDefContext)> allTypeTemplates = new List<(ITypeTemplate<IType>, FBlangParser.TypeDefContext)>();
         readonly List<(IContext, FBlangParser.ExtensionDefContext)> allExtensions = new List<(IContext, FBlangParser.ExtensionDefContext)>();
         public ASTFirstPass(string fileName)
-            : this(new FBModule(), fileName) {
+            : this(new FBModule(filename: fileName), fileName) {
 
         }
         public ASTFirstPass(FBModule mod, string fileName) {

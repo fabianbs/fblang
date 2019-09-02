@@ -17,12 +17,13 @@ using static CompilerInfrastructure.Utils.CoreExtensions;
 namespace CompilerInfrastructure {
     [Serializable]
     public class Module : HierarchialContext, IEquatable<Module>/*,ISerializable*/ {
-        public Module(string moduleName = "", IEnumerable<Module> referenceLibraries = null)
-            : this(moduleName, Guid.NewGuid(), referenceLibraries) {
+        public Module(string moduleName = "", string filename = "", IEnumerable<Module> referenceLibraries = null)
+            : this(moduleName, filename, Guid.NewGuid(), referenceLibraries) {
         }
-        public Module(string modulename, Guid guid, IEnumerable<Module> referenceLibraries = null)
-            : base(null, referenceLibraries?? Enumerable.Empty<IContext>(), Context.DefiningRules.All, true) {
+        public Module(string modulename, string filename, Guid guid, IEnumerable<Module> referenceLibraries = null)
+            : base(null, referenceLibraries ?? Enumerable.Empty<IContext>(), Context.DefiningRules.All, true) {
             ModuleName = modulename;
+            Filename = string.IsNullOrEmpty(filename) ? modulename : filename;
             ID = guid;
         }
         /* protected Module(SerializationInfo info, StreamingContext context):base(info, context) {
@@ -41,6 +42,8 @@ namespace CompilerInfrastructure {
         public string ModuleName {
             get;
         }
+        public string Filename { get; }
+
         protected override Module TheModule => this;
         public override bool Equals(object obj) => Equals(obj as Module);
         public bool Equals(Module other) => other != null && ID.Equals(other.ID);
