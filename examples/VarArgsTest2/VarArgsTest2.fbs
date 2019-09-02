@@ -1,0 +1,21 @@
+global int sum(int first, int ...rest){
+    int sum = first
+    for(int i: rest){
+        sum += i
+    }
+    return sum
+}
+global int bar(int first, int... rest){
+    //cprintln(first)
+    if(rest.length == 0)
+        return first
+    return first + bar(rest...)
+}
+
+global main(){
+    var ints = [3, 4]
+    cprintln(sum(1, 2, ints..., 5))
+    cprintln(sum(ints..., 1, 2, 5))
+    cprintln(sum(ints...))
+    cprintln(bar(1, 2, ints..., 5))
+}

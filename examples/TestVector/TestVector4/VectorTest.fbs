@@ -1,0 +1,19 @@
+global main(){
+    Vector<Data> vec = new ()
+    vec.@emplace(1)
+    vec.@emplace(3)
+    vec.@emplace(7)
+    vec.@emplace(5)
+    vec.add([new Data(4), new Data(7)])
+    
+    vec.@forEach cprintln("+" * %val.getValue())
+    cprintln(vec[3].getValue())
+}
+
+global macro print(vec, {block}){
+    cprintln("[ ")
+    for(public Data %val: vec){
+        block
+    }
+    cprintln("]")
+}

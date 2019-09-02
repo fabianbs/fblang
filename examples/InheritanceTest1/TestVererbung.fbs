@@ -1,0 +1,25 @@
+def class BaseClass{
+    protected int x
+    
+    public ctor(){
+        x = 3
+    }
+    public virtual int getValue(){
+        return x*x
+    }
+}
+def BaseClass DeriveredClass{
+    int y
+    public ctor(){
+        y = 4
+    }
+    public virtual int getValue(){
+        return super.getValue() * y
+    }
+}
+global main(){
+    BaseClass bc = new DeriveredClass()
+    
+    cprintln(bc.getValue())
+}
+

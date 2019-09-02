@@ -861,11 +861,18 @@ namespace LLVMCodeGenerator {
                     }
                     succ = succ && TryCast(factorEx.Position, rhs, factorEx.ReturnType, PrimitiveType.UInt, out rhs)
                         && TryCast(strEx.Position, lhs, strEx.ReturnType, PrimitiveType.String, out lhs);
-                    if (succ)
+                    if (succ) {
+                        var mem = GetMemory(bo);
                         llArgs.AddRange(ctx.ExtractValue(lhs, 0, irb),
                                         ctx.ExtractValue(lhs, 1, irb),
-                                        rhs);
-                    break;
+                                        rhs, mem);
+                        ctx.GetCall(llFn, llArgs.AsArray(), irb);
+                        ret = ctx.Load(mem, irb);
+                    }
+                    else
+                        ret = ctx.GetNullPtr();
+                    return succ;
+                    
                 default:
                     ret = default;
                     return $"The operator {bo.Operator} cannot be applied to strings".Report(bo.Position, false);
@@ -1470,9 +1477,16 @@ namespace LLVMCodeGenerator {
                 case RangedIndexerExpression rinde: {
                     return TryRangeBasedIndexerExpressionCodeGen(rinde, out ret);
                 }
+                case IndexerSetOverload iset: {
+                    return TryIndexerSetOverloadCodeGen(iset, out ret);
+                }
                 //TODO expr
             }
             throw new NotImplementedException();
+        }
+
+        private bool TryIndexerSetOverloadCodeGen(IndexerSetOverload iset, out IntPtr ret) {
+            return TryExpressionCodeGen(iset.OperatorCall, out ret);
         }
 
         private bool TryRangeBasedIndexerExpressionCodeGen(RangedIndexerExpression rinde, out IntPtr ret) {
@@ -1841,6 +1855,7 @@ namespace LLVMCodeGenerator {
             }
             else {
                 //TODO operator overload
+                //TODO bitwise operators on booleans
             }
             throw new NotImplementedException();
         }
@@ -1896,7 +1911,7 @@ namespace LLVMCodeGenerator {
         private void ThrowIfGreaterEqual(IntPtr index, IntPtr length, bool is64bit) {
             if (!DoBoundsChecks)
                 return;
-            var cond = ctx.CompareOp(index, length, (sbyte)'<', false, true, irb);
+            /*var cond = ctx.CompareOp(index, length, (sbyte)'<', false, true, irb);
             BasicBlock
                 bThrow = new BasicBlock(ctx, "indexOutOfBounds", fn),
                 bNotThrow = new BasicBlock(ctx, "indexInBounds", fn);
@@ -1908,9 +1923,9 @@ namespace LLVMCodeGenerator {
             ctx.GetCall(throwFn, new[] { index, length }, irb);
             ctx.Branch(bNotThrow, irb);
 
-            ctx.ResetInsertPoint(bNotThrow, irb);
-            //var throwFn = GetOrCreateInternalFunction(ctx, is64bit ? InternalFunction.throwIfOutOfBounds64 : InternalFunction.throwIfOutOfBounds);
-            //ctx.GetCall(throwFn, new[] { index, length }, irb);
+            ctx.ResetInsertPoint(bNotThrow, irb);*/
+            var throwFn = GetOrCreateInternalFunction(ctx, is64bit ? InternalFunction.throwIfOutOfBounds64 : InternalFunction.throwIfOutOfBounds);
+            ctx.GetCall(throwFn, new[] { index, length }, irb);
         }
         private void ThrowOutOfBounds(IntPtr index, IntPtr length, bool is64Bit = true) {
             if (!DoBoundsChecks)

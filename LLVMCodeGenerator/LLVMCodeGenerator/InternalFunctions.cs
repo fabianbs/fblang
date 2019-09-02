@@ -26,6 +26,7 @@ namespace LLVMCodeGenerator {
             cprintnwln,
             to_str,
             uto_str,
+            zto_str,
             lto_str,
             ulto_str,
             llto_str,
@@ -113,6 +114,8 @@ namespace LLVMCodeGenerator {
                     return to_str;
                 case PrimitiveName.UInt:
                     return uto_str;
+                case PrimitiveName.SizeT:
+                    return zto_str;
                 case PrimitiveName.Handle:
                 case PrimitiveName.Long:
                     return lto_str;
@@ -152,6 +155,13 @@ namespace LLVMCodeGenerator {
                 case uto_str:
                 case to_str: {
                     var inpTy = ctx.GetIntType();
+                    var retTy = ctx.GetPointerType(ctx.GetStringType());
+                    ret = ctx.DeclareFunction(name, ctx.GetVoidType(), new[] { inpTy, retTy }, new[] { "val", "ret" }, true);
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "writeonly" }, 1);
+                    break;
+                }
+                case zto_str: {
+                    var inpTy = ctx.GetSizeTType();
                     var retTy = ctx.GetPointerType(ctx.GetStringType());
                     ret = ctx.DeclareFunction(name, ctx.GetVoidType(), new[] { inpTy, retTy }, new[] { "val", "ret" }, true);
                     ctx.AddParamAttributes(ret, new[] { "nocapture", "writeonly" }, 1);
@@ -253,7 +263,7 @@ namespace LLVMCodeGenerator {
                     var cstrTy = ctx.GetVoidPtr();
                     ret = ctx.DeclareFunction("strmul_ret", stringTy, new[] { cstrTy, sizeTy, intTy }, new[] { "strVal", "strLen", "factor" }, false);
                     // noinline for better behaviour in custom optimizer pass
-                    ctx.AddFunctionAttributes(ret, new[] { "noinline" });
+                    //ctx.AddFunctionAttributes(ret, new[] { "noinline" });
                     ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 0);
 
                     var irb = IntPtr.Zero;

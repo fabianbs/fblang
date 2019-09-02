@@ -1,0 +1,11 @@
+def internal void Data{
+    uint value
+    
+    public ctor(uint val){
+        value = val
+    }
+    
+    public uint getValue(){
+        return value
+    }
+}

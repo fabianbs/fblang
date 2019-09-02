@@ -1,0 +1,105 @@
+def public class IntContainer{
+    protected int[] arrVal
+    protected int capacity
+    public ctor(int cap){
+        capacity = cap >= 0 ? cap : 0
+        arrVal = new int[cap]
+    }
+    public virtual bool contains(int val){
+        for(int i = 0, i < capacity, i++){
+            if(arrVal[i] == val)
+                return true
+        }
+        return false
+    }
+    public virtual int operator[](int index){
+        if(index >= 0 && index < capacity){
+            return arrVal[index]
+        }
+        return -1
+    }
+    public virtual operator[](int index, int val){
+        if(index >= 0 && index < capacity){
+            arrVal[index] = val
+        }
+    }
+}
+def void IntStackIterator{
+    IntStack s
+    int index
+    public ctor(IntStack s){
+        this.s = s
+        index = 0
+    }
+    public bool tryGetNext(int& ret){
+        if(index < s.getSize()){
+            ret = s[index]
+            index ++
+            return true
+        }
+        return false
+    }
+}
+def public IntContainer IntStack{
+    int size
+    public ctor(){
+        super(4)
+        size = 0
+    }
+    ensureCapacity(int offs){
+        if(offs + size >= capacity){
+            do{
+                capacity = capacity << 1
+            }while(offs + size >= capacity)
+            int[] nwArr = new int[capacity]
+            //[InternalCall]arrRefCpy(nwArr, 0, arrVal, 0, size)
+            nwArr... <- arrVal
+            arrVal = nwArr
+        }
+    }
+    public virtual bool contains(int val){
+        for(int i = 0, i < size, i++){
+            if(arrVal[i] == val)
+                return true
+        }
+        return false
+    }
+    public int getSize(){
+        return size
+    }
+    public push(int val){
+        ensureCapacity(1)
+        arrVal[size++] = val
+    }
+    public int pop(){
+        if(size > 0){
+            return arrVal[--size]
+        }
+        return -1
+    }
+    public IntStackIterator getIterator(){
+        return new IntStackIterator(this)
+    }
+}
+global test(){
+    int[] arr = new int[5]
+    
+    cprintln(arr.length)
+}
+global main(){
+    IntStack stack = new IntStack()
+    stack.push(1)
+    stack.push(2)
+    stack.push(3)
+    IntContainer cont = stack
+    cprintln("stack enthaelt 3: "+cont.contains(3))
+    cprintln("stack enthaelt 4: "+cont.contains(4))
+    cprintln("cont.set(3, 4)")
+    cont[3] = 4
+    cprintln("stack enthaelt 4: "+cont.contains(4))
+    IntStackIterator it = stack.getIterator()
+    int curr
+    while(it.tryGetNext(curr)){
+        cprintln(curr)
+    }
+}

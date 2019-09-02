@@ -243,7 +243,7 @@ namespace StrOpt {
             // TODO: handle the roots (check, whether or not the whole subtree can be replaced, or only parts of it) 
             // (replace the subtree from root by an array of the leaves + strmulticoncat call)
             bool ret = false;
-            llvm::errs() << "FOUND ROOTS----------------------------------------\n";
+            //llvm::errs() << "FOUND ROOTS----------------------------------------\n";
             llvm::SmallVector<StringConcatNode const *, 3> strconcatLeaves;
             for (auto &root : roots) {
                 if (auto strconc = root->asStringConcatNode()) {
@@ -254,7 +254,7 @@ namespace StrOpt {
                     }
                     if (strconc->Lhs->canBeRemoved() || strconc->Rhs->canBeRemoved()) {
                         // strconc is a candidate for optimization
-                        llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
+                        //llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
                         llvm::SmallVector<const StringNode *, 5> leaves;
                         strconc->collectLeaves(leaves, strconcatLeaves);
                         ret = true;
@@ -270,13 +270,13 @@ namespace StrOpt {
                 }
                 if (strconc->Lhs->canBeRemoved() || strconc->Rhs->canBeRemoved()) {
                     // strconc is a candidate for optimization
-                    llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
+                    //llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
                     llvm::SmallVector<const StringNode *, 5> leaves;
                     strconc->collectLeaves(leaves, strconcatLeaves);
                     ReplaceStringConcat(F, strconc, leaves);
                 }
             }
-            llvm::errs() << "ROOTS END------------------------------------------\n";
+            //llvm::errs() << "ROOTS END------------------------------------------\n";
         }
         if (ret) {
             llvm::errs() << F;
