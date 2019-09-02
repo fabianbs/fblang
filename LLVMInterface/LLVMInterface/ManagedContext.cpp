@@ -44,10 +44,10 @@
 #include "StrMultiConcatOptPass.h"
 #include "ManagedContext.h"
 
-ManagedContext::ManagedContext(const char *name) {
+ManagedContext::ManagedContext(const char *name, const char* filename) {
     context = new llvm::LLVMContext();
     M = new llvm::Module(name, *context);
-    M->setSourceFileName(name);
+    M->setSourceFileName(filename);
     M->setModuleIdentifier(name);
     builder = new llvm::IRBuilder<>(*context);
 }
@@ -111,9 +111,9 @@ bool bringToCommonSupertype(ManagedContext *ctx, llvm::Value *&lhs, llvm::Value 
     return lhs->getType()->isFloatingPointTy();
 }
 
-ManagedContext *CreateManagedContext(const char *name) {
+ManagedContext *CreateManagedContext(const char *name, const char* filename) {
 
-    return new ManagedContext(name);
+    return new ManagedContext(name, filename);
 }
 
 void DisposeManagedContext(ManagedContext *ctx) {

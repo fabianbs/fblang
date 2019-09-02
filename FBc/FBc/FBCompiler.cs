@@ -121,7 +121,7 @@ namespace FBc {
                 NumErrors = errc;
                 return false;
             }
-            module = new FBModule(ModuleName) {
+            module = new FBModule(ModuleName, Path.HasExtension(sources[0]) ? Path.GetFileName(sources[0]) : Path.GetDirectoryName(sources[0])) {
                 WarningLevel = _warningLevel
             };
             mod = module;
