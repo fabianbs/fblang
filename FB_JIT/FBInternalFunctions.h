@@ -30,6 +30,7 @@ FB_INTERNAL(int32_t) creadky();
 //string
 FB_INTERNAL(void) to_str(int i, String*);
 FB_INTERNAL(void) uto_str(uint32_t ui, String*);
+FB_INTERNAL(void) zto_str(size_t z, String *);
 FB_INTERNAL(void) lto_str(int64_t i, String*);
 FB_INTERNAL(void) ulto_str(uint64_t ui, String*);
 FB_INTERNAL(void) llto_str(int64_t hi, int64_t lo, String*);

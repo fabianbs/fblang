@@ -147,7 +147,7 @@ namespace FBc {
         protected override void CollectCoroSaveSlots(IStatement stmt, ref Vector<IntPtr> llFlds, ref bool hasError, IDictionary<IVariable, uint> localIndices, IDictionary<IExpression, uint> otherIndices) {
             base.CollectCoroSaveSlots(stmt, ref llFlds, ref hasError, localIndices, otherIndices);
             if (stmt is ForeachLoop fel && fel.Range is ContiguousRangeExpression cre) {
-                var itemTy = (cre.ReturnType as AggregateType).ItemType;
+                var itemTy = cre.ReturnType.Cast<AggregateType>().ItemType;
                 hasError |= TryGetType(itemTy, out var llItemTy);
                 // llFlds.Last == llRangeTy
                 llFlds.PopBack();

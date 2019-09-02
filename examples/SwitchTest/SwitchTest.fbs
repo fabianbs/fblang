@@ -1,0 +1,46 @@
+def class Pair<K, V>{
+    public final K key
+    public final V value
+    
+    public init ctor(K key, V value){
+    }
+    
+    public operator<-(K& ky, V &val){
+        ky = key
+        val = value
+    }
+}
+global foo(Pair<int, string> p){
+    switch(p){
+        case (var ky, var val) 
+            cprintln("Key: "+ ky +"; Value: "+val)
+        case null 
+            cprintln("<null>")
+    }
+}
+
+global bar(Pair<int,int> p){
+    switch(p){
+        case (var ky, ky)
+            cprintln("Key equals Value with "+ky)
+        case (var ky, var val)
+            cprintln("Key: "+ky+"; Value: "+val)
+        else
+            cprintln("<null>")
+    }
+}
+
+global main(){
+    Pair<int, string> p = new (42, "Hello")
+    foo(p)
+    foo(null)
+    Pair<int, int> p2 = new (42, 14)
+    Pair<int, int> p3 = new (42, 42)
+    // validate, that normal switch still works:
+    switch(42){
+        case 2  cprintln(2)
+        case 42 cprintln(42)
+    }
+    bar(p2)
+    bar(p3)
+}

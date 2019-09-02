@@ -1,0 +1,12 @@
+global main(){
+    printUpToAsync(20).wait()
+}
+global async printUpToAsync(uint n){
+    async[] arr = new [n]
+    for(uint i: 0 to n){
+        arr[i] = defer cprintln(i)
+    }
+    for(uint i: 0 to n){
+        await arr[i]
+    }
+}

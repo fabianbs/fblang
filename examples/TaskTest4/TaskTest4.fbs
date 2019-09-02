@@ -1,0 +1,8 @@
+global main(){
+    printUpToParallel(25)
+}
+global printUpToParallel(uint n){
+    concurrentFor(uint i: 1 to n+1	){
+        cprintln(i)
+    }
+}

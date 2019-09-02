@@ -2,7 +2,7 @@
   "profiles": {
     "FBc": {
       "commandName": "Project",
-      "commandLineArgs": "Complex.fbs --emit-llvm -O3",
+      "commandLineArgs": "--emit-llvm -O3 VererbungTest.fbs",
       "workingDirectory": "D:\\Besitzer\\Desktop",
       "nativeDebugging": true
     }

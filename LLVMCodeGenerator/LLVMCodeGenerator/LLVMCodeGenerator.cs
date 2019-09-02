@@ -112,13 +112,12 @@ namespace LLVMCodeGenerator {
         public virtual bool TryGetVTable(IType ty, out VirtualMethodTable vt, IntPtr irb) {
             if (vtables.TryGetValue(ty, out vt))
                 return true;
-            if (ty.Signature.BaseGenericType != null) {
-                var bb = ctx.GetCurrentBasicBlock(irb);
-                ImplementType(ty);
-                ctx.ResetInsertPoint(bb, irb);
-                return vtables.TryGetValue(ty, out vt);
-            }
-            return false;
+
+            var bb = ctx.GetCurrentBasicBlock(irb);
+            ImplementType(ty);
+            ctx.ResetInsertPoint(bb, irb);
+            return vtables.TryGetValue(ty, out vt);
+
         }
         protected internal virtual VirtualMethodTable GetVTable(IType ty, IntPtr irb) {
             if (!TryGetVTable(ty, out var vt, irb))

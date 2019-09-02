@@ -1,0 +1,45 @@
+
+def void Complex{
+    public final double real, img;
+    public ctor(double _real, _img){
+        real, img <- [_real, _img]
+    }
+    public Complex$ operator+(Complex$& other)
+        -> new (real + other.real, img + other.img)
+    
+    public Complex$ operator*(Complex$& other)
+        -> new (real*other.real - img*other.img, real*other.img + img*other.real)
+        
+    static double abs(double x)
+        -> x < 0 ? -x : x
+    
+    public operator string() {
+        if(real == 0.0){
+            if(img == 0.0)
+                return "0"
+            else if (img == 1.0)
+                return "i"
+            else
+                return img + "i"
+        }
+        else if(img == 0.0){
+            return (string)real
+        }
+        else{
+            string op = img < 0 ? " - " : " + "
+            if(abs(img) == 1.0)
+                return real + op + "i"
+            return real + op + abs(img) + "i"
+        }
+    }
+    public bool operator==(Complex$& other){
+        return real == other.real && img == other.img
+    }
+}
+global main(){
+    Complex$ c = new (2, 3)
+    Complex c2 = new (3, 4)
+    cprintln(c + c2)
+    cprintln(c2 * c)
+    cprintln(c + c)
+}

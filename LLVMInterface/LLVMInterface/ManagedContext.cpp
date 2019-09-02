@@ -1373,17 +1373,19 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
         builder.RerollLoops = true;
         builder.VerifyOutput = true;
         builder.OptLevel = optLvl;
+        builder.MergeFunctions = true;
         //builder.SizeLevel = 0;
         //builder.NewGVN = it == 0;
         if (it == 0) {
             builder.Inliner = llvm::createFunctionInliningPass(optLvl, 0, false);
         }
 
-        builder.addExtension(llvm::PassManagerBuilder::EP_LateLoopOptimizations, [] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) { 
+        builder.addExtension(llvm::PassManagerBuilder::EP_LateLoopOptimizations, [optLvl] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
             pm.add(llvm::createLoopDataPrefetchPass());
             pm.add(llvm::createLoopInterchangePass());
             pm.add(llvm::createIndVarSimplifyPass());
             pm.add(llvm::createLoopUnswitchPass());
+            pm.add(llvm::createLoopUnrollPass(optLvl));
         });
         builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it, maxIterations] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
 
@@ -1391,7 +1393,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             pm.add(llvm::createMemCpyOptPass());
             pm.add(llvm::createPartialInliningPass());
             pm.add(llvm::createInductiveRangeCheckEliminationPass());
-            
+            pm.add(llvm::createCFGSimplificationPass());
 
             if (builder.OptLevel > 1) {
                 std::unordered_map<std::string, char> m;
@@ -1409,30 +1411,36 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                 pm.add(llvm::createPartiallyInlineLibCallsPass());
             }
             if (builder.OptLevel > 2 && it > 3) {
-                if (it == 4)
+                if (it <= 5) {
                     pm.add(new StrOpt::StrMultiConcatOptPass());
+                }
                 else {
-                    if (it == 5) {
+                    if (it == 7) {
+                        bool has = false;
                         if (auto strconcat_ret = ctx->M->getFunction("strconcat_ret")) {
                             strconcat_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
                             strconcat_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+                            has = true;
                         }
                         if (auto strmul_ret = ctx->M->getFunction("strmul_ret")) {
                             strmul_ret->removeAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::NoInline);
                             strmul_ret->addAttribute(llvm::AttributeList::FunctionIndex, llvm::Attribute::AlwaysInline);
+                            has = true;
                         }
-                        pm.add(llvm::createAlwaysInlinerLegacyPass());
+                        if (has)
+                            pm.add(llvm::createAlwaysInlinerLegacyPass());
                     }
                     else if (it != maxIterations - 1)
                         pm.add(llvm::createLoadStoreVectorizerPass());
                 }
+                pm.add(llvm::createGlobalDCEPass());
             }
-            if (it == 0) {
+            if (it < 2) {
                 if (builder.OptLevel > 2) {
                     pm.add(ctx->arp = new AllocationRemovingPass("gc_new"));
                 }
             }
-            pm.add(llvm::createGlobalDCEPass());
+            pm.add(llvm::createStraightLineStrengthReducePass());
         });
 
 
@@ -1460,11 +1468,11 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             //builder.populateLTOPassManager(pm);
             changed |= pm.run(*ctx->M);
         }
-        /*if (it == 0) {
+        if (it == maxIterations - 1) {
             llvm::legacy::PassManager pm;
             builder.populateThinLTOPassManager(pm);
             changed |= pm.run(*ctx->M);
-        }*/
+        }
         //llvm::errs() << ">>optimize module done\r\n";
         //llvm::errs() << *ctx->M;
 
