@@ -1,0 +1,26 @@
+def interface IReadOnlyList<T>{
+    length: -> zint
+    operator[]: zint -> T
+    getIterator: -> iterator T
+    reversed: -> iterable T
+}
+def class ReadOnlyVector<T> : IReadOnlyList<T>{
+    Vector<T>! underlying
+    public ctor(){
+        underlying = new()
+    }
+    public init ctor(Vector<T>! underlying){}
+    public zint length() -> underlying.length()
+    public T operator[](zint ind) -> underlying[ind]
+    public iterator T getIterator() -> underlying.getIterator()
+    public iterable T reversed() -> underlying.reversed()
+}
+
+def class ReadOnlyVector2<T> : IReadOnlyList<T>{
+    including Vector<T>! underlying as IReadOnlyList<T>
+    //including Vector<T> underlying2
+    public ctor(){
+        underlying = new()
+    }
+    public init ctor(Vector<T>! underlying){}
+}

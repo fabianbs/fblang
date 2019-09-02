@@ -32,6 +32,8 @@
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 #include <llvm/Transforms/IPO/PartialInlining.h>
 #include <llvm/Transforms/Instrumentation/PGOInstrumentation.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/AggressiveInstCombine/AggressiveInstCombine.h>
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/CFG.h>
@@ -1389,11 +1391,12 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
         });
         builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it, maxIterations] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
 
+            pm.add(llvm::createAggressiveInstCombinerPass());
             pm.add(llvm::createTailCallEliminationPass());
             pm.add(llvm::createMemCpyOptPass());
             pm.add(llvm::createPartialInliningPass());
             pm.add(llvm::createInductiveRangeCheckEliminationPass());
-            pm.add(llvm::createCFGSimplificationPass());
+            pm.add(llvm::createJumpThreadingPass());
 
             if (builder.OptLevel > 1) {
                 std::unordered_map<std::string, char> m;
@@ -1433,7 +1436,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                     else if (it != maxIterations - 1)
                         pm.add(llvm::createLoadStoreVectorizerPass());
                 }
-                pm.add(llvm::createGlobalDCEPass());
+                
             }
             if (it < 2) {
                 if (builder.OptLevel > 2) {
@@ -1441,6 +1444,14 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                 }
             }
             pm.add(llvm::createStraightLineStrengthReducePass());
+            pm.add(llvm::createPruneEHPass());
+            pm.add(llvm::createArgumentPromotionPass());
+            if (it == maxIterations - 1) {
+                pm.add(llvm::createInstructionCombiningPass());
+                pm.add(llvm::createCFGSimplificationPass());
+                pm.add(llvm::createAggressiveDCEPass());
+                pm.add(llvm::createGlobalDCEPass());
+            }
         });
 
 
