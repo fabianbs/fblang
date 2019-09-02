@@ -1,0 +1,15 @@
+global main(){
+    var v = new Vector<int>()
+    v.add(42)
+    v.add([2,5,3,7,65])
+    IReadOnlyList<int> rov = new ReadOnlyVector<int>(v)
+    
+    for(int i: rov){
+        cprintln(i)
+    }
+    
+    IReadOnlyList<int> rov2 = new ReadOnlyVector2<int>(v)
+    for(var i: rov2){
+        cprintln(i)
+    }
+}

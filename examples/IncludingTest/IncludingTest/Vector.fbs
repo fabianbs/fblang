@@ -1,0 +1,63 @@
+def class Vector<T>{
+    T[] !arrVal
+    zint size
+    public ctor(){
+        size = 0
+        arrVal = new T[4]
+    }
+    ensureCapacity(zint offs){
+        if(size+offs>arrVal.length){
+            var cap = arrVal.length << 1 
+            while(size+offs > cap){
+                cap <<= 1
+            }
+            T[] nwArr = new T[cap]
+            nwArr... <- arrVal
+            arrVal = nwArr
+        }
+    }
+    public zint length() -> size
+    public T operator[](zint ind){
+        return arrVal[ind]
+    }
+    public add(T val){
+        ensureCapacity(1)
+        arrVal[size++] = val
+    }
+    public add(T* val){
+        ensureCapacity(val.length)
+        for(T v: val){
+            arrVal[size++] = v
+        }
+        
+        //arrVal[size:]... <- val
+        //size += val.length;
+    }
+    public T* slice(){
+        return arrVal[:size]
+    }
+    public T popBack(){
+        T ret = arrVal[--size]
+        arrVal[size - 1] = default
+        return ret
+    }
+    
+    public iterator T getIterator(){
+        //cprintln(size)
+        for(T val : arrVal[:size]){
+            yield val
+        }
+    }
+    public iterable T reversed(){
+        for(zint i = size, i > 0, --size)
+            yield arrVal[i - 1]
+    }
+    public macro emplace(...args){
+        this.add(new T(args...))
+    }
+    public macro forEach({block}){
+        for(public T %val: arrVal[:size]){
+            block
+        }
+    }
+}
