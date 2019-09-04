@@ -67,9 +67,10 @@ typeIdent: typeModifier* (ReferenceCapability? (typeQualifier|Async) (Exclamatio
 
 typeName:Ident|primitiveName;
 primitiveName:'nativehandle'|'bool'|'byte'|'char'|'short'|'ushort'|'int'|'zint'|'uint'|'long'|'ulong'|'biglong'|'ubiglong'|'float'|'double'|'string';
-typeSpecifier: typeModifier* ReferenceCapability?(fsArray|array ExclamationMark?) ;
+typeSpecifier: typeModifier* ReferenceCapability?(fsArray|(array|assocArray) ExclamationMark?) ;
 fsArray: '[' (IntLit|Ident) ']'Dollar;
 array: '['']';
+assocArray: '[' typeIdent ']';
 genericActualParameters: LT genericActualParameter(',' genericActualParameter)* GT;
 genericActualParameter: Ident| typeIdent |BoolLit| Minus?(IntLit|FloatLit)| StringLit|CharLit;
 
@@ -310,7 +311,7 @@ fragment HexByte: [0-9a-fA-F][0-9a-fA-F];
 fragment HexInt: '0'X HexByte+;
 fragment BinInt: '0'B [01]+;
 IntLit: DecimalInt | HexInt | BinInt;
-StringLit: '"' (~["] | '\\"')*? '"';
+StringLit: '"' (~["\\] | '\\"')*? '"';
 CharLit: '\'' ('\\\''|'\\'?.|'\\u'HexByte HexByte) '\'';
 
 FloatLit: ((DecimalInt?'.')?DecimalInt ([eE]('+'|Minus)?DecimalInt)[fF]?)

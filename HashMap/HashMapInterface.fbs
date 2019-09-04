@@ -1,0 +1,35 @@
+def interface<T, U> T[U] #if U.#hasMethod(getHashCode: -> zint) && 
+                             U.#hasMethod(equals:    U -> bool){
+    operator[]: U -> T&
+    operator[]: U, T
+    tryGetValue: U, T& -> bool
+    getOrElse: U, T -> T
+    contains: U -> bool
+    count: -> zint
+    
+    insert: U, T, bool -> bool
+    insertZip: iterable U, iterable T, bool -> zint
+    remove: U -> bool
+    removeAll: Func<U, bool> -> zint
+    
+    #ifdef FB_VERSION_HAS_TUPLES
+    getIterator: -> iterator (U, T)
+    insertMany: iterable (U, T) -> zint
+    #endif 
+    
+    #ifdef FB_VERSION_HAS_OPTIONAL_TYPES
+    erase: U -> T?
+    #elif FB_VERSION_HAS_TUPLES
+    erase: U -> (T, bool)
+    #endif
+    
+    keys: -> iterable U
+    values: -> iterable V
+    
+    ctor:
+    ctor: zint
+    
+    clear:
+    
+    macro forEach: {%key, %value}
+}

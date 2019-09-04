@@ -602,6 +602,7 @@ namespace CompilerInfrastructure {
             Function = 0x80000,
             NotNullable = 0x100000,
             ValueType = 0x200000 | NotNullable,
+            Builtin = 0x400000,
         }
         public static IType GetPrimitive(string name) {
             if (Enum.TryParse<PrimitiveName>(name, out var pname)) {
