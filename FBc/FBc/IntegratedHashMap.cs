@@ -1,4 +1,6 @@
 ﻿using CompilerInfrastructure;
+using CompilerInfrastructure.Expressions;
+using CompilerInfrastructure.Instructions;
 using CompilerInfrastructure.Structure;
 using CompilerInfrastructure.Structure.Macros;
 using CompilerInfrastructure.Structure.Types;
@@ -90,6 +92,40 @@ namespace FBc {
             }) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin | Method.Specifier.Constructor, NestedIn = Context });
 
         }
+
+        private void InitializeMacros() {
+            IMethod tryGetNext;
+            Context.DefineMethod(tryGetNext = new BasicMethod(default, "::tryGetNext", Visibility.Private, PrimitiveType.Bool, new[] {
+                new BasicVariable(default, PrimitiveType.SizeT.AsByRef(), Variable.Specifier.LocalVariable,"state",null),
+                new BasicVariable(default, U.AsByRef(), Variable.Specifier.LocalVariable,"ky",null),
+                new BasicVariable(default, T.AsByRef(), Variable.Specifier.LocalVariable,"val",null),
+            }) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin | Method.Specifier.Readonly, NestedIn = Context });
+            var forEach = new MacroFunction(default, "forEach",Visibility.Internal,Context, Dictionary.Empty<string,ExpressionParameter>(),null,new StatementParameter(default, "callBack"));
+            
+            Context.DefineMacro(forEach);
+            IVariable state, key, value;
+            var _this = new ThisExpression(default, BuildType());
+            var body = Vector<IStatement>.Reserve(4);
+            body.Add(new Declaration(default, PrimitiveType.SizeT, Variable.Specifier.LocalVariable, new[] { "%state" }, new SizeTLiteral(default, 0)));
+            state = (body.Back() as Declaration).Variables[0];
+            body.Add(new Declaration(default, U, Variable.Specifier.LocalVariable, new[] { "%key" }, vis: Visibility.Public));
+            key = (body.Back() as Declaration).Variables[0];
+            body.Add(new Declaration(default, T, Variable.Specifier.LocalVariable, new[] { "%value" }, vis: Visibility.Public));
+            value = (body.Back() as Declaration).Variables[0];
+
+            forEach.LocalContext.DefineVariable(key);
+            forEach.LocalContext.DefineVariable(value);
+
+            body.Add(new WhileLoop(default, new CallExpression(default, PrimitiveType.Bool, tryGetNext, _this, new[] {
+                new VariableAccessExpression(default,null, state),
+                new VariableAccessExpression(default, null, key),
+                new VariableAccessExpression(default, null, value)
+            }), new StatementParameterAccess(default, forEach.CapturedStatement)));
+
+            forEach.Body.Instruction = new BlockStatement(default, body.AsArray(), Context);
+
+        }
+
         public static ClassTypeTemplate GetOrCreateIntegratedHashMap(Module mod) {
             if (instance is null) {
                 var ttcx = SimpleTypeTemplateContext.NewScope(mod);
@@ -107,6 +143,7 @@ namespace FBc {
                 instance.InitializeInterface();
 
                 ttcx.Type = instance.BuildType();
+                instance.InitializeMacros();
             }
             return instance;
         }

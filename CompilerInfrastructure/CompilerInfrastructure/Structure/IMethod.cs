@@ -112,6 +112,10 @@ namespace CompilerInfrastructure {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Import);
         }
 
+        public static bool IsBuiltin(this IMethod met) {
+            return met != null && met.Specifiers.HasFlag(Method.Specifier.Builtin);
+        }
+
         public static string FullName(this IMethod met) {
             if (met is null)
                 return null;

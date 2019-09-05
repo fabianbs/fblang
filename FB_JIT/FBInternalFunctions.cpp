@@ -31,6 +31,7 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/Hashing.h>
 #include "formatStrings.h"
 #include "GC_NEW.h"
 #include <gc.h>
@@ -466,6 +467,10 @@ FB_INTERNAL(void) str_format(char *strVal, size_t strLen, String *ret, ...) {
 
 }
 
+FB_INTERNAL(size_t) str_hash(char *strVal, size_t strLen) {
+    return llvm::hash_value(llvm::StringRef(strVal, strLen));
+}
+
 
 FB_INTERNAL(size_t) u8string_len(char *strVal, size_t strLen) {
     return String(strVal, strLen).u8length();
@@ -595,6 +600,35 @@ FB_INTERNAL(bool) isPrime(uint64_t numb) {
             return false;
     }
     return true;
+}
+
+inline bool isPrimeSZ(size_t numb) {
+    static size_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
+    if (numb & 1)
+        return numb == 2;
+
+    size_t end = (size_t)std::sqrt(numb) + 1;
+
+    for (int i = 0; i < 20 && lowerPrimes[i] < end; ++i) {
+        if (numb % lowerPrimes[i] == 0)
+            return false;
+    }
+
+    for (size_t i = 73; i < end; i += 2) {
+        if (numb % i == 0)
+            return false;
+    }
+    return true;
+}
+
+FB_INTERNAL(size_t) nextPrime(size_t numb) {
+    if (numb < 5)// We dont want too small primes ...
+        return 5;
+    numb |= 1;
+    while (!isPrimeSZ(numb)) {
+        numb += 2;
+    }
+    return numb;
 }
 
 FB_INTERNAL(void) *gc_new_mutex() {
