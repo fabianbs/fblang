@@ -297,6 +297,9 @@ namespace CompilerInfrastructure {
         public static bool IsNotNullable(this IType tp) {
             return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.NotNullable);
         }
+        public static bool IsBuiltin(this IType tp) {
+            return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Builtin);
+        }
 
         public static IType AsArray(this IType tp) {
             return ArrayType.Get(tp);

@@ -37,6 +37,7 @@ namespace LLVMCodeGenerator {
             strmulticoncat,
             strmul,
             strmul_ret,
+            str_hash,
             gc_init,
             gc_new,
             gcnewActorContext,
@@ -100,6 +101,7 @@ namespace LLVMCodeGenerator {
             AddPositionalDouble,
             AddPositionalString,
             ParseOptions,
+            nextPrime,
             //TODO more
         }
         private static readonly Dictionary<InternalFunction, IntPtr> internalFunctions = new Dictionary<InternalFunction, IntPtr>();
@@ -279,6 +281,14 @@ namespace LLVMCodeGenerator {
                     var retVal = ctx.Load(retPtr, irb);
                     ctx.ReturnValue(retVal, irb);
                     ctx.ResetInsertPoint(currBB, irb);
+                    break;
+                }
+                case str_hash: {
+                    var voidPtrTy = ctx.GetVoidPtr();
+                    var size_t = ctx.GetSizeTType();
+                    ret = ctx.DeclareFunction(name, size_t, new[] { voidPtrTy, size_t }, new[] { "strVal", "strLen" }, true);
+                    ctx.AddFunctionAttributes(ret,new[] { "readonly", "nounwind", "argmemonly"});
+                    ctx.AddParamAttributes(ret, new[] { "nocapture" }, 0);
                     break;
                 }
                 case gc_init: {
@@ -576,6 +586,12 @@ namespace LLVMCodeGenerator {
                     ctx.AddFunctionAttributes(ret, new[] { "nounwind", "argmemonly" });
                     ctx.AddParamAttributes(ret, new[] { "readonly" }, 4);
                     ctx.AddParamAttributes(ret, new[] { "readonly" }, 5);
+                    break;
+                }
+                case nextPrime: {
+                    var size_t = ctx.GetSizeTType();
+                    ret = ctx.DeclareFunction(name, size_t, new[] { size_t }, new[] { "n" }, true);
+                    ctx.AddFunctionAttributes(ret, new[] { "readnone", "nounwind"});
                     break;
                 }
                 default:

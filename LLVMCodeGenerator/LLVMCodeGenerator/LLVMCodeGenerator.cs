@@ -53,7 +53,7 @@ namespace LLVMCodeGenerator {
         IntPtr interfaceType = IntPtr.Zero;
         protected internal readonly OptLevel optLvl;
         protected internal readonly byte maxOptIterations;
-
+        protected internal readonly ISemantics semantics;
 
         protected ManagedContext ctx;
 
@@ -64,7 +64,7 @@ namespace LLVMCodeGenerator {
             get;
         }
 
-        public LLVMCodeGenerator(string outputFilename, OptLevel lvl = OptLevel.O1, byte _maxOptIterations = 4, bool isLibrary = false)
+        public LLVMCodeGenerator(string outputFilename, OptLevel lvl = OptLevel.O1, byte _maxOptIterations = 4, bool isLibrary = false, ISemantics sem = null)
             : base(TemplateBehavior.None, TemplateBehavior.None, false, false, new DefaultNameMangler()) {
             if (string.IsNullOrWhiteSpace(outputFilename))
                 throw new ArgumentException("The output-filename must not be empty", nameof(outputFilename));
@@ -73,6 +73,7 @@ namespace LLVMCodeGenerator {
             optLvl = lvl;
             maxOptIterations = _maxOptIterations;
             IsLibrary = isLibrary;
+            semantics = sem ?? new BasicSemantics();
         }
         protected internal IEnumerable<IType> GetAllSuperTypes(IType tp) {
             if (tp is null)
@@ -186,6 +187,8 @@ namespace LLVMCodeGenerator {
         protected override bool ImplementTypeImpl(IType ty) {
             if (ty.IsImport())
                 return true;
+            if (ty.IsBuiltin())
+                return ImplementBuiltinType(ty);
             bool succ = true;
             if (virtualMethods.TryGetValue(ty, out ISet<IMethod> virtMets) || ty.CanBeInherited()) {
                 if (virtMets is null) {
@@ -280,6 +283,18 @@ namespace LLVMCodeGenerator {
             succ &= ImplementMethods(ty.Context);
             return succ & base.ImplementTypeImpl(ty);
         }
+
+        private bool ImplementBuiltinType(IType tp) {
+            if (tp.Signature.Name == "::HashMap") {
+                var keyTy = (IType)tp.Signature.GenericActualArguments.First();
+                var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
+                return ImplementBuiltinHashMap(tp, keyTy, valTy);
+            }
+            // already reported, that this is an invalid builtin type
+            return false;
+        }
+
+
 
         protected override bool DeclareTypeTemplateImpl(ITypeTemplate<IType> ty) {
             return true;
@@ -1086,9 +1101,23 @@ namespace LLVMCodeGenerator {
                 ret = GetVarArgType((tp as VarArgType), itemTy);
                 return true;
             }
+            else if (tp.IsBuiltin()) {
+                return TryGetBuiltinType(tp, out ret);
+            }
             ret = IntPtr.Zero;
             return null;
         }
+
+        private bool TryGetBuiltinType(IType tp, out IntPtr ret) {
+            if (tp.Signature.BaseGenericType != null && tp.Signature.BaseGenericType.Signature.Name == "::HashMap") {
+                var keyTy = (IType)tp.Signature.GenericActualArguments.First();
+                var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
+                return TryGetBuiltinHashMap(tp, keyTy, valTy, out ret);
+            }
+            ret = ctx.GetVoidPtr();
+            return $"Invalid builtin type: {tp.Signature}".Report(false);
+        }
+
 
 
         public bool TryGetType(IType tp, out IntPtr ret) {

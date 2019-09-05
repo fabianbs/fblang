@@ -66,8 +66,11 @@ class HashMap{
             if(!replace)
                 return false;
         }
-        else
+        else{
             size++;
+            if(buck->state == 2)
+                deleted--; // refill the deleted slot
+        }
         buck->key = ky;
         buck->value = val;
         buck->hashcode = hash;
@@ -78,26 +81,24 @@ class HashMap{
         size_t hc = hash % cap;
         const size_t _cap = cap;
         for(size_t i = hc; i < _cap; ++i){
-            if(arrVal[i].state == 0){
-                 return &arrVal[i];
-            }
-            else if(arrVal[i].state == 1){ 
+            if(arrVal[i].state != 0){ 
                 if(hash == arrVal[i].hashcode && ky.equals(arrVal[i].key)){
                     return &arrVal[i];
                 }
             }
+            else
+                return &arrVal[i];
         }
         for(size_t i = 0; i < hc; ++i){
-            if(arrVal[i].state == 0){
-                 return &arrVal[i];
-            }
-            else if(arrVal[i].state == 1){ 
+            if(arrVal[i].state != 0){ 
                 if(hash == arrVal[i].hashcode && ky.equals(arrVal[i].key)){
                     return &arrVal[i];
                 }
             }
+            else
+                return &arrVal[i];
         }
-        // will probably not happen
+        // will not happen, since LOAD_FACTOR < 1
         return nullptr;
     }
     size_t load(){

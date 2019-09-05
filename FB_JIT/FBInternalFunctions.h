@@ -58,6 +58,8 @@ FB_INTERNAL(bool) strscan(void* ctx, String* matchstr, uint32_t* groupID, uint32
 FB_INTERNAL(int) string_scanf(char* strVal, size_t strLen, char* format, size_t formatLen, ...);
 FB_INTERNAL(void) str_format(char* strVal, size_t strLen, String* ret, ...);
 
+FB_INTERNAL(size_t) str_hash(char *strVal, size_t strLen);
+
 FB_INTERNAL(size_t) u8string_len(char* strVal, size_t strLen);
 FB_INTERNAL(void)* u8string_it(char* strVal, size_t strLen);
 FB_INTERNAL(bool) u8str_it_tryGetNext(void* it, uint32_t* cp);
@@ -80,6 +82,7 @@ FB_INTERNAL(bool) setfileStreamPos(void* hFile, int64_t pos, StreamPos relativeT
 //math
 
 FB_INTERNAL(bool) isPrime(uint64_t numb);
+FB_INTERNAL(size_t) nextPrime(size_t numb);
 
 //sync
 

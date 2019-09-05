@@ -36,7 +36,7 @@ namespace FBc {
 
 
         public FBLLVMCodeGenerator(string outputFilename, FBModule fBModule, OptLevel lvl = OptLevel.O1, bool emitLLVM = false, bool native = false, bool forceLV = false, bool disableBoundsChecks = false, bool disableNullChecks = false, bool isLibrary = false)
-            : base(outputFilename, lvl, isLibrary: isLibrary) {
+            : base(outputFilename, lvl, isLibrary: isLibrary, sem: FBSemantics.Instance) {
             this.emitLLVM = emitLLVM;
             this.native = native;
             this.forceLV = forceLV;
