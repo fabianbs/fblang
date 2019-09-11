@@ -30,6 +30,7 @@ def interface<T, U> T[U] #if U.#hasMethod(getHashCode: -> zint) &&
     ctor: zint
     
     clear:
+    resize -> bool
     
     macro forEach: {%key, %value}
 }

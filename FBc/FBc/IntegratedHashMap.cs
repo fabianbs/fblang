@@ -25,7 +25,7 @@ namespace FBc {
                 new BasicVariable(default, U, Variable.Specifier.LocalVariable,"key",null)
             }) { Specifiers = Method.Specifier.OperatorOverload | Method.Specifier.UniqueThis | Method.Specifier.SideEffectFree | Method.Specifier.Builtin, NestedIn = Context });
             // operator[]: U, T
-            Context.DefineMethod(new BasicMethod(default, "operator []", Visibility.Internal, PrimitiveType.Void, new[] {
+            Context.DefineMethod(new BasicMethod(default, "operator []", Visibility.Internal, T.AsByRef(), new[] {
                 new BasicVariable(default, U, Variable.Specifier.LocalVariable,"key",null),
                 new BasicVariable(default, T, Variable.Specifier.LocalVariable,"value",null)
             }) { Specifiers = Method.Specifier.OperatorOverload | Method.Specifier.UniqueThis | Method.Specifier.Builtin, NestedIn = Context });
@@ -91,6 +91,7 @@ namespace FBc {
                 new BasicVariable(default, PrimitiveType.SizeT, Variable.Specifier.LocalVariable,"initialCapacity",null)
             }) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin | Method.Specifier.Constructor, NestedIn = Context });
 
+            //TODO 'resize: -> bool' method
         }
 
         private void InitializeMacros() {

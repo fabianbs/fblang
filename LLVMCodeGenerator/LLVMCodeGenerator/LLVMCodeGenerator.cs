@@ -55,7 +55,8 @@ namespace LLVMCodeGenerator {
         protected internal readonly byte maxOptIterations;
         protected internal readonly ISemantics semantics;
 
-        protected ManagedContext ctx;
+        protected internal ManagedContext ctx;
+        readonly BuiltinHashMap bhm;
 
         public string OutputFilename {
             get;
@@ -74,6 +75,7 @@ namespace LLVMCodeGenerator {
             maxOptIterations = _maxOptIterations;
             IsLibrary = isLibrary;
             semantics = sem ?? new BasicSemantics();
+            bhm = new BuiltinHashMap(this);
         }
         protected internal IEnumerable<IType> GetAllSuperTypes(IType tp) {
             if (tp is null)
@@ -288,7 +290,7 @@ namespace LLVMCodeGenerator {
             if (tp.Signature.Name == "::HashMap") {
                 var keyTy = (IType)tp.Signature.GenericActualArguments.First();
                 var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
-                return ImplementBuiltinHashMap(tp, keyTy, valTy);
+                return bhm.ImplementBuiltinHashMap(tp, keyTy, valTy);
             }
             // already reported, that this is an invalid builtin type
             return false;
@@ -1112,7 +1114,7 @@ namespace LLVMCodeGenerator {
             if (tp.Signature.BaseGenericType != null && tp.Signature.BaseGenericType.Signature.Name == "::HashMap") {
                 var keyTy = (IType)tp.Signature.GenericActualArguments.First();
                 var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
-                return TryGetBuiltinHashMap(tp, keyTy, valTy, out ret);
+                return bhm.TryGetBuiltinHashMap(tp, keyTy, valTy, out ret);
             }
             ret = ctx.GetVoidPtr();
             return $"Invalid builtin type: {tp.Signature}".Report(false);
