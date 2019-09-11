@@ -8,14 +8,20 @@ using System.Text;
 using CompilerInfrastructure.Utils;
 using static NativeManagedContext;
 namespace LLVMCodeGenerator {
-    partial class LLVMCodeGenerator {
+    class BuiltinHashMap {
+        LLVMCodeGenerator gen;
+        ManagedContext ctx;
         readonly Dictionary<IType, (IntPtr, IntPtr)> slotBucketType= new Dictionary<IType, (IntPtr, IntPtr)>();
 
-        private bool TryGetBuiltinHashMap(IType hmTy, IType keyTy, IType valTy, out IntPtr ret) {
+        public BuiltinHashMap(LLVMCodeGenerator gen) {
+            this.gen = gen;
+            ctx = gen.ctx;
+        }
+        internal bool TryGetBuiltinHashMap(IType hmTy, IType keyTy, IType valTy, out IntPtr ret) {
 
             var hashMapTy = ctx.GetStruct(hmTy.Signature.ToString());
-            types[hmTy.AsValueType()] = hashMapTy;
-            types[hmTy.AsReferenceType()] = ctx.GetPointerType(hashMapTy);
+            gen.types[hmTy.AsValueType()] = hashMapTy;
+            gen.types[hmTy.AsReferenceType()] = ctx.GetPointerType(hashMapTy);
 
             // first build the slot-type and the bucket-type
             // The slot-type will be the element-ytpe of the actual hash-table
@@ -24,7 +30,7 @@ namespace LLVMCodeGenerator {
             var bucketTy = ctx.GetStruct(hmTy.Signature.ToString() + "::bucketTy");
             // struct slotTy {index, hashCode, state} where state: 0=>free, 1=>full, 2=>deleted
             ctx.CompleteStruct(slotTy, new[] { ctx.GetSizeTType(), ctx.GetSizeTType(), ctx.GetByteType() });
-            bool succ = TryGetType(keyTy, out var ky) & TryGetType(valTy, out var val);
+            bool succ = gen.TryGetType(keyTy, out var ky) & gen.TryGetType(valTy, out var val);
             if (succ)
                 ctx.CompleteStruct(bucketTy, new[] { ky, val });
             // struct HashMap {slots, values, capacity, size, deletedCount}
@@ -36,7 +42,7 @@ namespace LLVMCodeGenerator {
             slotBucketType[hmTy] = (slotTy, bucketTy);
             return succ;
         }
-        private bool ImplementBuiltinHashMap(IType tp, IType keyTy, IType valTy) {
+        internal bool ImplementBuiltinHashMap(IType tp, IType keyTy, IType valTy) {
             // implement all the methods
 
             var getHashCode = tp.Context.InstanceContext.MethodsByName("getHashCode").FirstOrDefault(x =>
@@ -47,7 +53,7 @@ namespace LLVMCodeGenerator {
             if (getHashCode is null && !tp.IsIntegerType() && !tp.IsString()) {
                 $"The type {keyTy.Signature} does not provide  a publicly visible method getHashCode -> zint and can therefore not be used as key in an associative array".Report();
             }
-            bool succ = TryGetType(tp.AsReferenceType(), out var ty) & TryGetType(keyTy, out var keyt) & TryGetType(valTy, out var valt);
+            bool succ = gen.TryGetType(tp.AsReferenceType(), out var ty) & gen.TryGetType(keyTy, out var keyt) & gen.TryGetType(valTy, out var valt);
             if (!succ)
                 return false;
             IMethod ctor1;
@@ -58,23 +64,272 @@ namespace LLVMCodeGenerator {
             var search = ImplementBuiltinHashMapSearch(tp, ty, keyt, valt, keyTy);
             tp.OverloadsOperator(OverloadableOperator.Indexer, out var indexer);
             succ &= ImplementBuiltinHashMapOperatorIndexerGet((IMethod) indexer.First(x => x.Arguments.Length == 1), tp, ty, keyt, valt, search, getHashCode);
+
+            var insert = ImplementBuiltinHashMapInsertInternal(tp, ty, keyt, valt, search);
+            var rehashinsert = RehashInsert(tp, ty, keyt, search);
+            var rehash = ImplementBuiltinHashMapRehash(tp, ty, rehashinsert);
+            var ensureCapacity = ImplementBuiltinHashMapEnsureCapacity(tp, ty, rehash);
+
+            succ &= ImplementBuiltinHashMapOperatorIndexerSet((IMethod) indexer.First(x => x.Arguments.Length == 2), tp, ty, keyt, valt, search, getHashCode);
             //TODO more methods
             throw new NotImplementedException();
         }
+        private IntPtr RehashInsert(IType tp, IntPtr ty, IntPtr keyTy, IntPtr search) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(tp.FullName()+".rehashInsert",
+                ctx.GetVoidType(),
+                new[]{ ty, keyTy, ctx.GetSizeTType(), ctx.GetSizeTType() },
+                new[]{ "this", "key", "hashCode", "valueIndex" },
+                false);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                var key = ctx.GetArgument(fn, 1);
+                var hashCode = ctx.GetArgument(fn, 2);
+                var valIndex = ctx.GetArgument(fn, 3);
+
+                var slotPtr = ctx.GetCall(search, new[]{ thisptr, key, hashCode }, irb);
+                ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 0u }, valIndex, irb);
+                ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 1u }, hashCode, irb);
+                ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 2u }, ctx.GetInt8(1), irb);
+                ctx.ReturnVoid(irb);
+            }
+            return fn;
+        }
+        private IntPtr ImplementBuiltinHashMapRehash(IType tp, IntPtr ty, IntPtr rehashInsert) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(tp.FullName()+".rehash",
+                ctx.GetVoidType(),
+                new[]{ ty, ctx.GetBoolType() },
+                new[]{ "this", "increaseCapacity" },
+                false);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                var increaseCapacity = ctx.GetArgument(fn, 1);
+                var oldCap = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 2u }, irb);
+
+                var doIncreaseCapacity = new BasicBlock(ctx, "doIncreaseCapacity", fn);
+                var doRehash = new BasicBlock(ctx, "doRehash", fn);
+                ctx.ConditionalBranch(doIncreaseCapacity, doRehash, increaseCapacity, irb);
+
+                ctx.ResetInsertPoint(doIncreaseCapacity, irb);
+                var nextPrime = InstructionGenerator.GetOrCreateInternalFunction(ctx, InstructionGenerator.InternalFunction.nextPrime);
+                var doubleCap = ctx.ShiftOp(oldCap, ctx.GetIntSZ(1), true, true, irb);
+                var doubleCapPrime = ctx.GetCall(nextPrime, new[]{ doubleCap }, irb);
+                ctx.Branch(doRehash, irb);
+
+                ctx.ResetInsertPoint(doRehash, irb);
+                var newCap = new PHINode(ctx, ctx.GetSizeTType(), 2, irb);
+                newCap.AddMergePoint(oldCap, entry);
+                newCap.AddMergePoint(doubleCapPrime, doIncreaseCapacity);
+
+                var slots = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 0u }, irb);
+                var buckets = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u }, irb);
+                var size = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 3u }, irb);
+                var (slotTy, bucketTy) = slotBucketType[tp];
+
+                var nwSlots = MallocCArray(slotTy, newCap, irb);
+                var nwBuckets = MallocCArray(bucketTy, newCap, irb);
+
+                ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 0u }, nwSlots, irb);
+                ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 1u }, nwBuckets, irb);
+                var bucketSize = ctx.GetSizeOf(bucketTy);
+                var bucketsBytes = ctx.ArithmeticBinOp(size, bucketSize, (sbyte)'*', true, irb);
+                ctx.MemoryCopy(nwBuckets, buckets, bucketsBytes, false, irb);
+
+                var loop = new BasicBlock(ctx, "loop", fn);
+                var loopEnd = new BasicBlock(ctx, "loopEnd", fn);
+                var full = new BasicBlock(ctx, "full", fn);
+                var loopCond = new BasicBlock(ctx, "loopCond", fn);
+
+                var sizeIs0 = ctx.CompareOp(size, ctx.GetIntSZ(0), (sbyte)'!', true, true, irb);
+                ctx.ConditionalBranch(loopEnd, loop, sizeIs0, irb);
+
+                ctx.ResetInsertPoint(loop, irb);
+                var i = new PHINode(ctx, ctx.GetSizeTType(), 2, irb);
+                i.AddMergePoint(ctx.GetIntSZ(0), doRehash);
+                var state = ctx.LoadField(slots, new[]{ i, ctx.GetInt32(2)}, irb);
+                var isFull = ctx.CompareOp(state, ctx.GetIntSZ(1), (sbyte)'!', true, true, irb);
+                ctx.ConditionalBranch(full, loopCond, isFull, irb);
+
+                ctx.ResetInsertPoint(full, irb);
+                {
+                    var valInd = ctx.LoadField(slots, new[]{ i, ctx.GetInt32(0)}, irb);
+                    var hashCode = ctx.LoadField(slots, new[]{ i, ctx.GetInt32(1)}, irb);
+                    var ky = ctx.LoadField(buckets, new[]{ valInd, ctx.GetInt32(0)}, irb);
+                    ctx.GetCall(rehashInsert, new[] { thisptr, ky, hashCode, valInd }, irb);
+                }
+                ctx.Branch(loopCond, irb);
+
+                ctx.ResetInsertPoint(loopCond, irb);
+                var iPlus1 = ctx.ArithmeticBinOp(i, ctx.GetIntSZ(1),(sbyte)'+', true, irb);
+                i.AddMergePoint(iPlus1, loop);
+                var nextIteration = ctx.CompareOp(iPlus1, newCap, (sbyte)'<',false, true, irb);
+                ctx.ConditionalBranch(loop, loopEnd, nextIteration, irb);
+
+                ctx.ResetInsertPoint(loopEnd, irb);
+                ctx.ReturnVoid(irb);
+            }
+
+            return fn;
+        }
+        private IntPtr ImplementBuiltinHashMapEnsureCapacity(IType tp, IntPtr ty, IntPtr rehash) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(tp.FullName()+".ensureCapacity",
+                ctx.GetVoidType(),
+                new[]{ ty},
+                new[]{ "this" },
+                false);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                //load factor = 0,8
+                var cap = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 2u }, irb);
+                var bound = ctx.ArithmeticBinOp(ctx.ForceCast(cap, ctx.GetFloatType(), true, irb), ctx.GetFloat(0.8f),(sbyte)'*', true, irb);
+                var size = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 3u }, irb);
+                var del = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 4u }, irb);
+                var load = ctx.ArithmeticBinOp(size, del, (sbyte)'+', true, irb);
+                var loadFP = ctx.ForceCast(load, ctx.GetFloatType(), true, irb);
+                var needRehash = ctx.CompareOp(loadFP, bound, (sbyte)'>', true, true, irb);
+
+                var retBB = new BasicBlock(ctx, "exit", fn);
+                var doRehash = new BasicBlock(ctx, "doRehash", fn);
+
+                ctx.ConditionalBranch(doRehash, retBB, needRehash, irb);
+
+                ctx.ResetInsertPoint(retBB, irb);
+                ctx.ReturnVoid(irb);
+
+                ctx.ResetInsertPoint(doRehash, irb);
+
+                // increase the capacity iff the size is at least as large as the deletedCount (otherwise 
+                // even without resizing the capacity the available space is at least as big in relation to size
+                // as if resizing when del==0)
+                var sizeGTdel = ctx.CompareOp(size, del, (sbyte)'>',true,true,irb);
+                ctx.GetCall(rehash, new[] { thisptr, sizeGTdel }, irb);
+                ctx.Branch(retBB, irb);
+            }
+            return fn;
+        }
+
+        private IntPtr ImplementBuiltinHashMapInsertInternal(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IntPtr search) {
+            var irb = IntPtr.Zero;
+            var retTy = ctx.GetUnnamedStruct(new[]{ctx.GetPointerType(valTy), ctx.GetBoolType() });
+            var fn = ctx.DeclareFunction(tp.FullName()+".insertInternal",
+                retTy,
+                new[]{ ty, keyTy, valTy, ctx.GetSizeTType(), ctx.GetBoolType() },
+                new[]{ "this", "key", "value", "hashCode", "replace" },
+                false);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn,0);
+                var ky = ctx.GetArgument(fn, 1);
+                var val = ctx.GetArgument(fn, 2);
+                var hashCode = ctx.GetArgument(fn, 3);
+                var replace = ctx.GetArgument(fn, 4);
+                var size = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 3u }, irb);
+
+                var slotPtr = ctx.GetCall(search, new[]{ thisptr, ky, hashCode}, irb);
+                var state = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 2u}, irb);
+                var isFull = ctx.CompareOp(state, ctx.GetInt8(1), (sbyte)'!', true, true, irb);
+                var full = new BasicBlock(ctx, "full", fn);
+                var notFull = new BasicBlock(ctx, "notFull", fn);
+                var fullNotFullMerge = new BasicBlock(ctx, "full-notFull-merge", fn);
+                var fullReplace = new BasicBlock(ctx, "full-replace", fn);
+                var decrDel = new BasicBlock(ctx, "decrease-deletedCount", fn);
+                ctx.ConditionalBranch(full, notFull, isFull, irb);
+
+                ctx.ResetInsertPoint(notFull, irb);
+                // fill slot, add kvp, increase size, NOT ensureCapacity
+                {
+                    // index is the old size
+                    ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 0u }, size, irb);
+                    ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 1u }, hashCode, irb);
+                    ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 2u }, ctx.GetInt8(1), irb);
+
+                    var kvpPtr = ctx.GetElementPtr(ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u }, irb), new[]{ size }, irb);
+                    ctx.StoreFieldConstIdx(kvpPtr, new[] { 0u, 0u }, ky, irb);
+                    ctx.StoreFieldConstIdx(kvpPtr, new[] { 0u, 1u }, val, irb);
+
+                    var sizePlus1 = ctx.ArithmeticBinOp(size, ctx.GetIntSZ(1), (sbyte)'+', true, irb);
+                    ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 3u }, sizePlus1, irb);
+
+                    // if state == deleted then del-- ;
+                    var needDecrDel = ctx.CompareOp(state, ctx.GetInt8(2), (sbyte)'!', true, true, irb);
+                    ctx.ConditionalBranch(decrDel, fullNotFullMerge, needDecrDel, irb);
+                }
+
+                ctx.ResetInsertPoint(decrDel, irb);
+                {
+                    var del = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 4u }, irb);
+                    var delMinus1 = ctx.ArithmeticBinOp(del, ctx.GetIntSZ(1), (sbyte)'-', true, irb);
+                    ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 4u }, delMinus1, irb);
+                }
+                ctx.Branch(fullNotFullMerge, irb);
+
+                ctx.ResetInsertPoint(full, irb);
+                ctx.ConditionalBranch(fullReplace, fullNotFullMerge, replace, irb);
+
+                ctx.ResetInsertPoint(fullReplace, irb);
+                // fill slot, fill kvp, NOT increase size, NOT ensureCapacity
+                {
+                    // index remains the same
+                    //ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 0u }, size, irb);
+                    ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 1u }, hashCode, irb);
+                    ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 2u }, ctx.GetInt8(1), irb);
+                    var index = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 0u }, irb);
+
+                    var kvpPtr = ctx.GetElementPtr(ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u }, irb), new[]{ index }, irb);
+                    ctx.StoreFieldConstIdx(kvpPtr, new[] { 0u, 0u }, ky, irb);
+                    ctx.StoreFieldConstIdx(kvpPtr, new[] { 0u, 1u }, val, irb);
+                }
+                ctx.Branch(fullNotFullMerge, irb);
+
+                ctx.ResetInsertPoint(fullNotFullMerge, irb);
+                var boolRet = new PHINode(ctx, ctx.GetBoolType(), 3, irb);
+                boolRet.AddMergePoint(ctx.True(), notFull);
+                boolRet.AddMergePoint(ctx.True(), fullReplace);
+                boolRet.AddMergePoint(ctx.False(), full);
+                var ind = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 0u }, irb);
+                var valPtr = ctx.GetElementPtr(ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u }, irb), new[]{ ind, ctx.GetInt32(1)}, irb);
+                ctx.ReturnValue(ctx.GetStructValue(retTy, new[] { valPtr, boolRet }, irb), irb);
+            }
+            return fn;
+        }
+        private bool ImplementBuiltinHashMapOperatorIndexerSet(IMethod met, IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IntPtr search, IMethod getHashCode) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(DefaultNameMangler.Instance.MangleFunctionName(met),
+                ctx.GetPointerType(valTy),
+                new[]{ ty, keyTy, valTy },
+                new[]{ "this", "key", "value" },
+                false);
+            gen.methods[met] = fn;
+            var entry = new BasicBlock(ctx, "entry",fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                //TODO call ensureCapacity, call insertInternal
+                throw new NotImplementedException();
+            }
+        }
+
         private IntPtr GetHashCodeFrom(IMethod getHashCode, IType tp, IntPtr obj, IntPtr irb, IntPtr fn) {
             if (getHashCode is null) {
-                if (tp.IsIntegerType()) {
+                if (tp.IsIntegerType() || !tp.IsValueType()) {
                     return ctx.ForceCast(obj, ctx.GetSizeTType(), true, irb);
                 }
-                else {
+                else if (tp.IsString()) {
                     var ghc = InstructionGenerator.GetOrCreateInternalFunction(ctx, InstructionGenerator.InternalFunction.str_hash);
                     var strVal = ctx.ExtractValue(obj, 0, irb);
                     var strLen = ctx.ExtractValue(obj, 1, irb);
                     return ctx.GetCall(ghc, new[] { strVal, strLen }, irb);
                 }
+                else {
+                    // should be already caught
+                    return $"The value-type {tp.Signature} does not implement the method 'zint getHashCode()' and can therefore not be used as key in a hash-map".Report(default, ctx.GetIntSZ(0));
+                }
             }
             else {
-                TryGetMethod(getHashCode, out var ghc);
+                gen.TryGetMethod(getHashCode, out var ghc);
                 if (!tp.IsNotNullable()) {
                     var currBB = ctx.GetCurrentBasicBlock(irb);
                     var notNull = new BasicBlock(ctx, "notNull", fn);
@@ -102,7 +357,7 @@ namespace LLVMCodeGenerator {
                 new[]{ ty, keyTy },
                 new[]{ "this", "key" },
                 false);
-            methods[met] = fn;
+            gen.methods[met] = fn;
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var ky = ctx.GetArgument(fn, 1);
@@ -135,17 +390,17 @@ namespace LLVMCodeGenerator {
             // operator==
             IMethod equalsMet=null;
             if (tp.OverloadsOperator(OverloadableOperator.Equal, out var ov, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Instance)) {
-                equalsMet = semantics.BestFittingMethod(default, ov, new[] { tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
+                equalsMet = gen.semantics.BestFittingMethod(default, ov, new[] { tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
             }
             if (equalsMet is null || equalsMet.IsError()) {
                 if (tp.OverloadsOperator(OverloadableOperator.Equal, out var ovStat, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Static)) {
-                    equalsMet = semantics.BestFittingMethod(default, ovStat, new[] { tp, tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
+                    equalsMet = gen.semantics.BestFittingMethod(default, ovStat, new[] { tp, tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
                 }
             }
             if (equalsMet is null || equalsMet.IsError())
                 return ctx.CompareOp(obj1, obj2, (sbyte) '!', true, false, irb);
             else {
-                TryGetMethod(equalsMet, out var met);
+                gen.TryGetMethod(equalsMet, out var met);
                 return ctx.GetCall(met, new[] { obj1, obj2 }, irb);
             }
         }
@@ -229,7 +484,7 @@ namespace LLVMCodeGenerator {
                 new[]{ ty },
                 new[]{ "this" },
                 false);
-            methods[met] = fn;
+            gen.methods[met] = fn;
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var (slotTy, bucketTy) = slotBucketType[tp];
@@ -254,7 +509,7 @@ namespace LLVMCodeGenerator {
                 new[]{ ty, ctx.GetSizeTType() },
                 new[]{ "this", "initialCapacity" },
                 false);
-            methods[met] = fn;
+            gen.methods[met] = fn;
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var (slotTy, bucketTy) = slotBucketType[tp];
@@ -288,7 +543,7 @@ namespace LLVMCodeGenerator {
                 false);
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
-                var ctor1Fn = methods[ctor1];
+                var ctor1Fn = gen.methods[ctor1];
                 ctx.GetCall(ctor1Fn, new[] { ctx.GetArgument(fn, 0), ctx.GetIntSZ(5) }, irb);
                 // rest is zero-initialized
                 ctx.ReturnVoid(irb);
@@ -296,4 +551,5 @@ namespace LLVMCodeGenerator {
             return true;
         }
     }
+
 }
