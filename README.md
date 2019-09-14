@@ -4,7 +4,7 @@ This repository contains the compiler and language-runtime for my own programmin
 News
 --------
 - I will upload the code soon.
-- The TODOs will be converted to [issues](https://github.com/fabianbs/fblang/issues)
+- The [issues](https://github.com/fabianbs/fblang/issues) now contain information about the planned enhancements of the language.
 
 What is FB?
 ----------
