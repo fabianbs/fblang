@@ -850,6 +850,8 @@ namespace LLVMCodeGenerator {
                     virtualMethods.Add(parent, met);
                 return true;
             }
+            if (met.IsBuiltin())
+                return GetOrCreateBuiltinFunction(met, out ret);
             if (met.IsInternal()) {
                 ret = GetOrCreateInternalFunction(ctx, met);
                 return true;
@@ -897,6 +899,13 @@ namespace LLVMCodeGenerator {
             methods.Add(met, ret);
             allMethods.Add(met);
             return succ;
+        }
+
+        private bool GetOrCreateBuiltinFunction(IMethod met, out IntPtr ret) {
+            if (met.NestedIn is ITypeContext tcx && tcx.Type.Signature.BaseGenericType != null && tcx.Type.Signature.BaseGenericType.Signature.Name == "::HashMap") {
+               return bhm.TryGetMethod(met, out ret);
+            }
+            throw new NotImplementedException();
         }
         #endregion
         #region LazyCreation: Type

@@ -734,7 +734,7 @@ namespace FBc {
             }
             else if (context.assocArray() != null) {
                 var keyTy = VisitTypeIdent(context.assocArray().typeIdent(), fileName);
-                tp = IntegratedHashMap.GetOrCreateIntegratedHashMap(Module).BuildType(new[] { tp, keyTy });
+                tp = IntegratedHashMap.GetOrCreateIntegratedHashMap(Module).BuildType(new[] {  keyTy, tp });
                 if (context.ExclamationMark() != null) {
                     tp = tp.AsNotNullable();
                 }
