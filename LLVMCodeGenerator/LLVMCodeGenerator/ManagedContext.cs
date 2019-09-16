@@ -10,7 +10,7 @@ public static unsafe class NativeManagedContext {
         private bool isDisposed = false;
 
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr CreateManagedContext (string name, string filename);
+        private static extern IntPtr CreateManagedContext ([MarshalAs(UnmanagedType.LPUTF8Str)]string name, [MarshalAs(UnmanagedType.LPUTF8Str)]string filename);
         public  ManagedContext (string name, string filename) {
             Instance = CreateManagedContext(name, filename);
         }
@@ -24,12 +24,12 @@ public static unsafe class NativeManagedContext {
             DisposeManagedContext(Instance);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern void Save (IntPtr ctx, string filename);
+        private static extern void Save (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string filename);
         public void Save (string filename) {
             Save(Instance, filename);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern void DumpModule (IntPtr ctx, string filename);
+        private static extern void DumpModule (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string filename);
         public void DumpModule (string filename) {
             DumpModule(Instance, filename);
         }
@@ -59,7 +59,7 @@ public static unsafe class NativeManagedContext {
             return VerifyModule(Instance);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getStruct (IntPtr ctx, string name);
+        private static extern IntPtr getStruct (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name);
         public static IntPtr GetStruct (IntPtr ctx, string name) {
             return getStruct(ctx, name);
         }
@@ -187,7 +187,7 @@ public static unsafe class NativeManagedContext {
             return getVoidType(Instance);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getOpaqueType (IntPtr ctx, string name);
+        private static extern IntPtr getOpaqueType (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name);
         public static IntPtr GetOpaqueType (IntPtr ctx, string name) {
             return getOpaqueType(ctx, name);
         }
@@ -211,7 +211,7 @@ public static unsafe class NativeManagedContext {
             return getTypeFromValue(Instance, val);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr declareFunction (IntPtr ctx, string name, IntPtr retTy, IntPtr[] argTys, uint argc, string[] argNames, uint argNamec, bool isPublic);
+        private static extern IntPtr declareFunction (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr retTy, IntPtr[] argTys, uint argc, string[] argNames, uint argNamec, bool isPublic);
         public static IntPtr DeclareFunction (IntPtr ctx, string name, IntPtr retTy, IntPtr[] argTys, string[] argNames, bool isPublic) {
             return declareFunction(ctx, name, retTy, argTys, (uint)argTys.Length, argNames, (uint)argNames.Length, isPublic);
         }
@@ -219,7 +219,7 @@ public static unsafe class NativeManagedContext {
             return declareFunction(Instance, name, retTy, argTys, (uint)argTys.Length, argNames, (uint)argNames.Length, isPublic);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr declareFunctionOfType (IntPtr ctx, string name, IntPtr fnPtrTy, bool isPublic);
+        private static extern IntPtr declareFunctionOfType (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr fnPtrTy, bool isPublic);
         public static IntPtr DeclareFunctionOfType (IntPtr ctx, string name, IntPtr fnPtrTy, bool isPublic) {
             return declareFunctionOfType(ctx, name, fnPtrTy, isPublic);
         }
@@ -259,7 +259,7 @@ public static unsafe class NativeManagedContext {
             addReturnNotNullAttribute(Instance, fn);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr declareMallocFunction (IntPtr ctx, string name, IntPtr[] argTys, uint argc, bool resultNotNull);
+        private static extern IntPtr declareMallocFunction (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr[] argTys, uint argc, bool resultNotNull);
         public static IntPtr DeclareMallocFunction (IntPtr ctx, string name, IntPtr[] argTys, bool resultNotNull) {
             return declareMallocFunction(ctx, name, argTys, (uint)argTys.Length, resultNotNull);
         }
@@ -291,7 +291,7 @@ public static unsafe class NativeManagedContext {
             resetInsertPoint(Instance, bb, irb);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr defineAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, string name);
+        private static extern IntPtr defineAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, [MarshalAs(UnmanagedType.LPUTF8Str)]string name);
         public static IntPtr DefineAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, string name) {
             return defineAlloca(ctx, fn, ty, name);
         }
@@ -299,7 +299,7 @@ public static unsafe class NativeManagedContext {
             return defineAlloca(Instance, fn, ty, name);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr defineZeroinitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, string name, IntPtr irb, bool addlifetime);
+        private static extern IntPtr defineZeroinitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr irb, bool addlifetime);
         public static IntPtr DefineZeroinitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, string name, IntPtr irb, bool addlifetime) {
             return defineZeroinitializedAlloca(ctx, fn, ty, name, irb, addlifetime);
         }
@@ -307,7 +307,7 @@ public static unsafe class NativeManagedContext {
             return defineZeroinitializedAlloca(Instance, fn, ty, name, irb, addlifetime);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr defineInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, IntPtr initVal, string name, IntPtr irb, bool addlifetime);
+        private static extern IntPtr defineInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, IntPtr initVal, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr irb, bool addlifetime);
         public static IntPtr DefineInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr ty, IntPtr initVal, string name, IntPtr irb, bool addlifetime) {
             return defineInitializedAlloca(ctx, fn, ty, initVal, name, irb, addlifetime);
         }
@@ -315,7 +315,7 @@ public static unsafe class NativeManagedContext {
             return defineInitializedAlloca(Instance, fn, ty, initVal, name, irb, addlifetime);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr defineTypeInferredInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr initVal, string name, IntPtr irb, bool addlifetime);
+        private static extern IntPtr defineTypeInferredInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr initVal, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr irb, bool addlifetime);
         public static IntPtr DefineTypeInferredInitializedAlloca (IntPtr ctx, IntPtr fn, IntPtr initVal, string name, IntPtr irb, bool addlifetime) {
             return defineTypeInferredInitializedAlloca(ctx, fn, initVal, name, irb, addlifetime);
         }
@@ -594,7 +594,7 @@ public static unsafe class NativeManagedContext {
             return getInt8(Instance, val);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getString (IntPtr ctx, string strlit, IntPtr irb);
+        private static extern IntPtr getString (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string strlit, IntPtr irb);
         public static IntPtr GetString (IntPtr ctx, string strlit, IntPtr irb) {
             return getString(ctx, strlit, irb);
         }
@@ -860,7 +860,7 @@ public static unsafe class NativeManagedContext {
             return forceVectorizationForCurrentLoop(Instance, loopBB, fn);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getVTable (IntPtr ctx, string name, IntPtr vtableTy, IntPtr[] virtualMethods, uint virtualMethodc, IntPtr superVtable);
+        private static extern IntPtr getVTable (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr vtableTy, IntPtr[] virtualMethods, uint virtualMethodc, IntPtr superVtable);
         public static IntPtr GetVTable (IntPtr ctx, string name, IntPtr vtableTy, IntPtr[] virtualMethods, IntPtr superVtable) {
             return getVTable(ctx, name, vtableTy, virtualMethods, (uint)virtualMethods.Length, superVtable);
         }
@@ -868,7 +868,7 @@ public static unsafe class NativeManagedContext {
             return getVTable(Instance, name, vtableTy, virtualMethods, (uint)virtualMethods.Length, superVtable);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getImplicitVTableType (IntPtr ctx, string name, IntPtr[] virtualMethods, uint virtualMethodc);
+        private static extern IntPtr getImplicitVTableType (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr[] virtualMethods, uint virtualMethodc);
         public static IntPtr GetImplicitVTableType (IntPtr ctx, string name, IntPtr[] virtualMethods) {
             return getImplicitVTableType(ctx, name, virtualMethods, (uint)virtualMethods.Length);
         }
@@ -876,7 +876,7 @@ public static unsafe class NativeManagedContext {
             return getImplicitVTableType(Instance, name, virtualMethods, (uint)virtualMethods.Length);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr getVTableType (IntPtr ctx, string name, IntPtr[] fnTypes, uint fnTypec);
+        private static extern IntPtr getVTableType (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr[] fnTypes, uint fnTypec);
         public static IntPtr GetVTableType (IntPtr ctx, string name, IntPtr[] fnTypes) {
             return getVTableType(ctx, name, fnTypes, (uint)fnTypes.Length);
         }
@@ -884,7 +884,7 @@ public static unsafe class NativeManagedContext {
             return getVTableType(Instance, name, fnTypes, (uint)fnTypes.Length);
         }
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr isInst (IntPtr ctx, IntPtr vtablePtr, string typeName, IntPtr irb);
+        private static extern IntPtr isInst (IntPtr ctx, IntPtr vtablePtr, [MarshalAs(UnmanagedType.LPUTF8Str)]string typeName, IntPtr irb);
         public static IntPtr IsInst (IntPtr ctx, IntPtr vtablePtr, string typeName, IntPtr irb) {
             return isInst(ctx, vtablePtr, typeName, irb);
         }
@@ -899,7 +899,7 @@ public static unsafe class NativeManagedContext {
         public readonly IntPtr Instance;
 
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr createBasicBlock (IntPtr ctx, string name, IntPtr fn);
+        private static extern IntPtr createBasicBlock (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr fn);
         public  BasicBlock (IntPtr ctx, string name, IntPtr fn) {
             Instance = createBasicBlock(ctx, name, fn);
         }
@@ -993,7 +993,7 @@ public static unsafe class NativeManagedContext {
         public readonly IntPtr Instance;
 
         [DllImport(@"LLVMInterface.dll")]
-        private static extern IntPtr createVTable (IntPtr ctx, string name, IntPtr vtableTy, IntPtr[] virtualMethods, uint virtualMethodc);
+        private static extern IntPtr createVTable (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr vtableTy, IntPtr[] virtualMethods, uint virtualMethodc);
         public  VTable (IntPtr ctx, string name, IntPtr vtableTy, IntPtr[] virtualMethods) {
             Instance = createVTable(ctx, name, vtableTy, virtualMethods, (uint)virtualMethods.Length);
         }
