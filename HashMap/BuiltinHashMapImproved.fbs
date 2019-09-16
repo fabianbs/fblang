@@ -1,0 +1,246 @@
+// Improvings: 
+//   - robin-hood hashing with backshift removal
+//   - nocopy bucket realloc => value-reference stability
+
+def void HashMap<U, T>{
+    def void Slot{
+        internal zint index, hashCode
+        internal uint distance
+        internal byte buck
+        internal bool full
+        internal init ctor(zint index, hashCode, uint distance, byte buck, bool full){}
+        internal copy ctor(const Slot& s){}
+    }
+    def void Bucket{
+        internal U key
+        internal T value
+        internal init ctor(U key, T value){}
+    }
+    final float LOAD_FACTOR = 0.8
+    
+    resizeBuckets(){
+        var oldBucketsFill = bucketsFill
+        bucketsFill++
+        if(bucketsFill == numBucketArrays){
+            numBucketArrays << 1
+            var nwBuckArr = new Bucket$[][numBucketArrays]
+            nwBuckArr <- buckets[: oldBucketsFill]
+            buckets = nwBuckArr
+        }
+        buckets[bucketsFill] = new [currBucketCapacity <<= 1]
+        currBucketFill = 0
+    }
+    rehash(){
+        zint newCap
+        
+        newCap = [InternalCall]nextPrime(capacity << 1)
+        
+        var oldCap = capacity
+        capacity = newCap
+        var oldSlots = slots
+        var oldBuckets = buckets
+        //buckets = new [newCap]
+        //buckets... <- oldBuckets[: size]
+        
+        resizeBuckets(resizing)
+        slots = new [newCap]
+        
+        for(var &slot: oldSlots){
+            if(slot.fill == SlotFill.FULL){
+                doInsertKey(buckets[slot.buck][slot.index].key, slot.index, slot.buck, slot.hashCode)
+            }
+        }
+    }
+    ensureCapacity(){
+        if(capacity * LOAD_FACTOR <= size){
+            rehash(true)
+        }
+    }
+    
+    (bool, uint, zint) search(U ky, zint hashCode, ref Slot$& ret){
+        zint hc = hashCode % capacity
+        uint dist = 0
+        // TODO simplify
+        for(zint i => var &slot: slots[hc : ]){
+            if(slot.fill == SlotFill.FREE || slot.distance > dist){
+                ret = &slot
+                return (false, dist, i)
+            }
+            else if(slot.hashCode == hashCode && equals(ky, buckets[slot.buck][slot.index].key)){
+                ret = &slot
+                return (true, dist, i)
+            }
+            dist++
+        }
+        for(zint i => var &slot: slots[ : hc]){
+            if(slot.fill == SlotFill.FREE || slot.distance > dist){
+                ret = &slot
+                return (false, dist, i)
+            }
+            else if(slot.hashCode == hashCode && equals(ky, buckets[slot.buck][slot.index].key)){
+                ret = &slot
+                return (true, dist, i)
+            }
+            dist++
+        }
+        [Builtin]unreachable()
+    }
+    swap(U ky, zint index, byte buck, zint hashCode, uint dist, zint i){
+        //TODO implement
+        
+    }
+    bool doInsertKey(U ky, zint index, byte buck, zint hashCode, uint dist){
+        zint hc = hashCode % capacity
+        for(zint i => var &slot: slots[hc : ]){
+            if(!slot.full){
+                slot = new (index, hashCode, dist, buck, true)
+                return true
+            }
+            else if(slot.distance >= dist){
+                if(slot.distance > slot.dist){
+                    swap(ky, index, buck, hashCode, dist, i)
+                    return true
+                }
+                else if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
+                    return false
+                }
+            }
+            dist++
+        }
+        for(zint i => var &slot: slots[ : hc]){
+            if(!slot.full){
+                slot = new (index, hashCode, dist, buck, true)
+                return true
+            }
+            else if(slot.distance >= dist){
+                if(slot.distance > slot.dist){
+                    swap(ky, index, buck, hashCode, dist, i)
+                    return true
+                }
+                else if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
+                    return false
+                }
+            }
+            dist++
+        }
+        [Builtin]unreachable()
+    }
+    (T&, bool) insertInternal(U ky, T val, zint hashCode, bool replace){
+        var (has, dist, i) = search(ky, hashCode, ref Slot$ slot)
+        if(!has || replace){
+            var index = has ? slot.index : currBucketFill
+            var buck = has ? slot.buck : bucketsFill
+            buckets[buck][index] = new (ky, val)
+            if(!has){
+                if(slot.full){
+                    swap(ky, index, buck, hashCode, dist, i)
+                }
+                else{
+                    slot = new (index, dist, hashCode, buck, true)
+                }
+            }
+            return (buckets[slot.buck][slot.index].value, true)
+        }
+        else{
+            return (buckets[slot.buck][slot.index].value, false)
+        }
+    }
+    static bool equals(U ky1, U ky2){
+        #if(U is nullable){
+            if(ky1 == null)
+                return ky2 == null
+            else if(ky2 == null)
+                return false
+        }
+        #if(U is integer || U is string){
+            return ky1 == ky2
+        }
+        #elif(operator==(U)->bool in U){
+            return ky1 == ky2
+        }
+        #elif(static operator==(U, U)->bool in U){
+            return ky1 == ky2
+        }
+        #elif(U is referenceType){
+            return (nativehandle)ky1 == (nativehandle)ky2
+        }
+        #else{
+             #assert(false, "The value-type \{typename(U)} does not overload the == operator for " + 
+                            "comparing two \{typename(U)}s for equality. Hence it cannot be used " + 
+                            "as kye in an associative array")
+        }
+    }
+    static zint getHashCode(U ky){
+        #if(U is integer){
+            return (zint)ky
+        }
+        #elif(U is string){
+            return [InternalCall]str_hash(ky)
+        }
+        #elif(U is referenceType){
+            if(ky == null)
+                return 0
+            #if(getHashCode() -> zint in U)
+                return ky.getHashCode()
+            #else
+                return (zint)(nativehandle)ky
+        }
+        #elif(getHashCode() -> zint in U){
+            return ky.getHashCode()
+        }
+        #else{
+            #assert(false, "The value-type \{typename(U)} does not provide an instance method " +
+                           "getHashCode() -> zint and can therefore not be used as key in an " + 
+                           "associative array")
+        }
+    }
+    public bool insert(U ky, T val, bool replace){
+        var %, ret <- insertInternal(ky, val, getHashCode(ky), replace)
+        return ret
+    }
+    public T& operator[](U ky){
+        if(true, %, % <- search(ky, getHashCode(ky), ref var slot))
+            return buckets[slot.index].value
+        else
+            throw "Key not found"
+    }
+    public T& operator[](U ky, T val){
+        var &ret, % <- insertInternal(ky, val, getHashCode(ky), true)
+        return ret
+    }
+    
+    public bool remove(U ky){
+        //TODO implement
+    }
+    
+    public clear(){
+        #if(dtor() in U || dtor() in T){
+            for(var buckArr: buckets[: numBucketArrays]){
+                for(var buck: buckArr[: bucketsFill]){
+                    #if(dtor() in U)
+                        buck.key.dtor()
+                    #if(dtor() in T)
+                        buck.value.dtor()
+                }
+            }
+        }
+        size = del = bucketsFill = currBucketFill = 0
+        ctor()
+    }
+    
+    public ctor(zint initCap){
+        capacity = [InternalCall]nextPrime(initCap)
+        slots = new [capacity]
+        buckets = new [numBucketArrays = 2]
+        buckets[0] = new [currBucketCapacity = capacity]
+    }
+    public ctor(){
+        ctor(5)
+    }
+    
+    
+    Slot$[] slots
+    Bucket$[][] buckets
+    zint capacity, size, currBucketCapacity, currBucketFill
+    byte numBucketArrays, bucketsFill
+}

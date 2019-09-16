@@ -38,6 +38,7 @@ namespace LLVMCodeGenerator {
             strmul,
             strmul_ret,
             str_hash,
+            strequals,
             gc_init,
             gc_new,
             gcnewActorContext,
@@ -281,6 +282,16 @@ namespace LLVMCodeGenerator {
                     var retVal = ctx.Load(retPtr, irb);
                     ctx.ReturnValue(retVal, irb);
                     ctx.ResetInsertPoint(currBB, irb);
+                    break;
+                }
+                case strequals: {
+                    var size_t = ctx.GetSizeTType();
+                    var constCharPtr = ctx.GetVoidPtr();
+                    var boolTy = ctx.GetBoolType();
+                    ret = ctx.DeclareFunction(name, boolTy, new[] { constCharPtr, size_t, constCharPtr, size_t }, new[] { "str1Val", "str1Len", "str2Val", "str2Len" }, true);
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 0);
+                    ctx.AddParamAttributes(ret, new[] { "nocapture", "readonly" }, 2);
+                    ctx.AddFunctionAttributes(ret, new[] { "argmemonly" });
                     break;
                 }
                 case str_hash: {

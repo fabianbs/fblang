@@ -585,7 +585,7 @@ FB_INTERNAL(bool) setfileStreamPos(void *hFile, int64_t pos, StreamPos relativeT
 
 FB_INTERNAL(bool) isPrime(uint64_t numb) {
     static uint64_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
-    if (numb & 1)
+    if (!(numb & 1))
         return numb == 2;
 
     uint64_t end = (uint64_t)std::sqrt(numb) + 1;
@@ -603,21 +603,28 @@ FB_INTERNAL(bool) isPrime(uint64_t numb) {
 }
 
 inline bool isPrimeSZ(size_t numb) {
-    static size_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
-    if (numb & 1)
+    static const size_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
+    
+    if (!(numb & 1))
         return numb == 2;
 
     size_t end = (size_t)std::sqrt(numb) + 1;
 
     for (int i = 0; i < 20 && lowerPrimes[i] < end; ++i) {
-        if (numb % lowerPrimes[i] == 0)
+        if (numb % lowerPrimes[i] == 0) {
+            //printf("isPrimeSZ(%zu) = false", numb);
             return false;
+        }
+            
     }
 
     for (size_t i = 73; i < end; i += 2) {
-        if (numb % i == 0)
+        if (numb % i == 0) {
+            //printf("isPrimeSZ(%zu) = false", numb);
             return false;
+        }
     }
+    //printf("isPrimeSZ(%zu) = true", numb);
     return true;
 }
 

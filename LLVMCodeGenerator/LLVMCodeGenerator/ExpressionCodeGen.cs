@@ -255,6 +255,9 @@ namespace LLVMCodeGenerator {
                     else
                         return TryGetIndexerExpressionMemoryLocation(arrInd, out ret);
                 }
+                case CallExpression call: {
+                    return TryCallCodeGen(call.Position, call.Callee, call.ParentExpression, call.Arguments, out ret, call.IsCallVirt, true);
+                }
                 default: {
                     succ &= TryExpressionCodeGen(exp, out var val);
                     ret = ctx.DefineTypeInferredInitializedAlloca(fn, val, "tmp", irb, false);
@@ -323,6 +326,10 @@ namespace LLVMCodeGenerator {
         bool TryCastInternal(Position pos, IntPtr val, IType valTy, IType destTy, bool isLocallyAllocated, out IntPtr ret, bool throwOnError) {
             if (valTy == destTy && !(destTy is ClassType && isLocallyAllocated) || destTy.IsTop()) {
                 ret = val;
+                return true;
+            }
+            if (valTy == destTy.AsByRef()) {
+                ret = ctx.Load(val, irb);
                 return true;
             }
             if (destTy.IsPrimitive(PrimitiveName.String)) {
@@ -610,7 +617,7 @@ namespace LLVMCodeGenerator {
             foreach (var arg in args) {
                 succ &= TryExpressionCodeGen(arg, out var argEx);
                 var formalArg = intnl.Arguments[index];
-                succ &= TryCast(arg.Position, argEx, arg.ReturnType, formalArg, out argEx);
+                succ &= TryCast(arg.Position, argEx, arg.ReturnType.UnWrapAll(), formalArg, out argEx);
                 if (formalArg.Type.IsPrimitive(PrimitiveName.String)) {
                     llArgs.Add(ctx.ExtractValue(argEx, 0, irb));
                     llArgs.Add(ctx.ExtractValue(argEx, 1, irb));
@@ -872,7 +879,7 @@ namespace LLVMCodeGenerator {
                     else
                         ret = ctx.GetNullPtr();
                     return succ;
-                    
+
                 default:
                     ret = default;
                     return $"The operator {bo.Operator} cannot be applied to strings".Report(bo.Position, false);
@@ -1057,7 +1064,7 @@ namespace LLVMCodeGenerator {
             }
             return succ;
         }
-        protected bool TryCallCodeGen(Position pos, IMethod callee, IType parentTy, IntPtr par, IEnumerable<IntPtr> actualArgs, out IntPtr ret, bool isCallVirt) {
+        protected bool TryCallCodeGen(Position pos, IMethod callee, IType parentTy, IntPtr par, IEnumerable<IntPtr> actualArgs, out IntPtr ret, bool isCallVirt, bool isLValue = false) {
 
             bool succ = true;
             IntPtr fn;
@@ -1115,9 +1122,23 @@ namespace LLVMCodeGenerator {
             }
 
             ret = ctx.GetCall(fn, actualArgs.ToArray(), irb);
+            if (isLValue) {
+                if (!callee.ReturnType.IsByRef()) {
+                    if (succ &= gen.TryGetType(callee.ReturnType, out var retTy)) {
+                        var mem = ctx.DefineAlloca(fn, retTy, "");
+                        ctx.Store(mem, ret, irb);
+                        ret = mem;
+                    }
+                }
+            }
+            else {
+                if (callee.ReturnType.IsByRef()) {
+                    ret = ctx.Load(ret, irb);
+                }
+            }
             return succ;
         }
-        protected bool TryCallCodeGen(Position pos, IMethod callee, IType parentTy, IntPtr par, Span<IExpression> actualArgs, out IntPtr ret, bool isCallVirt) {
+        protected bool TryCallCodeGen(Position pos, IMethod callee, IType parentTy, IntPtr par, Span<IExpression> actualArgs, out IntPtr ret, bool isCallVirt, bool isLValue = false) {
             bool succ = true;
             if (callee.IsInternal())
                 return TryInternalCallCodeGen(callee, actualArgs, par, parentTy, out ret);
@@ -1194,6 +1215,21 @@ namespace LLVMCodeGenerator {
                 }
             }
             ret = ctx.GetCall(fn, args.AsArray(), irb);
+            if (isLValue) {
+                if (!callee.ReturnType.IsByRef()) {
+                    if (succ &= gen.TryGetType(callee.ReturnType, out var retTy)) {
+                        var mem = ctx.DefineAlloca(fn, retTy, "");
+                        ctx.Store(mem, ret, irb);
+                        ret = mem;
+                    }
+                }
+            }
+            else {
+                if (callee.ReturnType.IsByRef()) {
+                    ret = ctx.Load(ret, irb);
+                }
+            }
+
             return succ;
         }
         private IntPtr CreateStackallocSpan(Vector<IntPtr> elems, IntPtr spanTy, IntPtr itemTy) {
@@ -1304,7 +1340,7 @@ namespace LLVMCodeGenerator {
             return false;
         }
 
-        protected bool TryCallCodeGen(Position pos, IMethod callee, IExpression parent, Span<IExpression> actualArgs, out IntPtr ret, bool isCallVirt) {
+        protected bool TryCallCodeGen(Position pos, IMethod callee, IExpression parent, Span<IExpression> actualArgs, out IntPtr ret, bool isCallVirt, bool isLValue = false) {
             bool succ = true;
             IntPtr par;
             IType parentTy;
@@ -1318,7 +1354,7 @@ namespace LLVMCodeGenerator {
                 par = IntPtr.Zero;
             }
 
-            return succ & TryCallCodeGen(pos, callee, parentTy, par, actualArgs, out ret, isCallVirt);
+            return succ & TryCallCodeGen(pos, callee, parentTy, par, actualArgs, out ret, isCallVirt, isLValue);
         }
         protected internal virtual bool TryGetArrayLength(Position pos, IntPtr arr, IType arrTp, out IntPtr ret) {
 

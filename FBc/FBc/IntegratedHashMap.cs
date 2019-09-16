@@ -16,8 +16,8 @@ namespace FBc {
         readonly GenericTypeParameter T, U;
         private IntegratedHashMap(Module mod, IReadOnlyList<IGenericParameter> genArgs)
             : base(default, mod, "::HashMap", genArgs) {
-            T = (GenericTypeParameter) genArgs[0];
-            U = (GenericTypeParameter) genArgs[1];
+            U = (GenericTypeParameter) genArgs[0];
+            T = (GenericTypeParameter) genArgs[1];
         }
         private void InitializeInterface() {
             // operator[]: U -> T&
@@ -79,7 +79,7 @@ namespace FBc {
                 ) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin | Method.Specifier.SideEffectFree, NestedIn = Context });
 
             // clear:
-            Context.DefineMethod(new BasicMethod(default, "count", Visibility.Internal, PrimitiveType.Void, Array.Empty<IVariable>()
+            Context.DefineMethod(new BasicMethod(default, "clear", Visibility.Internal, PrimitiveType.Void, Array.Empty<IVariable>()
                 ) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin, NestedIn = Context });
 
             // Constructors: 
@@ -96,13 +96,13 @@ namespace FBc {
 
         private void InitializeMacros() {
             IMethod tryGetNext;
-            Context.DefineMethod(tryGetNext = new BasicMethod(default, "::tryGetNext", Visibility.Private, PrimitiveType.Bool, new[] {
-                new BasicVariable(default, PrimitiveType.SizeT.AsByRef(), Variable.Specifier.LocalVariable,"state",null),
+            Context.DefineMethod(tryGetNext = new BasicMethod(default, "tryGetNext", Visibility.Private, PrimitiveType.Bool, new[] {
+                new BasicVariable(default, PrimitiveType.SizeT.AsByRef(), Variable.Specifier.LocalVariable, "state", null),
                 new BasicVariable(default, U.AsByRef(), Variable.Specifier.LocalVariable,"ky",null),
                 new BasicVariable(default, T.AsByRef(), Variable.Specifier.LocalVariable,"val",null),
             }) { Specifiers = Method.Specifier.UniqueThis | Method.Specifier.Builtin | Method.Specifier.Readonly, NestedIn = Context });
             var forEach = new MacroFunction(default, "forEach",Visibility.Internal,Context, Dictionary.Empty<string,ExpressionParameter>(),null,new StatementParameter(default, "callBack"));
-            
+
             Context.DefineMacro(forEach);
             IVariable state, key, value;
             var _this = new ThisExpression(default, BuildType());
@@ -134,10 +134,10 @@ namespace FBc {
                 var valTy = new GenericTypeParameter(default, ttcx, "T");
                 ttcx.DefineType(valTy);
                 ttcx.DefineType(keyTy);
-                instance = new IntegratedHashMap(mod, new[] { valTy, keyTy }) {
+                instance = new IntegratedHashMap(mod, new[] { keyTy, valTy }) {
                     Context = ttcx,
                     Visibility = Visibility.Public,
-                    TypeSpecifiers = CompilerInfrastructure.Type.Specifier.NoInheritance
+                    TypeSpecifiers = CompilerInfrastructure.Type.Specifier.NoInheritance | CompilerInfrastructure.Type.Specifier.Builtin
                 };
                 ttcx.TypeTemplate = instance;
 
