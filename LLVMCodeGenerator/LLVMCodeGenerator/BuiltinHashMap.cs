@@ -154,6 +154,10 @@ namespace LLVMCodeGenerator {
                 new[]{ ty, ctx.GetPointerType(ctx.GetSizeTType()), ctx.GetPointerType(keyTy), ctx.GetPointerType(valTy) },
                 new[]{ "this", "state", "key", "value" },
                 false);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 0);
+            ctx.AddParamAttributes(fn, new[] { "nocapture" }, 1);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 2);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 3);
             var entry = new BasicBlock(ctx, "entry",fn);
             gen.methods.TryAdd(met, fn);
             using (ctx.PushIRBContext(entry, irb)) {
@@ -574,6 +578,9 @@ namespace LLVMCodeGenerator {
                 new[]{ ty, keyTy, ctx.GetSizeTType() },
                 new[]{ "this", "key", "hashCode" },
                 false);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 0);
+            ctx.AddReturnNotNullAttribute(fn);
+            ctx.AddFunctionAttributes(fn, new[] { "argmemonly", "readonly" });
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var thisptr = ctx.GetArgument(fn, 0);
