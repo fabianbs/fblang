@@ -259,6 +259,38 @@ public static unsafe class NativeManagedContext {
             addReturnNotNullAttribute(Instance, fn);
         }
         [DllImport(@"LLVMInterface.dll")]
+        private static extern void addReturnDereferenceableAttribute (IntPtr ctx, IntPtr fn, ulong numBytesOrDeduce);
+        public static void AddReturnDereferenceableAttribute (IntPtr ctx, IntPtr fn, ulong numBytesOrDeduce) {
+            addReturnDereferenceableAttribute(ctx, fn, numBytesOrDeduce);
+        }
+        public void AddReturnDereferenceableAttribute (IntPtr fn, ulong numBytesOrDeduce) {
+            addReturnDereferenceableAttribute(Instance, fn, numBytesOrDeduce);
+        }
+        [DllImport(@"LLVMInterface.dll")]
+        private static extern bool addParamDereferenceableAttribute (IntPtr ctx, IntPtr fn, uint paramIdx, ulong numBytesOrDeduce);
+        public static bool AddParamDereferenceableAttribute (IntPtr ctx, IntPtr fn, uint paramIdx, ulong numBytesOrDeduce) {
+            return addParamDereferenceableAttribute(ctx, fn, paramIdx, numBytesOrDeduce);
+        }
+        public bool AddParamDereferenceableAttribute (IntPtr fn, uint paramIdx, ulong numBytesOrDeduce) {
+            return addParamDereferenceableAttribute(Instance, fn, paramIdx, numBytesOrDeduce);
+        }
+        [DllImport(@"LLVMInterface.dll")]
+        private static extern void addReturnDereferenceableOrNullAttribute (IntPtr ctx, IntPtr fn, ulong numBytesOrDeduce);
+        public static void AddReturnDereferenceableOrNullAttribute (IntPtr ctx, IntPtr fn, ulong numBytesOrDeduce) {
+            addReturnDereferenceableOrNullAttribute(ctx, fn, numBytesOrDeduce);
+        }
+        public void AddReturnDereferenceableOrNullAttribute (IntPtr fn, ulong numBytesOrDeduce) {
+            addReturnDereferenceableOrNullAttribute(Instance, fn, numBytesOrDeduce);
+        }
+        [DllImport(@"LLVMInterface.dll")]
+        private static extern bool addParamDereferenceableOrNullAttribute (IntPtr ctx, IntPtr fn, uint paramIdx, ulong numBytesOrDeduce);
+        public static bool AddParamDereferenceableOrNullAttribute (IntPtr ctx, IntPtr fn, uint paramIdx, ulong numBytesOrDeduce) {
+            return addParamDereferenceableOrNullAttribute(ctx, fn, paramIdx, numBytesOrDeduce);
+        }
+        public bool AddParamDereferenceableOrNullAttribute (IntPtr fn, uint paramIdx, ulong numBytesOrDeduce) {
+            return addParamDereferenceableOrNullAttribute(Instance, fn, paramIdx, numBytesOrDeduce);
+        }
+        [DllImport(@"LLVMInterface.dll")]
         private static extern IntPtr declareMallocFunction (IntPtr ctx, [MarshalAs(UnmanagedType.LPUTF8Str)]string name, IntPtr[] argTys, uint argc, bool resultNotNull);
         public static IntPtr DeclareMallocFunction (IntPtr ctx, string name, IntPtr[] argTys, bool resultNotNull) {
             return declareMallocFunction(ctx, name, argTys, (uint)argTys.Length, resultNotNull);

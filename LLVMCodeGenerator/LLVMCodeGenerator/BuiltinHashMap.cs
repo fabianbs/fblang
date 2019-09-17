@@ -1,4 +1,11 @@
-﻿using CompilerInfrastructure;
+﻿/******************************************************************************
+ * Copyright (c) 2019 Fabian Schiebel.
+ * All rights reserved. This program and the accompanying materials are made
+ * available under the terms of LICENSE.txt.
+ *
+ *****************************************************************************/
+
+using CompilerInfrastructure;
 using CompilerInfrastructure.Structure;
 using CompilerInfrastructure.Structure.Types;
 using System;
@@ -81,9 +88,21 @@ namespace LLVMCodeGenerator {
                     ImplementBuiltinHashMapInsert(met, tp, ty, keyTp, keyTy, valTy, ensureCapacity, insertInternal, getHashCode);
                     return gen.methods[met];
                 }
+                case "tryGetValue": {
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    ImplementBuiltinHashMapTryGetValue(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
+                    return gen.methods[met];
+                }
+                case "getOrElse": {
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    ImplementBuiltinHashMapGetOrElse(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
+                    return gen.methods[met];
+                }
             }
             throw new NotImplementedException($"The builtin hashmap function {met.Signature} is not implemented yet");
         }
+
+
         internal bool TryGetBuiltinHashMap(IType hmTy, IType keyTy, IType valTy, out IntPtr ret) {
 
             var hashMapTy = ctx.GetStruct(hmTy.Signature.ToString());
@@ -146,6 +165,75 @@ namespace LLVMCodeGenerator {
         internal bool TryGetMethod(IMethod met, out IntPtr ret) {
             ret = methods[met];
             return true;
+        }
+        private void ImplementBuiltinHashMapGetOrElse(IMethod met, IType tp, IntPtr ty, IType keyTp, IntPtr keyTy, IntPtr valTy, IntPtr search, IMethod getHashCode) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(DefaultNameMangler.Instance.MangleFunctionName(met),
+                valTy,
+                new[]{ ty, keyTy, valTy },
+                new[]{ "this", "key", "orElse" },
+                false);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 0);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            gen.methods.TryAdd(met, fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                var ky = ctx.GetArgument(fn, 1);
+                var orElse = ctx.GetArgument(fn, 2);
+
+                var hashCode = GetHashCodeFrom(getHashCode, keyTp, ky, irb, fn);
+
+                var slotPtr = ctx.GetCall(search, new[]{ thisptr, ky, hashCode}, irb);
+                var state = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 2u}, irb);
+                var isFull = ctx.CompareOp(state, ctx.GetInt8(1), (sbyte)'!', true, true, irb);
+                var full = new BasicBlock(ctx, "full", fn);
+                var notFull = new BasicBlock(ctx, "notFull", fn);
+                ctx.ConditionalBranch(full, notFull, isFull, irb);
+
+                ctx.ResetInsertPoint(notFull, irb);
+                ctx.ReturnValue(orElse, irb);
+
+                ctx.ResetInsertPoint(full, irb);
+                var buckets = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u},irb);
+                var ret = ctx.LoadField(buckets, new[]{ ctx.LoadFieldConstIdx(slotPtr, new[] { 0u, 0u}, irb), ctx.GetInt32(1)}, irb);
+                ctx.ReturnValue(ret, irb);
+            }
+        }
+
+        private void ImplementBuiltinHashMapTryGetValue(IMethod met, IType tp, IntPtr ty, IType keyTp, IntPtr keyTy, IntPtr valTy, IntPtr search, IMethod getHashCode) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(DefaultNameMangler.Instance.MangleFunctionName(met),
+                ctx.GetBoolType(),
+                new[]{ ty, keyTy, ctx.GetPointerType(valTy) },
+                new[]{ "this", "key", "out_value" },
+                false);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 0);
+            ctx.AddParamAttributes(fn, new[] { "nocapture", "writeonly", "notnull" }, 2);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            gen.methods.TryAdd(met, fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                var ky = ctx.GetArgument(fn, 1);
+                var valPtr = ctx.GetArgument(fn, 2);
+
+                var hashCode = GetHashCodeFrom(getHashCode, keyTp, ky, irb, fn);
+
+                var slotPtr = ctx.GetCall(search, new[]{ thisptr, ky, hashCode}, irb);
+                var state = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 2u}, irb);
+                var isFull = ctx.CompareOp(state, ctx.GetInt8(1), (sbyte)'!', true, true, irb);
+                var full = new BasicBlock(ctx, "full", fn);
+                var notFull = new BasicBlock(ctx, "notFull", fn);
+                ctx.ConditionalBranch(full, notFull, isFull, irb);
+
+                ctx.ResetInsertPoint(notFull, irb);
+                ctx.ReturnValue(ctx.False(), irb);
+
+                ctx.ResetInsertPoint(full, irb);
+                var buckets = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u},irb);
+                var ret = ctx.LoadField(buckets, new[]{ ctx.LoadFieldConstIdx(slotPtr, new[] { 0u, 0u}, irb), ctx.GetInt32(1)}, irb);
+                ctx.Store(valPtr, ret, irb);
+                ctx.ReturnValue(ctx.True(), irb);
+            }
         }
         private IntPtr ImplementBuiltinHashMapTryGetNext(IMethod met, IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy) {
             var irb = IntPtr.Zero;
@@ -542,7 +630,7 @@ namespace LLVMCodeGenerator {
         private IntPtr CompareEQ(IType tp, IntPtr obj1, IntPtr obj2, IntPtr irb) {
             // operator==
             // TODO handle nullptrs
-            
+
             if (tp.IsString()) {
                 // handle string equality
                 var op = InstructionGenerator.GetOrCreateInternalFunction(ctx, InstructionGenerator.InternalFunction.strequals);
@@ -571,7 +659,7 @@ namespace LLVMCodeGenerator {
         }
         private IntPtr ImplementBuiltinHashMapSearch(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IType keyTp) {
             var irb = IntPtr.Zero;
-            
+
             var (slotTy, bucketTy) = slotBucketType[tp];
             var fn = ctx.DeclareFunction(tp.FullName()+".search",
                 ctx.GetPointerType(slotTy),

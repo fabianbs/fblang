@@ -6,8 +6,8 @@ global main(){
     map.insert("fünf", 5, false)
     map["sechs"] = 6
     
-    //cprint("map[\"drei\"] = ")
-    //cprintln(map["drei"])
+    cprint("map.getOrElse(\"drei\", -1) = ")
+    cprintln(map.getOrElse("drei", -1))
     
     cprint("map[\"fünf\"] = ")
     cprintln(map["fünf"])

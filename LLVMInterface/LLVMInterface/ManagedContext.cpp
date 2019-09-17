@@ -44,7 +44,7 @@
 #include "StrMultiConcatOptPass.h"
 #include "ManagedContext.h"
 
-ManagedContext::ManagedContext(const char *name, const char* filename) {
+ManagedContext::ManagedContext(const char *name, const char *filename) {
     context = new llvm::LLVMContext();
     M = new llvm::Module(name, *context);
     M->setSourceFileName(filename);
@@ -111,7 +111,7 @@ bool bringToCommonSupertype(ManagedContext *ctx, llvm::Value *&lhs, llvm::Value 
     return lhs->getType()->isFloatingPointTy();
 }
 
-ManagedContext *CreateManagedContext(const char *name, const char* filename) {
+ManagedContext *CreateManagedContext(const char *name, const char *filename) {
 
     return new ManagedContext(name, filename);
 }
@@ -375,6 +375,38 @@ EXTERN_API(void) addReturnNoAliasAttribute(ManagedContext *ctx, llvm::Function *
 
 EXTERN_API(void) addReturnNotNullAttribute(ManagedContext *ctx, llvm::Function *fn) {
     fn->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::get(*ctx->context, llvm::Attribute::NonNull));
+}
+
+uint64_t deduceNumDerefBytes(llvm::Module &M, llvm::Type *pointerTy) {
+    if (auto ptrTy = llvm::dyn_cast<llvm::PointerType>(pointerTy)) {
+        auto pointeeTy = ptrTy->getPointerElementType();
+        return M.getDataLayout().getTypeAllocSize(pointeeTy);
+    }
+    return 0;
+}
+
+EXTERN_API(void) addReturnDereferenceableAttribute(ManagedContext *ctx, llvm::Function *fn, uint64_t numBytesOrDeduce) {
+    fn->addDereferenceableAttr(llvm::AttributeList::ReturnIndex, numBytesOrDeduce ? numBytesOrDeduce : deduceNumDerefBytes(*ctx->M, fn->getReturnType()));
+}
+
+EXTERN_API(void) addReturnDereferenceableOrNullAttribute(ManagedContext *ctx, llvm::Function *fn, uint64_t numBytesOrDeduce) {
+    fn->addDereferenceableOrNullAttr(llvm::AttributeList::ReturnIndex, numBytesOrDeduce ? numBytesOrDeduce : deduceNumDerefBytes(*ctx->M, fn->getReturnType()));
+}
+
+EXTERN_API(bool) addParamDereferenceableAttribute(ManagedContext *ctx, llvm::Function *fn, uint32_t paramIdx, uint64_t numBytesOrDeduce) {
+    if (paramIdx < fn->arg_size()) {
+        fn->addDereferenceableParamAttr(paramIdx, numBytesOrDeduce ? numBytesOrDeduce : deduceNumDerefBytes(*ctx->M, fn->getFunctionType()->getParamType(paramIdx)));
+        return true;
+    }
+    return false;
+}
+
+EXTERN_API(bool) addParamDereferenceableOrNullAttribute(ManagedContext *ctx, llvm::Function *fn, uint32_t paramIdx, uint64_t numBytesOrDeduce) {
+    if (paramIdx < fn->arg_size()) {
+        fn->addDereferenceableOrNullParamAttr(paramIdx, numBytesOrDeduce ? numBytesOrDeduce : deduceNumDerefBytes(*ctx->M, fn->getFunctionType()->getParamType(paramIdx)));
+        return true;
+    }
+    return false;
 }
 
 
@@ -1378,7 +1410,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
         builder.MergeFunctions = true;
         //builder.SizeLevel = 0;
         //builder.NewGVN = it == 0;
-        if (it == 0) {
+        if (it < 2) {
             builder.Inliner = llvm::createFunctionInliningPass(optLvl, 0, false);
         }
 
@@ -1436,13 +1468,13 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                     else if (it != maxIterations - 1)
                         pm.add(llvm::createLoadStoreVectorizerPass());
                 }
-                
+
             }
-            if (it < 2) {
-                if (builder.OptLevel > 2) {
-                    pm.add(ctx->arp = new AllocationRemovingPass("gc_new"));
-                }
+            //if (it < 2 || it == 5) {
+            if (builder.OptLevel > 2) {
+                pm.add(ctx->arp = new AllocationRemovingPass("gc_new"));
             }
+            //}
             pm.add(llvm::createStraightLineStrengthReducePass());
             pm.add(llvm::createPruneEHPass());
             pm.add(llvm::createArgumentPromotionPass());

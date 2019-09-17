@@ -79,6 +79,10 @@ EXTERN_API(void) addFunctionAttributes(ManagedContext* ctx, llvm::Function* fn, 
 EXTERN_API(void) addParamAttributes(ManagedContext* ctx, llvm::Function* fn, const char** atts, uint32_t attc, uint32_t paramIdx);
 EXTERN_API(void) addReturnNoAliasAttribute(ManagedContext* ctx, llvm::Function* fn);
 EXTERN_API(void) addReturnNotNullAttribute(ManagedContext* ctx, llvm::Function* fn);
+EXTERN_API(void) addReturnDereferenceableAttribute(ManagedContext *ctx, llvm::Function *fn, uint64_t numBytesOrDeduce);
+EXTERN_API(bool) addParamDereferenceableAttribute(ManagedContext *ctx, llvm::Function *fn, uint32_t paramIdx, uint64_t numBytesOrDeduce);
+EXTERN_API(void) addReturnDereferenceableOrNullAttribute(ManagedContext *ctx, llvm::Function *fn, uint64_t numBytesOrDeduce);
+EXTERN_API(bool) addParamDereferenceableOrNullAttribute(ManagedContext *ctx, llvm::Function *fn, uint32_t paramIdx, uint64_t numBytesOrDeduce);
 EXTERN_API(llvm::Function)* declareMallocFunction(ManagedContext* ctx, const char* name, llvm::Type* const* argTys, uint32_t argc, bool resultNotNull);
 EXTERN_API(llvm::Type)* getFunctionPtrTypeFromFunction(ManagedContext* ctx, llvm::Function* fn);
 EXTERN_API(llvm::Type)* getFunctionPtrType(ManagedContext* ctx, llvm::Type* retTy, llvm::Type** argTys, uint32_t argc);
