@@ -11,5 +11,10 @@ namespace CompilerInfrastructure.Utils {
             }
             return false;
         }
+        public unsafe static long GetAddress(this object o) {
+            TypedReference tr = __makeref(o);
+            IntPtr ptr = **(IntPtr**)(&tr);
+            return ptr.ToInt64();
+        }
     }
 }

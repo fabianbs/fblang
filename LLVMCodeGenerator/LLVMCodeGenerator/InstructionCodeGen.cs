@@ -96,7 +96,8 @@ namespace LLVMCodeGenerator {
         }
         protected readonly ManagedContext ctx;
         protected readonly LLVMCodeGenerator gen;
-        protected readonly Dictionary<IVariable, IntPtr> variables = new Dictionary<IVariable, IntPtr>();
+        //protected readonly Dictionary<IVariable, IntPtr> variables = new Dictionary<IVariable, IntPtr>();
+        protected readonly StackedDictionary<IVariable, IntPtr> variables = new StackedDictionary<IVariable, IntPtr>();
         protected readonly Vector <Vector<IntPtr>> locallyDefinedVariables = new Vector<Vector<IntPtr>>();
         protected readonly Dictionary<IStatement, RedirectTarget> breakableStmts = new Dictionary<IStatement, RedirectTarget>();
         protected readonly IntPtr fn;
@@ -204,18 +205,21 @@ namespace LLVMCodeGenerator {
                     return TryReturnCodeGen(retStmt);
                 }
                 case BlockStatement block: {
-                    locallyDefinedVariables.PushBack(default);
-                    foreach (var nested in block.Statements) {
-                        succ &= TryInstructionCodeGen(nested);
-                        if (ctx.CurrentBlockIsTerminated(irb))
-                            break;
-                    }
-                    if (!ctx.CurrentBlockIsTerminated(irb)) {
-                        foreach (var alloca in locallyDefinedVariables.Back()) {
-                            ctx.EndLifeTime(alloca, irb);
+                    using (variables.PushFrame()) {
+                        locallyDefinedVariables.PushBack(default);
+
+                        foreach (var nested in block.Statements) {
+                            succ &= TryInstructionCodeGen(nested);
+                            if (ctx.CurrentBlockIsTerminated(irb))
+                                break;
                         }
+                        if (!ctx.CurrentBlockIsTerminated(irb)) {
+                            foreach (var alloca in locallyDefinedVariables.Back()) {
+                                ctx.EndLifeTime(alloca, irb);
+                            }
+                        }
+                        locallyDefinedVariables.PopBack();
                     }
-                    locallyDefinedVariables.PopBack();
                     return succ;
 
                 }

@@ -98,6 +98,11 @@ namespace LLVMCodeGenerator {
                     ImplementBuiltinHashMapGetOrElse(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
                     return gen.methods[met];
                 }
+                case "remove": {
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    ImplementBuiltinHashMapRemove(met, tp, ty, keyTp, keyTy, search, getHashCode);
+                    return gen.methods[met];
+                }
             }
             throw new NotImplementedException($"The builtin hashmap function {met.Signature} is not implemented yet");
         }
@@ -166,6 +171,58 @@ namespace LLVMCodeGenerator {
             ret = methods[met];
             return true;
         }
+        private void ImplementBuiltinHashMapRemove(IMethod met, IType tp, IntPtr ty, IType keyTp, IntPtr keyTy, IntPtr search, IMethod getHashCode) {
+            var irb = IntPtr.Zero;
+            var fn = ctx.DeclareFunction(DefaultNameMangler.Instance.MangleFunctionName(met),
+                ctx.GetBoolType(),
+                new[]{ ty, keyTy },
+                new[]{ "this", "key" },
+                false);
+            ctx.AddParamAttributes(fn, new[] { "nocapture" }, 0);
+            var entry = new BasicBlock(ctx, "entry",fn);
+            gen.methods.TryAdd(met, fn);
+            using (ctx.PushIRBContext(entry, irb)) {
+                var thisptr = ctx.GetArgument(fn, 0);
+                var key = ctx.GetArgument(fn, 1);
+                var hashCode = GetHashCodeFrom(getHashCode, keyTp, key, irb, fn);
+
+                var slotPtr = ctx.GetCall(search, new[]{ thisptr, key, hashCode }, irb);
+                var state = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 2u}, irb);
+                var isFull = ctx.CompareOp(state, ctx.GetInt8(1), (sbyte)'!', true, true, irb);
+                var full = new BasicBlock(ctx, "full", fn);
+                var notFull = new BasicBlock(ctx, "notFull", fn);
+                ctx.ConditionalBranch(full, notFull, isFull, irb);
+
+                ctx.ResetInsertPoint(notFull, irb);
+                ctx.ReturnValue(ctx.False(), irb);
+
+                ctx.ResetInsertPoint(full, irb);
+                
+                var del = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 4u }, irb);
+                var delPlus1 = ctx.ArithmeticBinOp(del, ctx.GetIntSZ(1),(sbyte)'+', true, irb);
+                ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 4u }, delPlus1, irb);
+                var size = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 3u }, irb);
+                var sizeMinus1 = ctx.ArithmeticBinOp(size, ctx.GetIntSZ(1), (sbyte)'-', true, irb);
+                ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 3u }, sizeMinus1, irb);
+
+                var buckets = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 1u }, irb);
+                var lastKey = ctx.LoadField(buckets, new[]{ sizeMinus1, ctx.GetInt32(0) }, irb);
+                var lastKeyHashCode = GetHashCodeFrom(getHashCode, keyTp, lastKey, irb, fn);
+                var lastSlotPtr = ctx.GetCall(search, new[]{ thisptr, lastKey, lastKeyHashCode }, irb);
+
+                var currIndex = ctx.LoadFieldConstIdx(slotPtr, new[]{ 0u, 0u }, irb);
+                ctx.StoreFieldConstIdx(lastSlotPtr, new[] { 0u, 0u }, currIndex, irb);
+                var lastBucket = ctx.LoadField(buckets, new[]{ sizeMinus1 }, irb);
+                ctx.StoreField(buckets, new[] { currIndex }, lastBucket, irb);
+                var (_, bucketTy) = slotBucketType[tp];
+                ctx.StoreField(buckets, new[] { sizeMinus1 }, ctx.GetAllZeroValue(bucketTy), irb);
+
+                ctx.StoreFieldConstIdx(slotPtr, new[] { 0u, 2u }, ctx.GetInt8(2), irb);
+
+                ctx.ReturnValue(ctx.True(), irb);
+            }
+        }
+
         private void ImplementBuiltinHashMapGetOrElse(IMethod met, IType tp, IntPtr ty, IType keyTp, IntPtr keyTy, IntPtr valTy, IntPtr search, IMethod getHashCode) {
             var irb = IntPtr.Zero;
             var fn = ctx.DeclareFunction(DefaultNameMangler.Instance.MangleFunctionName(met),

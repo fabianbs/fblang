@@ -194,6 +194,7 @@ namespace LLVMCodeGenerator {
         }
         protected virtual bool TryGetMemoryLocation(IExpression exp, out IntPtr ret) {
             bool succ = true;
+            
             switch (exp) {
                 case VariableAccessExpression vr: {
                     if (variables.TryGetValue(vr.Variable, out ret)) {// local variable

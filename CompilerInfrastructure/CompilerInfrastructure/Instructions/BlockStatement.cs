@@ -19,7 +19,7 @@ using CompilerInfrastructure.Utils;
 namespace CompilerInfrastructure.Instructions {
     [Serializable]
     public class BlockStatement : StatementImpl, IRangeScope {
-        
+
         readonly IStatement[] instructions;
         public BlockStatement(Position pos, IStatement[] stmts, IContext innerScope) : base(pos) {
             instructions = stmts ?? Array.Empty<IStatement>();
@@ -47,14 +47,19 @@ namespace CompilerInfrastructure.Instructions {
 
         protected override bool TryReplaceMacroParametersImpl(MacroCallParameters args, out IStatement stmt) {
             bool changed = false;
-            IStatement[] nwInst = instructions.Select(x => {
-                if (x.TryReplaceMacroParameters(args, out var nwStmt)) {
-                    changed = true;
-                    return nwStmt;
-                }
-                else
-                    return x;
-            }).ToArray();
+            IStatement[] nwInst;
+
+            using (args.contextStack.PushFrame(args.contextStack.Peek().NewScope(true))) {
+                nwInst = instructions.Select(x => {
+                    if (x.TryReplaceMacroParameters(args, out var nwStmt)) {
+                        changed = true;
+                        return nwStmt;
+                    }
+                    else
+                        return x;
+
+                }).ToArray();
+            }
             if (changed) {
                 stmt = new BlockStatement(Position.Concat(args.Position), nwInst, Context);
 
