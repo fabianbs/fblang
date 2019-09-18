@@ -130,7 +130,7 @@ namespace FBc {
                 new VariableAccessExpression(default, null, value)
             }), new StatementParameterAccess(default, forEach.CapturedStatement)));
 
-            forEach.Body.Instruction = new BlockStatement(default, body.AsArray(), Context);
+            forEach.Body.Instruction = new BlockStatement(default, body.AsArray(), Context.NewScope(CompilerInfrastructure.Context.DefiningRules.Variables));
 
         }
 
