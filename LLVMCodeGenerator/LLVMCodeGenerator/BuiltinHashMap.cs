@@ -18,9 +18,17 @@ using CompilerInfrastructure.Contexts;
 
 namespace LLVMCodeGenerator {
     class BuiltinHashMap {
+        enum HelperFunction {
+            rehash,
+            search,
+            rehashInsert,
+            ensureCapacity,
+            insertInternal
+        }
         LLVMCodeGenerator gen;
         readonly Dictionary<IType, (IntPtr, IntPtr)> slotBucketType= new Dictionary<IType, (IntPtr, IntPtr)>();
         readonly LazyDictionary<IMethod, IntPtr> methods;
+        readonly Dictionary<(IType, HelperFunction), IntPtr> definedFunctions = new Dictionary<(IType, HelperFunction), IntPtr>();
         public BuiltinHashMap(LLVMCodeGenerator gen) {
             this.gen = gen;
             methods = new LazyDictionary<IMethod, IntPtr>(GetMethod);
@@ -31,7 +39,7 @@ namespace LLVMCodeGenerator {
                 return ret;
 
             var tp = (met.NestedIn as ITypeContext).Type;
-
+            
             var keyTp = (IType)tp.Signature.GenericActualArguments.First();
             var valTp = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
             bool succ = gen.TryGetType(tp.AsReferenceType(), out var ty) & gen.TryGetType(keyTp, out var keyTy) & gen.TryGetType(valTp, out var valTy);
@@ -197,7 +205,7 @@ namespace LLVMCodeGenerator {
                 ctx.ReturnValue(ctx.False(), irb);
 
                 ctx.ResetInsertPoint(full, irb);
-                
+
                 var del = ctx.LoadFieldConstIdx(thisptr, new[]{ 0u, 4u }, irb);
                 var delPlus1 = ctx.ArithmeticBinOp(del, ctx.GetIntSZ(1),(sbyte)'+', true, irb);
                 ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 4u }, delPlus1, irb);
@@ -338,6 +346,8 @@ namespace LLVMCodeGenerator {
         }
 
         private IntPtr RehashInsert(IType tp, IntPtr ty, IntPtr keyTy, IntPtr search) {
+            if (definedFunctions.TryGetValue((tp, HelperFunction.rehashInsert), out var ret))
+                return ret;
             var irb = IntPtr.Zero;
             var fn = ctx.DeclareFunction(tp.FullName()+".rehashInsert",
                 ctx.GetVoidType(),
@@ -345,6 +355,7 @@ namespace LLVMCodeGenerator {
                 new[]{ "this", "key", "hashCode", "valueIndex" },
                 false);
             var entry = new BasicBlock(ctx, "entry",fn);
+            definedFunctions.TryAdd((tp, HelperFunction.rehashInsert), fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var thisptr = ctx.GetArgument(fn, 0);
                 var key = ctx.GetArgument(fn, 1);
@@ -360,12 +371,15 @@ namespace LLVMCodeGenerator {
             return fn;
         }
         private IntPtr ImplementBuiltinHashMapRehash(IType tp, IntPtr ty, IntPtr rehashInsert) {
+            if (definedFunctions.TryGetValue((tp, HelperFunction.rehash), out var ret))
+                return ret;
             var irb = IntPtr.Zero;
             var fn = ctx.DeclareFunction(tp.FullName()+".rehash",
                 ctx.GetVoidType(),
                 new[]{ ty, ctx.GetBoolType() },
                 new[]{ "this", "increaseCapacity" },
                 false);
+            definedFunctions.TryAdd((tp, HelperFunction.rehash), fn);
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var thisptr = ctx.GetArgument(fn, 0);
@@ -380,6 +394,7 @@ namespace LLVMCodeGenerator {
                 var nextPrime = InstructionGenerator.GetOrCreateInternalFunction(ctx, InstructionGenerator.InternalFunction.nextPrime);
                 var doubleCap = ctx.ShiftOp(oldCap, ctx.GetIntSZ(1), true, true, irb);
                 var doubleCapPrime = ctx.GetCall(nextPrime, new[]{ doubleCap }, irb);
+                ctx.StoreFieldConstIdx(thisptr, new[] { 0u, 2u }, doubleCapPrime, irb);
                 ctx.Branch(doRehash, irb);
 
                 ctx.ResetInsertPoint(doRehash, irb);
@@ -428,7 +443,7 @@ namespace LLVMCodeGenerator {
                 ctx.ResetInsertPoint(loopCond, irb);
                 var iPlus1 = ctx.ArithmeticBinOp(i, ctx.GetIntSZ(1),(sbyte)'+', true, irb);
                 i.AddMergePoint(iPlus1, loopCond);
-                var nextIteration = ctx.CompareOp(iPlus1, newCap, (sbyte)'<',false, true, irb);
+                var nextIteration = ctx.CompareOp(iPlus1, oldCap, (sbyte)'<',false, true, irb);
                 ctx.ConditionalBranch(loop, loopEnd, nextIteration, irb);
 
                 ctx.ResetInsertPoint(loopEnd, irb);
@@ -440,12 +455,15 @@ namespace LLVMCodeGenerator {
             return fn;
         }
         private IntPtr ImplementBuiltinHashMapEnsureCapacity(IType tp, IntPtr ty, IntPtr rehash) {
+            if (definedFunctions.TryGetValue((tp, HelperFunction.ensureCapacity), out var ret))
+                return ret;
             var irb = IntPtr.Zero;
             var fn = ctx.DeclareFunction(tp.FullName()+".ensureCapacity",
                 ctx.GetVoidType(),
                 new[]{ ty},
                 new[]{ "this" },
                 false);
+            definedFunctions.TryAdd((tp, HelperFunction.ensureCapacity), fn);
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var thisptr = ctx.GetArgument(fn, 0);
@@ -479,6 +497,8 @@ namespace LLVMCodeGenerator {
         }
 
         private IntPtr ImplementBuiltinHashMapInsertInternal(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IntPtr search) {
+            if (definedFunctions.TryGetValue((tp, HelperFunction.insertInternal), out var ret))
+                return ret;
             var irb = IntPtr.Zero;
             var retTy = ctx.GetUnnamedStruct(new[]{ctx.GetPointerType(valTy), ctx.GetBoolType() });
             var fn = ctx.DeclareFunction(tp.FullName()+".insertInternal",
@@ -486,6 +506,7 @@ namespace LLVMCodeGenerator {
                 new[]{ ty, keyTy, valTy, ctx.GetSizeTType(), ctx.GetBoolType() },
                 new[]{ "this", "key", "value", "hashCode", "replace" },
                 false);
+            definedFunctions.TryAdd((tp, HelperFunction.insertInternal), fn);
             var entry = new BasicBlock(ctx, "entry",fn);
             using (ctx.PushIRBContext(entry, irb)) {
                 var thisptr = ctx.GetArgument(fn,0);
@@ -715,14 +736,17 @@ namespace LLVMCodeGenerator {
             }
         }
         private IntPtr ImplementBuiltinHashMapSearch(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IType keyTp) {
+            if (definedFunctions.TryGetValue((tp, HelperFunction.search), out var ret))
+                return ret;
             var irb = IntPtr.Zero;
 
-            var (slotTy, bucketTy) = slotBucketType[tp];
+            var (slotTy, _) = slotBucketType[tp];
             var fn = ctx.DeclareFunction(tp.FullName()+".search",
                 ctx.GetPointerType(slotTy),
                 new[]{ ty, keyTy, ctx.GetSizeTType() },
                 new[]{ "this", "key", "hashCode" },
                 false);
+            definedFunctions.TryAdd((tp, HelperFunction.search), fn);
             ctx.AddParamAttributes(fn, new[] { "nocapture", "readonly" }, 0);
             ctx.AddReturnNotNullAttribute(fn);
             ctx.AddFunctionAttributes(fn, new[] { "argmemonly", "readonly" });
