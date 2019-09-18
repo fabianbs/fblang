@@ -197,7 +197,7 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;LLVMINTERFACE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions);LLVM_Interface_Export_Symbols</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Program Files\LLVM\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\Besitzer\Programme\UTF8-cpp\source;C:\Program Files\LLVM\install\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
