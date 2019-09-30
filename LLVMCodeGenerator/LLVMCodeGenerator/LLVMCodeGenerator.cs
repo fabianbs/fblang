@@ -176,7 +176,7 @@ namespace LLVMCodeGenerator {
         protected override bool DeclareMethodImpl(IMethod met) {
             if (met.IsInternal())
                 return true;
-            return TryGetMethod(met, out _);
+            return TryGetMethod(met, out _, default);
         }
 
         protected override bool DeclareMethodTemplateImpl(IMethodTemplate<IMethod> met) {
@@ -228,7 +228,7 @@ namespace LLVMCodeGenerator {
                             succ = $"The method {met.Signature} cannot override {met.OverrideTarget}, since it is only a method-template".Report(met.Position, false);
                         }
                         else {
-                            succ &= TryGetMethod(met, out var llMet);
+                            succ &= TryGetMethod(met, out var llMet, met.Position);
                             uint slot = GetVirtualMethodSlot(ovMet, IntPtr.Zero);
                             vtableVal[slot] = llMet;
                             succ &= TryGetFunctionPtrType(met, out vtableTys[slot]);
@@ -237,7 +237,7 @@ namespace LLVMCodeGenerator {
                         }
                     }
                     else {
-                        succ &= TryGetMethod(met, out var llMet);
+                        succ &= TryGetMethod(met, out var llMet, met.Position);
                         //virtualMethodSlot[met] = vtableVal.Length;
                         SetVirtualMethodSlot(met, vtableVal.Length);
                         vtableVal.Add(llMet);
@@ -671,7 +671,7 @@ namespace LLVMCodeGenerator {
             //TODO method-implementation
             if (met.IsInternal() || met.IsExternal() || met.IsImport())
                 return true;
-            if (!TryGetMethod(met, out var fn))
+            if (!TryGetMethod(met, out var fn, met.Position))
                 return false;
 
             if (met.Body.Instruction != null) {
@@ -728,7 +728,7 @@ namespace LLVMCodeGenerator {
             return true;
         }
         public bool TryGetFunctionPtrType(IMethod met, out IntPtr ret) {
-            if (!met.IsAbstract() && TryGetMethod(met, out var fn)) {
+            if (!met.IsAbstract() && TryGetMethod(met, out var fn, met.Position)) {
                 ret = ctx.GetFunctionPtrTypeFromFunction(fn);
                 return true;
             }
@@ -825,21 +825,21 @@ namespace LLVMCodeGenerator {
 
             if (met is BasicMethod bm)
                 bm.Visibility = Visibility.Public;
-            return TryGetMethodInternal(met, out ret);
+            return TryGetMethodInternal(met, out ret, default);
         }
 
 
 
-        public bool TryGetMethod(IMethod met, out IntPtr ret) {
+        public bool TryGetMethod(IMethod met, out IntPtr ret, Position pos) {
             if (methods.TryGetValue(met, out ret)) {
                 return true;
             }
             if (met.Signature.Name == "main" && met.IsStatic() && met.NestedIn is Module) {
                 return TryGetMainMethod(met, out ret);
             }
-            return TryGetMethodInternal(met, out ret);
+            return TryGetMethodInternal(met, out ret, pos);
         }
-        bool TryGetMethodInternal(IMethod met, out IntPtr ret) {
+        bool TryGetMethodInternal(IMethod met, out IntPtr ret, Position pos) {
             if (met.IsAbstract()) {
                 // when declaring a bodyless function in llvm, it must be imported from a library,
                 // so don't declare abstract methods
@@ -851,7 +851,7 @@ namespace LLVMCodeGenerator {
                 return true;
             }
             if (met.IsBuiltin())
-                return GetOrCreateBuiltinFunction(met, out ret);
+                return GetOrCreateBuiltinFunction(pos, met, out ret);
             if (met.IsInternal()) {
                 ret = GetOrCreateInternalFunction(ctx, met);
                 return true;
@@ -901,9 +901,9 @@ namespace LLVMCodeGenerator {
             return succ;
         }
 
-        private bool GetOrCreateBuiltinFunction(IMethod met, out IntPtr ret) {
+        private bool GetOrCreateBuiltinFunction(Position pos, IMethod met, out IntPtr ret) {
             if (met.NestedIn is ITypeContext tcx && tcx.Type.Signature.BaseGenericType != null && tcx.Type.Signature.BaseGenericType.Signature.Name == "::HashMap") {
-               return bhm.TryGetMethod(met, out ret);
+                return bhm.TryGetMethod(pos, met, out ret);
             }
             throw new NotImplementedException();
         }

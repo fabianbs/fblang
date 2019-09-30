@@ -1036,7 +1036,7 @@ namespace LLVMCodeGenerator {
                 else {
 
                     var slot = gen.GetVirtualMethodSlot(met, irb);
-                    succ &= gen.TryGetMethod(src, out var fn);
+                    succ &= gen.TryGetMethod(src, out var fn, pos);
                     if (fn == IntPtr.Zero || fn == zero)
                         succ = $"The method {src} which implements the method from the interface {intfTy.Signature} has no body".Report(pos, false);
                     vtVal[slot] = fn;
@@ -1072,7 +1072,7 @@ namespace LLVMCodeGenerator {
             if (callee.IsInternal())
                 fn = GetOrCreateInternalFunction(ctx, callee.Signature.InternalName);
             else
-                succ &= gen.TryGetMethod(callee, out fn);
+                succ &= gen.TryGetMethod(callee, out fn, pos);
             //var args = Vector<IntPtr>.Reserve((uint)callee.Arguments.Length + (callee.IsStatic() ? 0u : 1u));
             if (!callee.IsStatic() && parentTy != null) {
                 // if retType is locally allocated, then use TryGetMemoryLocation instead
@@ -1144,7 +1144,7 @@ namespace LLVMCodeGenerator {
             if (callee.IsInternal())
                 return TryInternalCallCodeGen(callee, actualArgs, par, parentTy, out ret);
 
-            succ &= gen.TryGetMethod(callee, out var fn);
+            succ &= gen.TryGetMethod(callee, out var fn, pos);
             var args = Vector<IntPtr>.Reserve((uint) callee.Arguments.Length + (callee.IsStatic() ? 0u : 1u));
             if (!callee.IsStatic() && parentTy != null) {
                 // if retType is locally allocated, then use TryGetMemoryLocation instead

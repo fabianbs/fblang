@@ -84,6 +84,10 @@ namespace CompilerInfrastructure {
         public static bool IsError(this IMethod met) {
             return met == ErrorMethod.Instance;
         }
+        public static bool IsNullOrError(this IMethod met) {
+            return met is null || met == ErrorMethod.Instance;
+        }
+
         public static bool IsStatic(this IMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Static);
         }

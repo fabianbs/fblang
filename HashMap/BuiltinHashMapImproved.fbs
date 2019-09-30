@@ -3,148 +3,26 @@
 //   - nocopy bucket realloc => value-reference stability
 
 def void HashMap<U, T>{
-    def void Slot{
-        internal zint index, hashCode
-        internal uint distance
-        internal byte buck
-        internal bool full
-        internal init ctor(zint index, hashCode, uint distance, byte buck, bool full){}
+    def const void Slot{
+        final internal zint hashCode
+        final internal Bucket! buck
+        final internal uint distance
+        internal init ctor(zint _hashCode, Bucket! buck, uint distance){
+            hashCode = _hashCode | 1
+        }
         internal copy ctor(const Slot& s){}
+        internal bool isFull() -> hashCode & 1
+        internal bool clear(){
+            hashCode = 0
+        }
     }
-    def void Bucket{
-        internal U key
-        internal T value
+    def const void Bucket{
+        final internal U key
+        final internal T value
         internal init ctor(U key, T value){}
     }
     final float LOAD_FACTOR = 0.8
     
-    resizeBuckets(){
-        var oldBucketsFill = bucketsFill
-        bucketsFill++
-        if(bucketsFill == numBucketArrays){
-            numBucketArrays << 1
-            var nwBuckArr = new Bucket$[][numBucketArrays]
-            nwBuckArr <- buckets[: oldBucketsFill]
-            buckets = nwBuckArr
-        }
-        buckets[bucketsFill] = new [currBucketCapacity <<= 1]
-        currBucketFill = 0
-    }
-    rehash(){
-        zint newCap
-        
-        newCap = [InternalCall]nextPrime(capacity << 1)
-        
-        var oldCap = capacity
-        capacity = newCap
-        var oldSlots = slots
-        var oldBuckets = buckets
-        //buckets = new [newCap]
-        //buckets... <- oldBuckets[: size]
-        
-        resizeBuckets(resizing)
-        slots = new [newCap]
-        
-        for(var &slot: oldSlots){
-            if(slot.fill == SlotFill.FULL){
-                doInsertKey(buckets[slot.buck][slot.index].key, slot.index, slot.buck, slot.hashCode)
-            }
-        }
-    }
-    ensureCapacity(){
-        if(capacity * LOAD_FACTOR <= size){
-            rehash(true)
-        }
-    }
-    
-    (bool, uint, zint) search(U ky, zint hashCode, ref Slot$& ret){
-        zint hc = hashCode % capacity
-        uint dist = 0
-        // TODO simplify
-        for(zint i => var &slot: slots[hc : ]){
-            if(slot.fill == SlotFill.FREE || slot.distance > dist){
-                ret = &slot
-                return (false, dist, i)
-            }
-            else if(slot.hashCode == hashCode && equals(ky, buckets[slot.buck][slot.index].key)){
-                ret = &slot
-                return (true, dist, i)
-            }
-            dist++
-        }
-        for(zint i => var &slot: slots[ : hc]){
-            if(slot.fill == SlotFill.FREE || slot.distance > dist){
-                ret = &slot
-                return (false, dist, i)
-            }
-            else if(slot.hashCode == hashCode && equals(ky, buckets[slot.buck][slot.index].key)){
-                ret = &slot
-                return (true, dist, i)
-            }
-            dist++
-        }
-        [Builtin]unreachable()
-    }
-    swap(U ky, zint index, byte buck, zint hashCode, uint dist, zint i){
-        //TODO implement
-        
-    }
-    bool doInsertKey(U ky, zint index, byte buck, zint hashCode, uint dist){
-        zint hc = hashCode % capacity
-        for(zint i => var &slot: slots[hc : ]){
-            if(!slot.full){
-                slot = new (index, hashCode, dist, buck, true)
-                return true
-            }
-            else if(slot.distance >= dist){
-                if(slot.distance > slot.dist){
-                    swap(ky, index, buck, hashCode, dist, i)
-                    return true
-                }
-                else if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
-                    return false
-                }
-            }
-            dist++
-        }
-        for(zint i => var &slot: slots[ : hc]){
-            if(!slot.full){
-                slot = new (index, hashCode, dist, buck, true)
-                return true
-            }
-            else if(slot.distance >= dist){
-                if(slot.distance > slot.dist){
-                    swap(ky, index, buck, hashCode, dist, i)
-                    return true
-                }
-                else if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
-                    return false
-                }
-            }
-            dist++
-        }
-        [Builtin]unreachable()
-    }
-    (T&, bool) insertInternal(U ky, T val, zint hashCode, bool replace){
-        var (has, dist, i) = search(ky, hashCode, ref Slot$ slot)
-        if(!has || replace){
-            var index = has ? slot.index : currBucketFill
-            var buck = has ? slot.buck : bucketsFill
-            buckets[buck][index] = new (ky, val)
-            if(!has){
-                if(slot.full){
-                    swap(ky, index, buck, hashCode, dist, i)
-                }
-                else{
-                    slot = new (index, dist, hashCode, buck, true)
-                }
-            }
-            return (buckets[slot.buck][slot.index].value, true)
-        }
-        else{
-            return (buckets[slot.buck][slot.index].value, false)
-        }
-    }
     static bool equals(U ky1, U ky2){
         #if(U is nullable){
             if(ky1 == null)
@@ -152,6 +30,7 @@ def void HashMap<U, T>{
             else if(ky2 == null)
                 return false
         }
+        
         #if(U is integer || U is string){
             return ky1 == ky2
         }
@@ -161,12 +40,12 @@ def void HashMap<U, T>{
         #elif(static operator==(U, U)->bool in U){
             return ky1 == ky2
         }
-        #elif(U is referenceType){
+        #elif(U is &){
             return (nativehandle)ky1 == (nativehandle)ky2
         }
         #else{
-             #assert(false, "The value-type \{typename(U)} does not overload the == operator for " + 
-                            "comparing two \{typename(U)}s for equality. Hence it cannot be used " + 
+             #assert(false, "The value-type \{#"U")} does not overload the == operator for " + 
+                            "comparing two \{#"U"}s for equality. Hence it cannot be used " + 
                             "as kye in an associative array")
         }
     }
@@ -177,7 +56,7 @@ def void HashMap<U, T>{
         #elif(U is string){
             return [InternalCall]str_hash(ky)
         }
-        #elif(U is referenceType){
+        #elif(U is &){
             if(ky == null)
                 return 0
             #if(getHashCode() -> zint in U)
@@ -189,50 +68,258 @@ def void HashMap<U, T>{
             return ky.getHashCode()
         }
         #else{
-            #assert(false, "The value-type \{typename(U)} does not provide an instance method " +
+            #assert(false, "The value-type \{#"U"} does not provide an instance method " +
                            "getHashCode() -> zint and can therefore not be used as key in an " + 
                            "associative array")
         }
     }
-    public bool insert(U ky, T val, bool replace){
-        var %, ret <- insertInternal(ky, val, getHashCode(ky), replace)
-        return ret
+    ensureCapacity(zint offs = 1){
+        zint maxLoad = (zint)(capacity * LOAD_FACTOR)
+        if(size + offs >= maxLoad){
+            var cap = capacity << 1
+            maxLoad <<= 1
+            while(size + offs >= maxLoad){
+                cap <<= 1
+                maxLoad <<= 1
+            }
+            rehash([InternalCall]nextPrime(cap))
+        }
     }
-    public T& operator[](U ky){
-        if(true, %, % <- search(ky, getHashCode(ky), ref var slot))
-            return buckets[slot.index].value
-        else
-            throw "Key not found"
-    }
-    public T& operator[](U ky, T val){
-        var &ret, % <- insertInternal(ky, val, getHashCode(ky), true)
-        return ret
+    rehash(zint nwCap){
+        
+        var nwBuckets = new Bucket[nwCap]
+        nwBuckets... <- buckets
+        buckets = nwBuckets
+        
+        var oldSlots = slots
+        slots = new [nwCap]
+        capacity = nwCap
+        
+        
+        for(var buck : buckets[: size]){
+            bool unused
+            zint hashCode = getHashCode(buck.key)
+            getOrInsert(buck.key, hashCode, buck, unused, hashCode % nwCap, 0)
+        }
+           
     }
     
-    public bool remove(U ky){
-        //TODO implement
+    Bucket addBucket(U ky, T val){
+        return (buckets[size] = new (ky, value))
+    }
+    Bucket getLastBucket(){
+        // assert size > 0
+        return buckets[size - 1]
     }
     
-    public clear(){
-        #if(dtor() in U || dtor() in T){
-            for(var buckArr: buckets[: numBucketArrays]){
-                for(var buck: buckArr[: bucketsFill]){
-                    #if(dtor() in U)
-                        buck.key.dtor()
-                    #if(dtor() in T)
-                        buck.value.dtor()
+    ref Slot$ search(U ky, zint hashCode, bool &found, zint index){
+        // search without insert
+        uint dist = 0
+        macro handleSlot(s, i) {
+            if(!s.isFull()){
+                found = false
+                index = i
+                return &s // not found
+            }
+            else if(s.hashCode == hashCode | 1 && equals(ky, s.buck.ky)){
+                found = true
+                index = i
+                return &s // found
+            }
+            else if(s.distance < dist){
+                found = false
+                index = i
+                return &s // not found (insertion would have swapped here)
+            }
+            dist++
+        }
+        for(zint i => var& s: slots[hashCode % capacity : ]){
+            @handleSlot(s, i)
+        }
+        for(zint i => var& s: slots[ : hashCode % capacity]){
+            @handleSlot(s, i)
+        }
+        [Builtin]unreachable()
+    }
+    ref Slot$ getOrInsert(U ky, zint hashCode, T value, bool replace, bool& inserted){
+        ensureCapacity()
+        uint dist = 0
+        // new feature-request: lambda-macro
+        macro handleSlot(i, s) {
+            if(!s.isFull()){
+                //buckets[currBucketIdx][currBucketFill] = new (ky, value)
+                var buck = addBucket(ky, value)
+                s = new (hashCode, buck, dist)
+                inserted = true
+                size++
+                return &s
+            }
+            else if(s.hashCode == hashCode | 1 && equals(ky, s.buck.ky)){
+                inserted = replace
+                if(replace){
+                    s.buck = new (ky, value)
                 }
+                return &s
+            }
+            else if(s.distance < dist){
+                // not there => must be inserted
+                //buckets[currBucketIdx][currBucketFill] = new (ky, value)
+                var buck = addBucket(ky, value)
+                
+                var rhKy = s.buck.key
+                var rhHashCode = s.hashCode
+                var rhDistance = s.distance
+                var rhBuck = s.buck
+                
+                s = new (hashCode, buck, dist)
+                size++
+                // tail call
+                return &getOrInsert(rhKy, rhHashCode, rhBuck, inserted, i + 1, rhDistance + 1)
+            }
+            dist++
+        }
+        for(zint i => Slot$& s: slots[hashCode % capacity : ]){
+            @handleSlot(i, s)
+        }
+        for(zint i => Slot$& s: slots[ : hashCode % capacity]){
+            @handleSlot(i, s)
+        }
+        [Builtin]unreachable()
+    }
+    ref Slot$ getOrInsert(U ky, zint hashCode, Bucket! buck, bool& inserted, zint hc, uint dist){
+        macro handleSlot(i, s) {
+            if(!s.isFull()){
+                s = new (hashCode, buck, dist)
+                inserted = true
+                return &s
+            }
+            else if(s.distance < dist){
+                var rhKy = s.buck.key
+                var rhHashCode = s.hashCode
+                var rhDistance = s.distance
+                var rhBuck = s.buck
+                
+                s = new (hashCode, buck, dist)
+                
+                // tail recursion
+                return &getOrInsert(rhKy, rhHashCode, rhBuck, inserted, i + 1, rhDistance + 1)
+            }
+            dist++
+        }
+        for(zint i => Slot$& s: slots[hc : ]){
+            @handleSlot(i, s)
+        }
+        for(zint i => Slot$& s: slots[ : hc]){
+            @handleSlot(i, s)
+        }
+        [Builtin]unreachable()
+    }
+    
+    public iterator (U, ref T) getIterator(){
+        for(var buck : buckArr[: size]){
+            yield (buck.key, &buck.value)
+        }
+    }
+    
+    public macro forEach({fn}){
+        for(public U %key, public ref T %value : this){
+            fn
+        }
+    }
+    
+    public bool insert(U ky, T value, bool replace){
+        bool ret
+        getOrInsert(ky, getHashCode(ky), value, replace, ret)
+        return ret
+    }
+    
+    public ref T operator[](U ky){
+        #if(default in T){ // null is the default for every nullable reference-type
+            bool unused
+            return &getOrInsert(ky, getHashCode(ky), default(T), false, unused).buck.value
+        }
+        #elif(ctor() in T && T is $){
+            bool unused
+            return &getOrInsert(ky, getHashCode(ky), new T(), false, unused).buck.value
+        }
+        #else{
+            bool found
+            zint index
+            ref Slot$ s = search(ky, getHashCode(ky), found, index)
+            if(found){
+                return &s.buck.value
+            }
+            else{
+                throw new KeyNorFoundException("Key \{ky} not found")
             }
         }
-        size = del = bucketsFill = currBucketFill = 0
-        ctor()
+    }
+    public ref T operator[](U ky, T val) #if (!default in T && !(ctor() in T && T is $)){
+        bool unused
+        return &getOrInsert(ky, getHashCode(ky), val, false, unused).buck.value
+    }
+    
+    public bool tryGetValue(U ky, T &out_val){
+        bool found
+        zint index
+        var s = &search(ky, getHashCode(ky), found, index)
+        if(found)
+            out_val = s.buck.value
+        return found
+    }
+    
+    bool remove(U ky){
+        
+        zint hashCode = getHashCode(ky)
+        bool found
+        zint index
+        ref Slot$ s = search(ky, hashCode, found, index)
+        if(!found)
+            return false
+            
+        // swap Bucket$s not possible, since we have to preserve the references
+        // Hence use Bucket!s
+        if(--size){
+            var buck = getLastBucket()
+            zint unused
+            var last = &search(buck.key, getHashCode(buck.key), found, unused)
+            s.buck = last
+            last = null
+        }
+        
+        s.clear()
+        
+        macro backShift(i, last_i) {
+            if(!slots[i].isFull() || slots[i].distance == 0)
+                return true
+            slots[last_i] = slots[i]
+            slots[last_i].distance --
+            slots[i].clear()
+        }
+        
+        for(zint i : index + 1 to capacity){
+            @backShift(i, i - 1)
+        }
+        @backShift(0, capacity - 1)
+        for(zint i : 1 to index){
+            @backShift(i, i - 1)
+        }
+        [Builtin]unreachable()
+    }
+    
+    
+    public ctor((U => T)... args){
+        //ensureCapacity((zint)(args.length * (1/LOAD_FACTOR)))
+        ctor((zint)(args.length * (1/LOAD_FACTOR)))
+        for(U ky => T val : args){
+            insert(ky, val, false)
+        }
     }
     
     public ctor(zint initCap){
         capacity = [InternalCall]nextPrime(initCap)
         slots = new [capacity]
-        buckets = new [numBucketArrays = 2]
-        buckets[0] = new [currBucketCapacity = capacity]
+        buckets = new [capacity]
     }
     public ctor(){
         ctor(5)
@@ -240,7 +327,6 @@ def void HashMap<U, T>{
     
     
     Slot$[] slots
-    Bucket$[][] buckets
-    zint capacity, size, currBucketCapacity, currBucketFill
-    byte numBucketArrays, bucketsFill
+    Bucket[] buckets
+    zint capacity, size
 }

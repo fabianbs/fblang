@@ -4,7 +4,7 @@
       "commandName": "Project",
       "commandLineArgs": "IntegratedHashMapTest.fbs --emit-llvm -O0",
       "workingDirectory": "D:\\Besitzer\\Desktop",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }
