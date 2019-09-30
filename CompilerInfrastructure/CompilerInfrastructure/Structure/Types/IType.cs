@@ -325,6 +325,9 @@ namespace CompilerInfrastructure {
         public static bool IsError(this IType tp) {
             return tp == ErrorType.Instance;
         }
+        public static bool IsNullOrError(this IType tp) {
+            return tp is null || tp == ErrorType.Instance;
+        }
         public static bool IsTop(this IType tp) {
             return tp != null && tp.UnWrapAll() == TopType.Instance;
         }

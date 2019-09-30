@@ -27,36 +27,76 @@ namespace LLVMCodeGenerator {
         }
         LLVMCodeGenerator gen;
         readonly Dictionary<IType, (IntPtr, IntPtr)> slotBucketType= new Dictionary<IType, (IntPtr, IntPtr)>();
-        readonly LazyDictionary<IMethod, IntPtr> methods;
+        //readonly LazyDictionary<IMethod, IntPtr> methods;
+        readonly Dictionary<IMethod, IntPtr> methods;
         readonly Dictionary<(IType, HelperFunction), IntPtr> definedFunctions = new Dictionary<(IType, HelperFunction), IntPtr>();
+        readonly HashSet<IType> keyTypes = new HashSet<IType>();
         public BuiltinHashMap(LLVMCodeGenerator gen) {
             this.gen = gen;
-            methods = new LazyDictionary<IMethod, IntPtr>(GetMethod);
+            methods = new Dictionary<IMethod, IntPtr>();
         }
         ManagedContext ctx => gen.ctx;
-        private IntPtr GetMethod(IMethod met) {
+        private IntPtr GetMethod(Position pos, IMethod met) {
             if (gen.methods.TryGetValue(met, out var ret))
                 return ret;
 
             var tp = (met.NestedIn as ITypeContext).Type;
-            
+
             var keyTp = (IType)tp.Signature.GenericActualArguments.First();
             var valTp = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
             bool succ = gen.TryGetType(tp.AsReferenceType(), out var ty) & gen.TryGetType(keyTp, out var keyTy) & gen.TryGetType(valTp, out var valTy);
+
+            bool firstUseOfKeyTy = keyTypes.Add(keyTp);
+
+
             var getHashCode = keyTp.Context.InstanceContext.MethodsByName("getHashCode").FirstOrDefault(x =>
                 x.Arguments.Length == 0 &&
                 x.ReturnType == PrimitiveType.SizeT &&
                 x.Visibility == Visibility.Public
             );
-            if (getHashCode is null && !keyTp.IsIntegerType() && !keyTp.IsString()) {
-                $"The type {keyTp.Signature} does not provide  a publicly visible method getHashCode -> zint and can therefore not be used as key in an associative array".Report();
+            if (firstUseOfKeyTy && getHashCode is null && keyTp.IsValueType() && !keyTp.IsIntegerType() && !keyTp.IsString()) {
+                $"The type {keyTp.Signature} does not provide  a publicly visible method getHashCode -> zint and can therefore not be used as key in an associative array".Report(pos);
+            }
+            IMethod equalsMet = keyTp.Context.InstanceContext.MethodsByName("equals").FirstOrDefault(x=>
+                x.Arguments.Length == 1 &&
+                x.Arguments[0].Type.UnWrapAll() == keyTp &&
+                (x.Arguments[0].Type.IsByRef() || !x.Arguments[0].Type.IsValueType()) &&
+                x.Visibility == Visibility.Public
+            );
+            if (equalsMet.IsNullOrError()) {
+                equalsMet = keyTp.Context.StaticContext.MethodsByName("equals").FirstOrDefault(x =>
+                x.Arguments.Length == 2 &&
+                x.Arguments[0].Type.UnWrapAll() == keyTp &&
+                (x.Arguments[0].Type.IsByRef() || !x.Arguments[1].Type.IsValueType()) &&
+                x.Arguments[1].Type.UnWrapAll() == keyTp &&
+                (x.Arguments[1].Type.IsByRef() || !x.Arguments[1].Type.IsValueType()) &&
+                x.Visibility == Visibility.Public
+            );
+            }
+
+            if (equalsMet.IsNullOrError() && keyTp.OverloadsOperator(OverloadableOperator.Equal, out var ov, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Instance)) {
+                equalsMet = gen.semantics.BestFittingMethod(default, ov, new[] { tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
+            }
+            if (equalsMet.IsNullOrError()) {
+                if (keyTp.OverloadsOperator(OverloadableOperator.Equal, out var ovStat, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Static)) {
+                    equalsMet = gen.semantics.BestFittingMethod(default, ovStat, new[] { keyTp, keyTp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
+                }
+            }
+            if (firstUseOfKeyTy) {
+                if (getHashCode is null && equalsMet != null) {
+                    $"The key-type {keyTp.Signature} implements the equals-method, but not getHashCode() -> zint".Warn(pos, WarningLevel.High);
+                }
+                else if (getHashCode != null && equalsMet is null) {
+                    $"The key-type {keyTp.Signature} implements the getHashCode-method, but not equals({keyTp.Signature}, {keyTp.Signature}) -> bool".Warn(pos, WarningLevel.High);
+                }
             }
             //TODO: other methods
             switch (met.Signature.Name) {
                 case "ctor":
                     if (met.Arguments.Length == 0) {
                         var ctor1 = tp.Context.InstanceContext.MethodsByName("ctor").First(x=>x.Arguments.Length==1);
-                        var unused = methods[ctor1];
+                        //var unused = methods[ctor1];
+                        TryGetMethod(pos, ctor1, out _);
                         ImplementBuiltinHashMapCtor0(met, ctor1, tp, ty);
                         return gen.methods[met];
                     }
@@ -69,7 +109,7 @@ namespace LLVMCodeGenerator {
                     ImplementBuiltinHashMapClear(met, tp, ty);
                     return gen.methods[met];
                 case "operator []": {
-                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp, equalsMet);
                     if (met.Arguments.Length == 1) {
                         ImplementBuiltinHashMapOperatorIndexerGet(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
                         return gen.methods[met];
@@ -88,7 +128,7 @@ namespace LLVMCodeGenerator {
                 case "tryGetNext":
                     return ImplementBuiltinHashMapTryGetNext(met, tp, ty, keyTy, valTy);
                 case "insert": {
-                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp, equalsMet);
                     var rehashInsert = RehashInsert(tp, ty, keyTy, search);
                     var rehash = ImplementBuiltinHashMapRehash(tp, ty, rehashInsert);
                     var ensureCapacity = ImplementBuiltinHashMapEnsureCapacity(tp, ty, rehash);
@@ -97,24 +137,23 @@ namespace LLVMCodeGenerator {
                     return gen.methods[met];
                 }
                 case "tryGetValue": {
-                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp, equalsMet);
                     ImplementBuiltinHashMapTryGetValue(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
                     return gen.methods[met];
                 }
                 case "getOrElse": {
-                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp, equalsMet);
                     ImplementBuiltinHashMapGetOrElse(met, tp, ty, keyTp, keyTy, valTy, search, getHashCode);
                     return gen.methods[met];
                 }
                 case "remove": {
-                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp);
+                    var search = ImplementBuiltinHashMapSearch(tp, ty, keyTy, valTy, keyTp, equalsMet);
                     ImplementBuiltinHashMapRemove(met, tp, ty, keyTp, keyTy, search, getHashCode);
                     return gen.methods[met];
                 }
             }
             throw new NotImplementedException($"The builtin hashmap function {met.Signature} is not implemented yet");
         }
-
 
         internal bool TryGetBuiltinHashMap(IType hmTy, IType keyTy, IType valTy, out IntPtr ret) {
 
@@ -144,14 +183,14 @@ namespace LLVMCodeGenerator {
         internal bool ImplementBuiltinHashMap(IType tp, IType keyTy, IType valTy) {
             // implement all the methods
 
-            var getHashCode = keyTy.Context.InstanceContext.MethodsByName("getHashCode").FirstOrDefault(x =>
+            /*var getHashCode = keyTy.Context.InstanceContext.MethodsByName("getHashCode").FirstOrDefault(x =>
                 x.Arguments.Length == 0 &&
                 x.ReturnType == PrimitiveType.SizeT &&
                 x.Visibility == Visibility.Public
             );
             if (getHashCode is null && !keyTy.IsIntegerType() && !keyTy.IsString()) {
                 $"The type {keyTy.Signature} does not provide  a publicly visible method getHashCode -> zint and can therefore not be used as key in an associative array".Report();
-            }
+            }*/
             bool succ = gen.TryGetType(tp.AsReferenceType(), out var ty) & gen.TryGetType(keyTy, out var keyt) & gen.TryGetType(valTy, out var valt);
             if (!succ)
                 return false;
@@ -175,8 +214,11 @@ namespace LLVMCodeGenerator {
             throw new NotImplementedException();*/
             return succ;
         }
-        internal bool TryGetMethod(IMethod met, out IntPtr ret) {
-            ret = methods[met];
+        internal bool TryGetMethod(Position pos, IMethod met, out IntPtr ret) {
+            if (!methods.TryGetValue(met, out ret)) {
+                ret = GetMethod(pos, met);
+                methods[met] = ret;
+            }
             return true;
         }
         private void ImplementBuiltinHashMapRemove(IMethod met, IType tp, IntPtr ty, IType keyTp, IntPtr keyTy, IntPtr search, IMethod getHashCode) {
@@ -648,7 +690,7 @@ namespace LLVMCodeGenerator {
                 }
             }
             else {
-                gen.TryGetMethod(getHashCode, out var ghc);
+                gen.TryGetMethod(getHashCode, out var ghc, getHashCode.Position);
                 if (!keyTp.IsNotNullable()) {
                     var currBB = ctx.GetCurrentBasicBlock(irb);
                     var notNull = new BasicBlock(ctx, "notNull", fn);
@@ -705,11 +747,11 @@ namespace LLVMCodeGenerator {
             return true;
         }
 
-        private IntPtr CompareEQ(IType tp, IntPtr obj1, IntPtr obj2, IntPtr irb) {
+        private IntPtr CompareEQ(IMethod equalsMet, IType keyTp, IntPtr obj1, IntPtr obj2, IntPtr irb, IntPtr fn) {
             // operator==
             // TODO handle nullptrs
 
-            if (tp.IsString()) {
+            if (keyTp.IsString()) {
                 // handle string equality
                 var op = InstructionGenerator.GetOrCreateInternalFunction(ctx, InstructionGenerator.InternalFunction.strequals);
                 return ctx.GetCall(op, new[] {
@@ -719,23 +761,62 @@ namespace LLVMCodeGenerator {
                     ctx.ExtractValue(obj2, 1, irb),
                 }, irb);
             }
-            IMethod equalsMet=null;
-            if (tp.OverloadsOperator(OverloadableOperator.Equal, out var ov, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Instance)) {
-                equalsMet = gen.semantics.BestFittingMethod(default, ov, new[] { tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
-            }
-            if (equalsMet is null || equalsMet.IsError()) {
-                if (tp.OverloadsOperator(OverloadableOperator.Equal, out var ovStat, CompilerInfrastructure.Contexts.SimpleMethodContext.VisibleMembers.Static)) {
-                    equalsMet = gen.semantics.BestFittingMethod(default, ovStat, new[] { tp, tp }, PrimitiveType.Bool, new CompilerInfrastructure.Utils.ErrorBuffer());
-                }
-            }
+
             if (equalsMet is null || equalsMet.IsError())
                 return ctx.CompareOp(obj1, obj2, (sbyte) '!', true, false, irb);
             else {
-                gen.TryGetMethod(equalsMet, out var met);
-                return ctx.GetCall(met, new[] { obj1, obj2 }, irb);
+                gen.TryGetMethod(equalsMet, out var met, equalsMet.Position);
+                if (keyTp.IsNotNullable() || equalsMet.IsStatic() && equalsMet.Arguments.All(x => !x.Type.IsNotNullable()))
+                    return ctx.GetCall(met, new[] { obj1, obj2 }, irb);
+                else {
+                    var obj2ExpectedType = equalsMet.Arguments.Last().Type;
+                    bool needsObj2NullCheck = obj2ExpectedType.IsNotNullable();
+
+                    var currBB = ctx.GetCurrentBasicBlock(irb);
+                    var obj1Null = new BasicBlock(ctx, "lhsNull", fn);
+                    var obj1NotNull = new BasicBlock(ctx, "lhsNotNull", fn);
+
+                    var merge = new BasicBlock(ctx, "lhsNullMerge", fn);
+
+                    var isObj1NotNull = ctx.IsNotNull(obj1, irb);
+                    ctx.ConditionalBranch(obj1NotNull, obj1Null, isObj1NotNull, irb);
+
+                    ctx.ResetInsertPoint(obj1Null, irb);
+                    var isObj1NullAndObj2NotNull = ctx.IsNotNull(obj2, irb);
+                    var bothNull = ctx.Negate(isObj1NullAndObj2NotNull, (sbyte)'!', true, irb);
+                    ctx.Branch(merge, irb);
+
+                    ctx.ResetInsertPoint(obj1NotNull, irb);
+                    BasicBlock bothNotNull = null;
+
+                    if (needsObj2NullCheck) {
+                        bothNotNull = new BasicBlock(ctx, "bothNotNull", fn);
+
+                        var isObj2NotNull = ctx.IsNotNull(obj2, irb);
+                        ctx.ConditionalBranch(bothNotNull, merge, isObj2NotNull, irb);
+
+                        ctx.ResetInsertPoint(bothNotNull, irb);
+                    }
+
+                    var obj1NotNullRet = ctx.GetCall(met, new[] { obj1, obj2 }, irb);
+                    ctx.Branch(merge, irb);
+
+
+                    ctx.ResetInsertPoint(merge, irb);
+                    var ret = new PHINode(ctx, ctx.GetBoolType(), needsObj2NullCheck? 3u : 2u, irb);
+                    ret.AddMergePoint(bothNull, obj1Null);
+                    if (needsObj2NullCheck) {
+                        ret.AddMergePoint(ctx.False(), obj1NotNull);
+                        ret.AddMergePoint(obj1NotNullRet, bothNotNull);
+                    }
+                    else {
+                        ret.AddMergePoint(obj1NotNullRet, obj1NotNull);
+                    }
+                    return ret;
+                }
             }
         }
-        private IntPtr ImplementBuiltinHashMapSearch(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IType keyTp) {
+        private IntPtr ImplementBuiltinHashMapSearch(IType tp, IntPtr ty, IntPtr keyTy, IntPtr valTy, IType keyTp, IMethod equalsMet) {
             if (definedFunctions.TryGetValue((tp, HelperFunction.search), out var ret))
                 return ret;
             var irb = IntPtr.Zero;
@@ -790,7 +871,7 @@ namespace LLVMCodeGenerator {
                     ctx.ResetInsertPoint(hashCodesEqual, irb);
                     // buckets[slots[i].index].key
                     var bucketKey = ctx.LoadField(buckets, new[]{ ctx.LoadField(slots, new[] { i, ctx.GetInt32(0)},irb), ctx.GetInt32(0)},irb);
-                    var areKeysEqual = CompareEQ(keyTp, bucketKey, ctx.GetArgument(fn, 1),irb);
+                    var areKeysEqual = CompareEQ(equalsMet, keyTp, bucketKey, ctx.GetArgument(fn, 1), irb, fn);
                     var keysEqual = new BasicBlock(ctx, "keysEqual", fn);
                     ctx.ConditionalBranch(keysEqual, stateFreeMerge, areKeysEqual, irb);
 
