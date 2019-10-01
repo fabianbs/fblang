@@ -42,9 +42,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="CompilerInfrastructure">
-      <HintPath>..\..\CompilerInfrastructure\CompilerInfrastructure\bin\Debug\netstandard2.0\CompilerInfrastructure.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\CompilerInfrastructure\CompilerInfrastructure\CompilerInfrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="LLVMCodeGenerator">
       <HintPath>..\..\LLVMCodeGenerator\LLVMCodeGenerator\bin\Debug\netcoreapp2.1\LLVMCodeGenerator.dll</HintPath>
     </Reference>

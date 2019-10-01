@@ -28,9 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="CompilerInfrastructure">
-      <HintPath>..\..\CompilerInfrastructure\CompilerInfrastructure\bin\Debug\netstandard2.0\CompilerInfrastructure.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\CompilerInfrastructure\CompilerInfrastructure\CompilerInfrastructure.csproj" />
   </ItemGroup>
 
 </Project>
