@@ -129,5 +129,15 @@ namespace CompilerInfrastructure.Structure {
 
             return ty.UnWrapAll().FullName() + (ty.IsByRef() ? "&" : "");
         }
+
+
+        static DefaultNameMangler instance = null;
+        public static DefaultNameMangler Instance {
+            get {
+                if (instance is null)
+                    instance = new DefaultNameMangler();
+                return instance;
+            }
+        }
     }
 }

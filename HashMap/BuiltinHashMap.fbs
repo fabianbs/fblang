@@ -1,0 +1,194 @@
+def void HashMap<U, T>{
+    def void Slot{
+        internal zint index, hashCode
+        internal SlotFill fill
+        internal init ctor(zint index, hashCode, SlotFill fill){}
+    }
+    def void Bucket{
+        internal U key
+        internal T value
+        internal init ctor(U key, T value){}
+    }
+    def enum SlotFill : byte{
+        FREE, FULL, DELETED
+    }
+    final float LOAD_FACTOR = 0.8
+    
+    rehash(bool resizing){
+        zint newCap
+        if(resizing)
+            newCap = [InternalCall]nextPrime(capacity << 1)
+        else
+            newCap = capacity
+            
+        var oldCap = capacity
+        capacity = newCap
+        var oldSlots = slots
+        var oldBuckets = buckets
+        buckets = new [newCap]
+        buckets... <- oldBuckets[: size]
+        slots = new [newCap]
+        del = 0
+        
+        for(var &slot: oldSlots){
+            if(slot.fill == SlotFill.FULL){
+                ref var nwSlot = &search(buckets[slot.index].key, slot.hashCode)
+                nwSlot = slot
+            }
+        }
+    }
+    ensureCapacity(){
+        if(capacity * LOAD_FACTOR <= size + del){
+            rehash(size >= del)
+        }
+    }
+    
+    Slot$& search(U ky, zint hashCode){
+        zint hc = hashCode % capacity
+        for(var &slot: slots[hc : ]){
+            if(slot.fill == SlotFill.FREE){
+                return slot
+            }
+            else{
+                if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
+                    return slot
+                }
+            }
+        }
+        for(var &slot: slots[ : hc]){
+            if(slot.fill == SlotFill.FREE){
+                return slot
+            }
+            else{
+                if(slot.hashCode == hashCode && equals(ky, buckets[slot.index].key)){
+                    return slot
+                }
+            }
+        }
+        [Builtin]unreachable()
+    }
+    (T&, bool) insertInternal(U ky, T val, zint hashCode, bool replace){
+        ref var slot = &search(ky, hashCode)
+        if(slot.fill == SlotFill.FULL){
+            if(replace){
+                buckets[slot.index] = new (ky, val)
+                return (buckets[slot.index].value, true)
+            }
+            else
+                return (buckets[slot.index].value, false)
+        }
+        else{
+            if(slot.fill == SlotFill.DELETED)
+                del--
+            slot = new (size, hashCode, SlotFill.FULL)
+            buckets[size] = new (ky, val)
+            return (buckets[size++].value, true)
+        }
+    }
+    static bool equals(U ky1, U ky2){
+        #if(U is nullable){
+            if(ky1 == null)
+                return ky2 == null
+            else if(ky2 == null)
+                return false
+        }
+        #if(U is integer || U is string){
+            return ky1 == ky2
+        }
+        #elif(operator==(U)->bool in U){
+            return ky1 == ky2
+        }
+        #elif(static operator==(U, U)->bool in U){
+            return ky1 == ky2
+        }
+        #elif(U is referenceType){
+            return (nativehandle)ky1 == (nativehandle)ky2
+        }
+        #else{
+             #assert(false, "The value-type \{typename(U)} does not overload the == operator for " + 
+                            "comparing two \{typename(U)}s for equality. Hence it cannot be used " + 
+                            "as kye in an associative array")
+        }
+    }
+    static zint getHashCode(U ky){
+        #if(U is integer){
+            return (zint)ky
+        }
+        #elif(U is string){
+            return [InternalCall]str_hash(ky)
+        }
+        #elif(U is referenceType){
+            if(ky == null)
+                return 0
+            #if(getHashCode() -> zint in U)
+                return ky.getHashCode()
+            #else
+                return (zint)(nativehandle)ky
+        }
+        #elif(getHashCode() -> zint in U){
+            return ky.getHashCode()
+        }
+        #else{
+            #assert(false, "The value-type \{typename(U)} does not provide an instance method " +
+                           "getHashCode() -> zint and can therefore not be used as key in an " + 
+                           "associative array")
+        }
+    }
+    public bool insert(U ky, T val, bool replace){
+        var %, ret <- insertInternal(ky, val, getHashCode(ky), replace)
+        return ret
+    }
+    public T& operator[](U ky){
+        ref var slot = &search(ky, getHashCode(ky))
+        if(slot.fill == SlotFill.FULL)
+            return buckets[slot.index].value
+        else
+            throw "Key not found"
+    }
+    public T& operator[](U ky, T val){
+        var &ret, % <- insertInternal(ky, val, getHashCode(ky), true)
+        return ret
+    }
+    
+    public bool remove(U ky){
+        ref var slot = &search(ky, getHashCode(ky))
+        if(slot.fill == SlotFill.FULL){
+            #if(dtor() in U)
+                buckets[slot.index].key.dtor()
+            #if(dtor() in T)
+                buckets[slot.index].value.dtor()
+            buckets[size], buckets[slot.index] <- [buckets[slot.index], buckets[size]]
+            size--
+            del++
+        }
+        else
+            return false
+    }
+    
+    public clear(){
+        #if(dtor() in U || dtor() in T){
+            for(var buck: buckets[: size]){
+                #if(dtor() in U)
+                    buck.key.dtor()
+                #if(dtor() in T)
+                    buck.value.dtor()
+            }
+        }
+        size = del = 0
+        ctor()
+    }
+    
+    public ctor(zint initCap){
+        capacity = [InternalCall]nextPrime(initCap)
+        slots = new [capacity]
+        buckets = new [capacity]
+    }
+    public ctor(){
+        ctor(5)
+    }
+    
+    
+    Slot$[] slots
+    Bucket$[] buckets
+    zint capacity, size, del
+}

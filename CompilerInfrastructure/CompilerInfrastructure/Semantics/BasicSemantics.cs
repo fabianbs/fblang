@@ -338,7 +338,7 @@ namespace CompilerInfrastructure.Semantics {
                 if (actualRetTy.IsSubTypeOf(formalRetTy, out var rtDiff)) {
                     diff += rtDiff * rtDiff;
                 }
-                else if (Type.IsAssignable(actualRetTy, formalRetTy, out var localDiff)) {
+                else if (CanBePassedAsParameterTo(actualRetTy, formalRetTy, out var localDiff)) {
                     diff += localDiff * localDiff;
                 }
                 else {
@@ -352,7 +352,7 @@ namespace CompilerInfrastructure.Semantics {
             using (var actArgs = actualArgTps.GetEnumerator()) {
 
                 for (int i = 0; i < formalArgs.Length - 1 && actArgs.MoveNext(); ++i) {
-                    if (Type.IsAssignable(actArgs.Current, formalArgs[i].Type, out int localDiff)) {
+                    if (CanBePassedAsParameterTo(actArgs.Current, formalArgs[i].Type, out int localDiff)) {
                         diff += localDiff * localDiff;
                     }
                     else if (IsFunctional(actArgs.Current, out var actFnTy) && IsFunctional(formalArgs[i].Type, out var formFnTy) && IsCompatible(actFnTy, formFnTy, out int fnDiff)) {
@@ -406,7 +406,7 @@ namespace CompilerInfrastructure.Semantics {
                         diff += MISSING_ARG_COST;
                         succ = false;
                     }
-                    if (Type.IsAssignable(actArgs.Current, formalArgs[formalArgs.Length - 1].Type, out int localDiff)) {
+                    if (CanBePassedAsParameterTo(actArgs.Current, formalArgs[formalArgs.Length - 1].Type, out int localDiff)) {
                         diff += localDiff * localDiff;
                     }
                     else if (IsFunctional(actArgs.Current, out var actFnTy) && IsFunctional(formalArgs[formalArgs.Length - 1].Type, out var formFnTy) && IsCompatible(actFnTy, formFnTy, out int fnDiff)) {
@@ -905,5 +905,7 @@ namespace CompilerInfrastructure.Semantics {
             tryGetNext = null;
             return false;
         }
+
+        public virtual bool CanBePassedAsParameterTo(IType actualTy, IType formalTy, out int diff) => Type.IsAssignable(actualTy, formalTy, out diff);
     }
 }

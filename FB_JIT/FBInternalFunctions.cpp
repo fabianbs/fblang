@@ -31,9 +31,11 @@
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/ArrayRef.h>
+#include <llvm/ADT/Hashing.h>
 #include "formatStrings.h"
 #include "GC_NEW.h"
 #include <gc.h>
+#include <utf8.h>
 #define STRETURN(str){*_ret=(str);return;}
 
 #ifdef WIN32
@@ -125,29 +127,35 @@ void divide(uint64_t hi, uint64_t lo, uint64_t n, uint64_t &retHi, uint64_t &ret
 }
 FB_INTERNAL(void) cprintln(const char *str, size_t len) {
     //static uint32_t counter = 0;
-    std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
-    //couts() << ">> Print string of length " << len << "\r\n";
+    //std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
+    //std::cout << ">> Print string of length " << len << std::endl;
     //if (len < 32)
-    couts() << llvm::StringRef(str, len) << ENDL;
+
+    //couts() << llvm::StringRef(str, len) << ENDL;
     //couts().flush();
-    //std::cout << std::string(str, len) << "::" << ++counter << std::endl;
-    //printf("%.*s\n", len, str);
+    //std::cout << std::string(str, len) << std::endl;
+    printf("%.*s\n", (unsigned)(len & UINT_MAX), str);
     //fflush(stdout);
+
+
 }
 
 FB_INTERNAL(void) cprintnwln() {
-    std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
-    couts() << ENDL;
+    //std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
+    //couts() << ENDL;
+    printf(ENDL);
     //couts().flush();
 }
 
 FB_INTERNAL(void) cprint(const char *str, size_t len) {
-    std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
-    couts() << llvm::StringRef(str, len);
+    //std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
+    //couts() << ">> Print string of length " << utf8::distance(str, str + len) << ENDL;
+    printf("%.*s", (unsigned)(len & UINT_MAX), str);
+    //couts() << llvm::StringRef(str, len);
 }
 
 FB_INTERNAL(int) cprintf(const char *str, size_t len, ...) {
-    std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
+    //std::lock_guard<decltype(stdOutMx)> lck(stdOutMx);
     va_list v;
     va_start(v, len);
     std::string fstr(str, len);
@@ -466,6 +474,10 @@ FB_INTERNAL(void) str_format(char *strVal, size_t strLen, String *ret, ...) {
 
 }
 
+FB_INTERNAL(size_t) str_hash(char *strVal, size_t strLen) {
+    return llvm::hash_value(llvm::StringRef(strVal, strLen));
+}
+
 
 FB_INTERNAL(size_t) u8string_len(char *strVal, size_t strLen) {
     return String(strVal, strLen).u8length();
@@ -580,7 +592,7 @@ FB_INTERNAL(bool) setfileStreamPos(void *hFile, int64_t pos, StreamPos relativeT
 
 FB_INTERNAL(bool) isPrime(uint64_t numb) {
     static uint64_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
-    if (numb & 1)
+    if (!(numb & 1))
         return numb == 2;
 
     uint64_t end = (uint64_t)std::sqrt(numb) + 1;
@@ -595,6 +607,42 @@ FB_INTERNAL(bool) isPrime(uint64_t numb) {
             return false;
     }
     return true;
+}
+
+inline bool isPrimeSZ(size_t numb) {
+    static const size_t lowerPrimes[] = { 2,3,5,7,11,13,17,19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71 };
+
+    if (!(numb & 1))
+        return numb == 2;
+
+    size_t end = (size_t)std::sqrt(numb) + 1;
+
+    for (int i = 0; i < 20 && lowerPrimes[i] < end; ++i) {
+        if (numb % lowerPrimes[i] == 0) {
+            //printf("isPrimeSZ(%zu) = false", numb);
+            return false;
+        }
+
+    }
+
+    for (size_t i = 73; i < end; i += 2) {
+        if (numb % i == 0) {
+            //printf("isPrimeSZ(%zu) = false", numb);
+            return false;
+        }
+    }
+    //printf("isPrimeSZ(%zu) = true", numb);
+    return true;
+}
+
+FB_INTERNAL(size_t) nextPrime(size_t numb) {
+    if (numb < 5)// We dont want too small primes ...
+        return 5;
+    numb |= 1;
+    while (!isPrimeSZ(numb)) {
+        numb += 2;
+    }
+    return numb;
 }
 
 FB_INTERNAL(void) *gc_new_mutex() {

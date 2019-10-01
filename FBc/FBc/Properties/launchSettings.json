@@ -2,9 +2,9 @@
   "profiles": {
     "FBc": {
       "commandName": "Project",
-      "commandLineArgs": "--emit-llvm -O3 VererbungTest.fbs",
+      "commandLineArgs": "IntegratedHashMapTest.fbs --emit-llvm -O0",
       "workingDirectory": "D:\\Besitzer\\Desktop",
-      "nativeDebugging": true
+      "nativeDebugging": false
     }
   }
 }

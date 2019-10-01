@@ -40,6 +40,19 @@ namespace FBc {
             fnTy = default;
             return false;
         }
+        public override bool CanBePassedAsParameterTo(IType actualTy, IType formalTy, out int diff) {
+            if (base.CanBePassedAsParameterTo(actualTy, formalTy, out diff))
+                return true;
+            if (formalTy.TryCast<IterableType>(out var iter)) {
+                if (IsIterable(actualTy, iter.ItemType) || actualTy.IsArrayOf(iter.ItemType)) {
+                    diff = 2;
+                    return true;
+                }
+            }
+            diff = int.MaxValue;
+            return false;
+        }
+
         public static FBSemantics Instance {
             get {
                 if (instance is null) {
@@ -213,7 +226,7 @@ namespace FBc {
                             nwArgs.Add(new IndexerExpression(it.Current.Position, met.Arguments[i].Type, range, new[] { Literal.UInt(j) }));
                         }
 
-                        
+
                         nwArgs.Add(new UnOp(it.Current.Position,
                             null,
                             UnOp.OperatorKind.UNPACK,

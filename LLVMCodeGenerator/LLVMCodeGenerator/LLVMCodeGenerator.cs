@@ -53,9 +53,10 @@ namespace LLVMCodeGenerator {
         IntPtr interfaceType = IntPtr.Zero;
         protected internal readonly OptLevel optLvl;
         protected internal readonly byte maxOptIterations;
+        protected internal readonly ISemantics semantics;
 
-
-        protected ManagedContext ctx;
+        protected internal ManagedContext ctx;
+        readonly BuiltinHashMap bhm;
 
         public string OutputFilename {
             get;
@@ -64,7 +65,7 @@ namespace LLVMCodeGenerator {
             get;
         }
 
-        public LLVMCodeGenerator(string outputFilename, OptLevel lvl = OptLevel.O1, byte _maxOptIterations = 4, bool isLibrary = false)
+        public LLVMCodeGenerator(string outputFilename, OptLevel lvl = OptLevel.O1, byte _maxOptIterations = 4, bool isLibrary = false, ISemantics sem = null)
             : base(TemplateBehavior.None, TemplateBehavior.None, false, false, new DefaultNameMangler()) {
             if (string.IsNullOrWhiteSpace(outputFilename))
                 throw new ArgumentException("The output-filename must not be empty", nameof(outputFilename));
@@ -73,6 +74,8 @@ namespace LLVMCodeGenerator {
             optLvl = lvl;
             maxOptIterations = _maxOptIterations;
             IsLibrary = isLibrary;
+            semantics = sem ?? new BasicSemantics();
+            bhm = new BuiltinHashMap(this);
         }
         protected internal IEnumerable<IType> GetAllSuperTypes(IType tp) {
             if (tp is null)
@@ -173,7 +176,7 @@ namespace LLVMCodeGenerator {
         protected override bool DeclareMethodImpl(IMethod met) {
             if (met.IsInternal())
                 return true;
-            return TryGetMethod(met, out _);
+            return TryGetMethod(met, out _, default);
         }
 
         protected override bool DeclareMethodTemplateImpl(IMethodTemplate<IMethod> met) {
@@ -186,6 +189,8 @@ namespace LLVMCodeGenerator {
         protected override bool ImplementTypeImpl(IType ty) {
             if (ty.IsImport())
                 return true;
+            if (ty.IsBuiltin())
+                return ImplementBuiltinType(ty);
             bool succ = true;
             if (virtualMethods.TryGetValue(ty, out ISet<IMethod> virtMets) || ty.CanBeInherited()) {
                 if (virtMets is null) {
@@ -223,7 +228,7 @@ namespace LLVMCodeGenerator {
                             succ = $"The method {met.Signature} cannot override {met.OverrideTarget}, since it is only a method-template".Report(met.Position, false);
                         }
                         else {
-                            succ &= TryGetMethod(met, out var llMet);
+                            succ &= TryGetMethod(met, out var llMet, met.Position);
                             uint slot = GetVirtualMethodSlot(ovMet, IntPtr.Zero);
                             vtableVal[slot] = llMet;
                             succ &= TryGetFunctionPtrType(met, out vtableTys[slot]);
@@ -232,7 +237,7 @@ namespace LLVMCodeGenerator {
                         }
                     }
                     else {
-                        succ &= TryGetMethod(met, out var llMet);
+                        succ &= TryGetMethod(met, out var llMet, met.Position);
                         //virtualMethodSlot[met] = vtableVal.Length;
                         SetVirtualMethodSlot(met, vtableVal.Length);
                         vtableVal.Add(llMet);
@@ -280,6 +285,18 @@ namespace LLVMCodeGenerator {
             succ &= ImplementMethods(ty.Context);
             return succ & base.ImplementTypeImpl(ty);
         }
+
+        private bool ImplementBuiltinType(IType tp) {
+            if (tp.Signature.Name == "::HashMap") {
+                var keyTy = (IType)tp.Signature.GenericActualArguments.First();
+                var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
+                return bhm.ImplementBuiltinHashMap(tp, keyTy, valTy);
+            }
+            // already reported, that this is an invalid builtin type
+            return false;
+        }
+
+
 
         protected override bool DeclareTypeTemplateImpl(ITypeTemplate<IType> ty) {
             return true;
@@ -654,7 +671,7 @@ namespace LLVMCodeGenerator {
             //TODO method-implementation
             if (met.IsInternal() || met.IsExternal() || met.IsImport())
                 return true;
-            if (!TryGetMethod(met, out var fn))
+            if (!TryGetMethod(met, out var fn, met.Position))
                 return false;
 
             if (met.Body.Instruction != null) {
@@ -711,7 +728,7 @@ namespace LLVMCodeGenerator {
             return true;
         }
         public bool TryGetFunctionPtrType(IMethod met, out IntPtr ret) {
-            if (!met.IsAbstract() && TryGetMethod(met, out var fn)) {
+            if (!met.IsAbstract() && TryGetMethod(met, out var fn, met.Position)) {
                 ret = ctx.GetFunctionPtrTypeFromFunction(fn);
                 return true;
             }
@@ -808,21 +825,21 @@ namespace LLVMCodeGenerator {
 
             if (met is BasicMethod bm)
                 bm.Visibility = Visibility.Public;
-            return TryGetMethodInternal(met, out ret);
+            return TryGetMethodInternal(met, out ret, default);
         }
 
 
 
-        public bool TryGetMethod(IMethod met, out IntPtr ret) {
+        public bool TryGetMethod(IMethod met, out IntPtr ret, Position pos) {
             if (methods.TryGetValue(met, out ret)) {
                 return true;
             }
             if (met.Signature.Name == "main" && met.IsStatic() && met.NestedIn is Module) {
                 return TryGetMainMethod(met, out ret);
             }
-            return TryGetMethodInternal(met, out ret);
+            return TryGetMethodInternal(met, out ret, pos);
         }
-        bool TryGetMethodInternal(IMethod met, out IntPtr ret) {
+        bool TryGetMethodInternal(IMethod met, out IntPtr ret, Position pos) {
             if (met.IsAbstract()) {
                 // when declaring a bodyless function in llvm, it must be imported from a library,
                 // so don't declare abstract methods
@@ -833,6 +850,8 @@ namespace LLVMCodeGenerator {
                     virtualMethods.Add(parent, met);
                 return true;
             }
+            if (met.IsBuiltin())
+                return GetOrCreateBuiltinFunction(pos, met, out ret);
             if (met.IsInternal()) {
                 ret = GetOrCreateInternalFunction(ctx, met);
                 return true;
@@ -880,6 +899,13 @@ namespace LLVMCodeGenerator {
             methods.Add(met, ret);
             allMethods.Add(met);
             return succ;
+        }
+
+        private bool GetOrCreateBuiltinFunction(Position pos, IMethod met, out IntPtr ret) {
+            if (met.NestedIn is ITypeContext tcx && tcx.Type.Signature.BaseGenericType != null && tcx.Type.Signature.BaseGenericType.Signature.Name == "::HashMap") {
+                return bhm.TryGetMethod(pos, met, out ret);
+            }
+            throw new NotImplementedException();
         }
         #endregion
         #region LazyCreation: Type
@@ -1086,9 +1112,23 @@ namespace LLVMCodeGenerator {
                 ret = GetVarArgType((tp as VarArgType), itemTy);
                 return true;
             }
+            else if (tp.IsBuiltin()) {
+                return TryGetBuiltinType(tp, out ret);
+            }
             ret = IntPtr.Zero;
             return null;
         }
+
+        private bool TryGetBuiltinType(IType tp, out IntPtr ret) {
+            if (tp.Signature.BaseGenericType != null && tp.Signature.BaseGenericType.Signature.Name == "::HashMap") {
+                var keyTy = (IType)tp.Signature.GenericActualArguments.First();
+                var valTy = (IType)tp.Signature.GenericActualArguments.ElementAt(1);
+                return bhm.TryGetBuiltinHashMap(tp, keyTy, valTy, out ret);
+            }
+            ret = ctx.GetVoidPtr();
+            return $"Invalid builtin type: {tp.Signature}".Report(false);
+        }
+
 
 
         public bool TryGetType(IType tp, out IntPtr ret) {

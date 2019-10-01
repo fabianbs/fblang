@@ -84,6 +84,10 @@ namespace CompilerInfrastructure {
         public static bool IsError(this IMethod met) {
             return met == ErrorMethod.Instance;
         }
+        public static bool IsNullOrError(this IMethod met) {
+            return met is null || met == ErrorMethod.Instance;
+        }
+
         public static bool IsStatic(this IMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Static);
         }
@@ -110,6 +114,10 @@ namespace CompilerInfrastructure {
         }
         public static bool IsImport(this IMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Import);
+        }
+
+        public static bool IsBuiltin(this IMethod met) {
+            return met != null && met.Specifiers.HasFlag(Method.Specifier.Builtin);
         }
 
         public static string FullName(this IMethod met) {
@@ -347,15 +355,20 @@ namespace CompilerInfrastructure {
             /// <summary>
             /// This method has no side-effects, which are visible from other places than the method-body
             /// </summary>
-            SideEffectFree = 0x8000,
+            SideEffectFree = 0x8000 | Readonly,
             /// <summary>
             /// This method has no side-effects and reads no memory, which is not allocated in the method-body
             /// </summary>
             Pure = SideEffectFree | 0x10000,
             /// <summary>
+            /// This method either has not implementation at all (all calls will be replaced by specialized LLVM-IR) or 
+            /// the compiler will generate the implementation of this method on its own
+            /// </summary>
+            Builtin = 0x20000,
+            /// <summary>
             /// Dummy, which may be used for extending the specifiers in other modules
             /// </summary>
-            LAST = Pure,
+            LAST = Builtin,
             /// <summary>
             /// All specifiers
             /// </summary>

@@ -106,6 +106,7 @@ namespace CompilerInfrastructure.Structure.Types {
             switch (name) {
                 case PrimitiveName.Char:
                 case PrimitiveName.Short:
+                case PrimitiveName.Handle:
                 case PrimitiveName.Int:
                 case PrimitiveName.Long:
                 case PrimitiveName.BigLong:

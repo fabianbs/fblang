@@ -1,5 +1,6 @@
 #include "StringHelper.h"
 #include <llvm/IR/IRBuilder.h>
+#include <utf8.h>
 namespace StringHelper {
     using namespace llvm;
     llvm::Constant *CreateIntSZ(Module &M, size_t val) {
@@ -37,6 +38,7 @@ namespace StringHelper {
         IRBuilder<> irb(M.getContext());
         auto gep = irb.CreateGlobalStringPtr(strVal);
         auto len = CreateIntSZ(M, strVal.size());
+        
 
         return ConstantStruct::get((StructType *)CreateStringType(M), { gep, len });
     }

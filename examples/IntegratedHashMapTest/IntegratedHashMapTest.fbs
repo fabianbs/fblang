@@ -1,0 +1,24 @@
+global main(){
+    int[string] map = new ()
+    map["eins"] = 1
+    map["zwei"] = 2
+    //map.insertZip(["drei", "vier"], [3, 4], true)
+    map.insert("fünf", 5, false)
+    map["sechs"] = 6
+    
+    cprint("map.getOrElse(\"drei\", -1) = ")
+    cprintln(map.getOrElse("drei", -1))
+    
+    cprint("map[\"fünf\"] = ")
+    cprintln(map["fünf"])
+    
+    map["drei"] = 33
+    cprint("map[\"drei\"] = ")
+    cprintln(map["drei"])
+    
+    map.@forEach{
+        cprint(%key)
+        cprint(" => ")
+        cprintln(%value)
+    }
+} 

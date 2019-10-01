@@ -281,7 +281,7 @@ namespace FBc {
         protected virtual void VisitGenericFormalArgument([NotNull] FBlangParser.GenericFormalArgumentContext context, IGenericParameter genArg) {
 
             if (context.genericTypeParameter() != null) {
-                VisitGenericTypeParameter(context.genericTypeParameter(), (GenericTypeParameter)genArg);
+                VisitGenericTypeParameter(context.genericTypeParameter(), (GenericTypeParameter) genArg);
             }
             // generic literalparameter already finished
         }
@@ -389,7 +389,7 @@ namespace FBc {
                 try {
                     var res = Convert.ToByte(litStr, @base);
                     if (negative) {
-                        res = (byte)(256 - res);
+                        res = (byte) (256 - res);
                     }
                     return new ByteLiteral(pos, res);
                 }
@@ -402,7 +402,7 @@ namespace FBc {
                 try {
                     var res = Convert.ToUInt32(litStr, @base);
                     if (negative) {
-                        res = (uint)((long)uint.MaxValue + 1 - res);
+                        res = (uint) ((long) uint.MaxValue + 1 - res);
                     }
                     return new UIntLiteral(pos, res);
                 }
@@ -428,7 +428,7 @@ namespace FBc {
                 try {
                     var res = Convert.ToUInt16(litStr, @base);
                     if (negative) {
-                        res = (ushort)(ushort.MaxValue + 1 - res);
+                        res = (ushort) (ushort.MaxValue + 1 - res);
                     }
                     return new UShortLiteral(pos, res);
                 }
@@ -480,14 +480,14 @@ namespace FBc {
                     return new BigLongLiteral(pos, value);
                 }
                 else {
-                    long val = (long)value;
+                    long val = (long) value;
                     if (val < int.MinValue)
                         return new LongLiteral(pos, val);
                     else {
                         if (val < short.MinValue || expectedReturnType != PrimitiveType.Short)
-                            return new IntLiteral(pos, (int)val);
+                            return new IntLiteral(pos, (int) val);
                         else
-                            return new ShortLiteral(pos, (short)val);
+                            return new ShortLiteral(pos, (short) val);
                     }
                 }
             }
@@ -503,13 +503,13 @@ namespace FBc {
                     return new BigLongLiteral(pos, value, false);
                 }
                 else {
-                    var val = (ulong)value;
+                    var val = (ulong) value;
                     if (val > long.MaxValue)
                         return new ULongLiteral(pos, val);
-                    else if ((ulong)val > uint.MaxValue)
-                        return new LongLiteral(pos, (long)val);
-                    else if ((uint)val > int.MaxValue)
-                        return new UIntLiteral(pos, (uint)val);
+                    else if ((ulong) val > uint.MaxValue)
+                        return new LongLiteral(pos, (long) val);
+                    else if ((uint) val > int.MaxValue)
+                        return new UIntLiteral(pos, (uint) val);
                     else {
                         PrimitiveName primName;
                         if (expectedReturnType is PrimitiveType prim) {
@@ -518,14 +518,14 @@ namespace FBc {
                         else {
                             primName = PrimitiveName.Int;
                         }
-                        if ((int)val > ushort.MaxValue || primName == PrimitiveName.Int)
-                            return new IntLiteral(pos, (int)val);
-                        else if ((ushort)val > short.MaxValue || primName == PrimitiveName.UShort)
-                            return new UShortLiteral(pos, (ushort)val);
-                        else if ((short)val > byte.MaxValue || primName == PrimitiveName.Short)
-                            return new ShortLiteral(pos, (short)val);
+                        if ((int) val > ushort.MaxValue || primName == PrimitiveName.Int)
+                            return new IntLiteral(pos, (int) val);
+                        else if ((ushort) val > short.MaxValue || primName == PrimitiveName.UShort)
+                            return new UShortLiteral(pos, (ushort) val);
+                        else if ((short) val > byte.MaxValue || primName == PrimitiveName.Short)
+                            return new ShortLiteral(pos, (short) val);
                         else
-                            return new ByteLiteral(pos, (byte)val);
+                            return new ByteLiteral(pos, (byte) val);
                     }
                 }
             }
@@ -589,18 +589,18 @@ namespace FBc {
                 }
                 try {
                     checked {
-                        var ret = (pre + Math.Pow(16, (int)-(Math.Log(post, 16) + 1)) * post) * Math.Pow(10, exp);
+                        var ret = (pre + Math.Pow(16, (int) -(Math.Log(post, 16) + 1)) * post) * Math.Pow(10, exp);
                         if (negative)
                             ret = -ret;
                         if (forceFloat || expectedReturnType == PrimitiveType.Float)
-                            return new FloatLiteral(pos, (float)ret);
+                            return new FloatLiteral(pos, (float) ret);
                         else
                             return new DoubleLiteral(pos, ret);
                     }
                 }
                 catch {
                     return err.Report($"The floating-point literal '{lit.ToString()}' is too {(negative ? "small" : "large")} for a {(forceFloat ? "float" : "double")}-value"
-                        , pos, (forceFloat ? (ILiteral)new FloatLiteral(pos, float.NaN) : new DoubleLiteral(pos, double.NaN)));
+                        , pos, (forceFloat ? (ILiteral) new FloatLiteral(pos, float.NaN) : new DoubleLiteral(pos, double.NaN)));
                 }
             }
             else if (lit.StartsWith("0b", StringComparison.CurrentCultureIgnoreCase)) {
@@ -634,18 +634,18 @@ namespace FBc {
                 }
                 try {
                     checked {
-                        var ret = (pre + Math.Pow(2, (int)-(Math.Log(post, 2) + 1)) * post) * Math.Pow(10, exp);
+                        var ret = (pre + Math.Pow(2, (int) -(Math.Log(post, 2) + 1)) * post) * Math.Pow(10, exp);
                         if (negative)
                             ret = -ret;
                         if (forceFloat)
-                            return new FloatLiteral(pos, (float)ret);
+                            return new FloatLiteral(pos, (float) ret);
                         else
                             return new DoubleLiteral(pos, ret);
                     }
                 }
                 catch {
                     return err.Report($"The floating-point literal '{lit.ToString()}' is too {(negative ? "small" : "large")} for a {(forceFloat ? "float" : "double")}-value"
-                       , pos, (forceFloat ? (ILiteral)new FloatLiteral(pos, float.NaN) : new DoubleLiteral(pos, double.NaN)));
+                       , pos, (forceFloat ? (ILiteral) new FloatLiteral(pos, float.NaN) : new DoubleLiteral(pos, double.NaN)));
                 }
             }
             else {
@@ -728,6 +728,13 @@ namespace FBc {
         void VisitTypeSpecifier([NotNull] FBlangParser.TypeSpecifierContext context, ref IType tp, ref bool toret, string fileName, ErrorBuffer err) {
             if (context.array() != null) {
                 tp = tp.AsArray();
+                if (context.ExclamationMark() != null) {
+                    tp = tp.AsNotNullable();
+                }
+            }
+            else if (context.assocArray() != null) {
+                var keyTy = VisitTypeIdent(context.assocArray().typeIdent(), fileName);
+                tp = IntegratedHashMap.GetOrCreateIntegratedHashMap(Module).BuildType(new[] {  keyTy, tp });
                 if (context.ExclamationMark() != null) {
                     tp = tp.AsNotNullable();
                 }

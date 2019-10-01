@@ -297,6 +297,9 @@ namespace CompilerInfrastructure {
         public static bool IsNotNullable(this IType tp) {
             return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.NotNullable);
         }
+        public static bool IsBuiltin(this IType tp) {
+            return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Builtin);
+        }
 
         public static IType AsArray(this IType tp) {
             return ArrayType.Get(tp);
@@ -321,6 +324,9 @@ namespace CompilerInfrastructure {
         }
         public static bool IsError(this IType tp) {
             return tp == ErrorType.Instance;
+        }
+        public static bool IsNullOrError(this IType tp) {
+            return tp is null || tp == ErrorType.Instance;
         }
         public static bool IsTop(this IType tp) {
             return tp != null && tp.UnWrapAll() == TopType.Instance;
@@ -602,6 +608,7 @@ namespace CompilerInfrastructure {
             Function = 0x80000,
             NotNullable = 0x100000,
             ValueType = 0x200000 | NotNullable,
+            Builtin = 0x400000,
         }
         public static IType GetPrimitive(string name) {
             if (Enum.TryParse<PrimitiveName>(name, out var pname)) {
