@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CompilerInfrastructure.Utils {
+    /// <summary>
+    /// A dictionary, which caches the results of a function. Circular calls will cause an exception
+    /// </summary>
     public class LazyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, IDictionary<TKey, TValue> {
         readonly Dictionary<TKey, TValue> underlying = new Dictionary<TKey, TValue>();
         readonly HashSet<TKey> computing = new HashSet<TKey>();
