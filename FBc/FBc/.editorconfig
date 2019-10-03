@@ -1,0 +1,4 @@
+﻿[*.cs]
+
+# IDE0008: Expliziten Typ verwenden
+csharp_style_var_for_built_in_types = false:silent

@@ -63,60 +63,60 @@ namespace CompilerInfrastructure {
     /// Auxiliary class that provides some utility functions as extension-methods to <see cref="IMethod"/>
     /// </summary>
     public static class MethodHelper {
-        public static bool IsVirtual(this IMethod met) {
+        public static bool IsVirtual(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Virtual);
         }
-        public static bool IsOverride(this IMethod met) {
+        public static bool IsOverride(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Overrides);
         }
-        public static bool IsAsync(this IMethod met) {
+        public static bool IsAsync(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Async);
         }
-        public static bool IsOperatorOverload(this IMethod met) {
+        public static bool IsOperatorOverload(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.OperatorOverload);
         }
-        public static bool IsReadonly(this IMethod met) {
+        public static bool IsReadonly(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Virtual);
         }
-        public static bool IsAbstract(this IMethod met) {
+        public static bool IsAbstract(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Abstract);
         }
-        public static bool IsError(this IMethod met) {
+        public static bool IsError(this IDeclaredMethod met) {
             return met == ErrorMethod.Instance;
         }
-        public static bool IsNullOrError(this IMethod met) {
+        public static bool IsNullOrError(this IDeclaredMethod met) {
             return met is null || met == ErrorMethod.Instance;
         }
 
-        public static bool IsStatic(this IMethod met) {
+        public static bool IsStatic(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Static);
         }
-        public static bool HasUniqueThis(this IMethod met) {
+        public static bool HasUniqueThis(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.UniqueThis);
         }
-        public static bool IsInternal(this IMethod met) {
+        public static bool IsInternal(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Internal);
         }
-        public static bool IsExternal(this IMethod met) {
+        public static bool IsExternal(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.External);
         }
-        public static bool IsConstructor(this IMethod met) {
+        public static bool IsConstructor(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Constructor);
         }
-        public static bool IsDestructor(this IMethod met) {
+        public static bool IsDestructor(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Destructor);
         }
-        public static bool IsFinal(this IMethod met) {
+        public static bool IsFinal(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Final);
         }
-        public static bool IsCoroutine(this IMethod met) {
+        public static bool IsCoroutine(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Coroutine);
         }
-        public static bool IsImport(this IMethod met) {
+        public static bool IsImport(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Import);
         }
 
-        public static bool IsBuiltin(this IMethod met) {
+        public static bool IsBuiltin(this IDeclaredMethod met) {
             return met != null && met.Specifiers.HasFlag(Method.Specifier.Builtin);
         }
 

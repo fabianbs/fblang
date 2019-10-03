@@ -34,6 +34,12 @@ def void HashMap<U, T>{
         #if(U is integer || U is string){
             return ky1 == ky2
         }
+        #elif(equals(U)->bool in U){
+            return ky1.equals(ky2)
+        }
+        #elif(static equals(U,U)->bool in U){
+            return U.equals(ky1, ky2)
+        }
         #elif(operator==(U)->bool in U){
             return ky1 == ky2
         }

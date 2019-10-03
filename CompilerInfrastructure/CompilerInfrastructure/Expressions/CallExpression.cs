@@ -77,6 +77,23 @@ namespace CompilerInfrastructure.Expressions {
         public bool MayHaveSideEffects {
             get => Callee.MayHaveSideEffects(out _);
         }
+        public IEnumerable<(IExpression, IVariable)> MapActualToFormalParameters() {
+            if (!Callee.Arguments.Any())
+                yield break;
+            int i;
+            for(i = 0; i < Callee.Arguments.Length-1; ++i) {
+                yield return (Arguments[i], Callee.Arguments[i]);
+            }
+            if (Callee.IsVariadic()) {
+                var vararg = Callee.Arguments[i];
+                for (; i < Arguments.Length; ++i) {
+                    yield return (Arguments[i], vararg);
+                }
+            }
+            else {
+                yield return (Arguments[i], Callee.Arguments[i]);
+            }
+        }
 
         //public override IRefEnumerator<IASTNode> GetEnumerator() => RefEnumerator.FromArray<IASTNode>(content);
         public override IEnumerable<IExpression> GetExpressions() => content[0] is null ? content.Skip(1) : content;
