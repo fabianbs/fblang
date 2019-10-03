@@ -282,5 +282,11 @@ IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();*/
             Static = 0x10,
         }
         public static IVariable Error => ErrorVariable.Instance;
+        static readonly LazyDictionary<IType, IVariable> thisCache = new LazyDictionary<IType, IVariable>(ty=>{
+            return new BasicVariable(default, ty, Specifier.Final, "this", ty);
+        });
+        public static IVariable This(IType ty) {
+            return thisCache[ty];
+        }
     }
 }

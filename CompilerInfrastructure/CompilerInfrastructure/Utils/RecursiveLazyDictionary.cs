@@ -43,7 +43,7 @@ namespace CompilerInfrastructure.Utils {
         public RecursiveLazyDictionary(Func<TKey, Func<TKey, TValue>, TValue> _fn, TValue _default, IEqualityComparer<TKey> _kyComp = null) {
             if (_fn is null)
                 throw new ArgumentNullException(nameof(_fn));
-            fn = ky => _fn(ky, fn);
+            fn = ky => _fn(ky, x => this[x]);
             if (_kyComp is null)
                 _kyComp = EqualityComparer<TKey>.Default;
             cache = new Dictionary<TKey, TValue>(_kyComp);
