@@ -61,7 +61,7 @@ FB_INTERNAL(_TaskT)* readFileAsync(void * hFile, char * buffer, uint32_t buffers
 		num = ~0;
 	}
 	TaskT task = &ov->task;
-	task->complete = Optional(succ, (void*)num);
+	task->complete = Optional(succ, (void*)(size_t)num);
 	task->coro_resume = nullptr;
 	return task;
 }
@@ -77,7 +77,7 @@ FB_INTERNAL(_TaskT)* writeFileAsync(void * hFile, char * buffer, uint32_t buffer
 		num = ~0;
 	}
 	TaskT task = &ov->task;
-	task->complete = Optional(succ, (void*)num);
+	task->complete = Optional(succ, (void*)(size_t)num);
 	task->coro_resume = nullptr;
 	return task;
 }

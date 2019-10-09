@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{B001E2A6-D6CB-3458-90A5-06CCA95595E0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8A49DCA4-0D9E-3557-B08A-09701DA6BD35}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Actor.cpp" />
+    <ClCompile Include="ActorContext.cpp" />
+    <ClCompile Include="AlignedStorage.cpp" />
+    <ClCompile Include="AsyncFileIO.cpp" />
+    <ClCompile Include="AsyncIO.cpp" />
+    <ClCompile Include="BasicBitcodeJIT.cpp" />
+    <ClCompile Include="Delay.cpp" />
+    <ClCompile Include="FBInternalFunctions.cpp" />
+    <ClCompile Include="ManualResetEvent.cpp" />
+    <ClCompile Include="MPSCQueue.cpp" />
+    <ClCompile Include="ParallelLoop.cpp" />
+    <ClCompile Include="ProgramOptions.cpp" />
+    <ClCompile Include="RandomNumberGenerator.cpp" />
+    <ClCompile Include="SchedulerQueue.cpp" />
+    <ClCompile Include="SimpleGC.cpp" />
+    <ClCompile Include="SimpleJobScheduler.cpp" />
+    <ClCompile Include="String.cpp" />
+    <ClCompile Include="Task.cpp" />
+    <ClCompile Include="TaskBarrier.cpp" />
+    <ClCompile Include="TaskScheduler.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Actor.h" />
+    <ClInclude Include="ActorContext.h" />
+    <ClInclude Include="AlignedStorage.h" />
+    <ClInclude Include="AsyncFileIO.h" />
+    <ClInclude Include="AsyncIO.h" />
+    <ClInclude Include="Delay.h" />
+    <ClInclude Include="FBInternalFunctions.h" />
+    <ClInclude Include="formatStrings.h" />
+    <ClInclude Include="GC_NEW.h" />
+    <ClInclude Include="IDManager.h" />
+    <ClInclude Include="ManualResetEvent.h" />
+    <ClInclude Include="MPSCQueue.h" />
+    <ClInclude Include="ParallelLoop.h" />
+    <ClInclude Include="ProgramOptions.h" />
+    <ClInclude Include="RandomNumberGenerator.h" />
+    <ClInclude Include="SchedulerQueue.h" />
+    <ClInclude Include="SimpleGC.h" />
+    <ClInclude Include="SimpleJobScheduler.h" />
+    <ClInclude Include="Structures.h" />
+    <ClInclude Include="Task.h" />
+    <ClInclude Include="TaskBarrier.h" />
+    <ClInclude Include="TaskScheduler.h" />
+  </ItemGroup>
+</Project>

@@ -26,10 +26,10 @@ void IOProc(void* iocp) {
 		AwaitableOverlapped * awo = nullptr;
 		DWORD numBytes = 0;
 		ULONG_PTR ky = 0;
-		BOOL res = GetQueuedCompletionStatus(iocp, &numBytes, &ky, (LPOVERLAPPED*)&awo, INFINITE);
+		BOOL unused = GetQueuedCompletionStatus(iocp, &numBytes, &ky, (LPOVERLAPPED*)&awo, INFINITE);
 
 		//awo->task.result.store((void*)numBytes, std::memory_order_release);
-		value_event_set(&awo->task.complete, (void*)numBytes);
+		value_event_set(&awo->task.complete, (void*)(ptrdiff_t)numBytes);
 		//event_set(&awo->task.task.complete);
 		awaiter_t* nod = awo->task.awaiters.load(std::memory_order_acquire);
 		auto pool = getThreadPool();

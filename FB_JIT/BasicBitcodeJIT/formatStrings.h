@@ -49,7 +49,7 @@ int vasprintf(char **strp, const char *format, va_list ap)
 	char *str = (char*)malloc((size_t)len + 1);
 	if (!str)
 		return -1;
-	int retval = vsnprintf(str, len + 1, format, ap);
+	int retval = vsnprintf(str, (size_t)len + 1, format, ap);
 	if (retval == -1) {
 		free(str);
 		return -1;

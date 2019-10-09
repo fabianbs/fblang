@@ -65,11 +65,11 @@ int main(int argc, char **argv, char *const *envp) {
             getchar();
             return 2;
         }
-        if (verifyModule(*M, &errs())) {
+        /*if (verifyModule(*M, &errs())) {
             errs() << argv[0] << ": Error verifying Module!\n\n\n";
             getchar();
             return 1;
-        }
+        }*/
 
         errs() << "OK\n";
         Function *parameterlessMain = 0, *cmdLineArgsMain = 0;
@@ -100,7 +100,7 @@ int main(int argc, char **argv, char *const *envp) {
             .setErrorStr(&errStr)
             .setEngineKind(EngineKind::JIT)
             .setVerifyModules(true)
-            .setOptLevel(CodeGenOpt::Aggressive)
+            .setOptLevel(CodeGenOpt::Level::Aggressive)
             .create();
 
         if (!EE) {
