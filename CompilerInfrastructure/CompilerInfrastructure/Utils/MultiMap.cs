@@ -28,31 +28,48 @@ namespace CompilerInfrastructure.Utils {
 
         protected MultiMap(SerializationInfo info, StreamingContext context) : base(info, context) {
         }
+
+        public ISet<TValue> GetOrInsert(TKey ky, TValue dflt = default) {
+            if (!base.TryGetValue(ky, out var ret))
+                base.Add(ky, ret = new HashSet<TValue> { dflt });
+            return ret;
+        }
         public bool Add(TKey ky, TValue val) {
-            if (!TryGetValue(ky, out var vals)) {
+            if (!base.TryGetValue(ky, out var vals)) {
                 vals = new HashSet<TValue>();
-                Add(ky, vals);
+                base.Add(ky, vals);
             }
             return vals.Add(val);
         }
         public new void Add(TKey ky, ISet<TValue> val) {
-            if (TryGetValue(ky, out var vals))
+            if (base.TryGetValue(ky, out var vals))
                 vals.UnionWith(val);
             else
                 base.Add(ky, val);
         }
         public void Add(TKey ky, IEnumerable<TValue> val) {
-            if (TryGetValue(ky, out var vals))
+            if (base.TryGetValue(ky, out var vals))
                 vals.UnionWith(val);
             else
                 base.Add(ky, new HashSet<TValue>(val));
         }
         public bool Remove(TKey ky, TValue val) {
-            if (TryGetValue(ky, out var vals) && vals.Remove(val)) {
+            if (base.TryGetValue(ky, out var vals) && vals.Remove(val)) {
                 if (!vals.Any())
                     Remove(ky);
                 return true;
             }
+            return false;
+        }
+        public new bool ContainsKey(TKey ky) {
+            return base.TryGetValue(ky, out var ret) && ret.Any();
+        }
+        public new bool TryGetValue(TKey ky, out ISet<TValue> val) {
+            if (base.TryGetValue(ky, out var ret) && ret.Any()) {
+                val = ret;
+                return true;
+            }
+            val = default;
             return false;
         }
     }

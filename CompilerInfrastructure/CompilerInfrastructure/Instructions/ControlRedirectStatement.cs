@@ -17,9 +17,9 @@ using System.Text;
 
 namespace CompilerInfrastructure.Instructions {
     [Serializable]
-    public abstract class ControlRedirectStatement : StatementImpl {
+    public abstract class ControlRedirectStatement : StatementImpl, ITerminatorStatement {
         readonly IStatement[] tar;
-        public ControlRedirectStatement(Position  pos, IStatement target) : base(pos) {
+        public ControlRedirectStatement(Position pos, IStatement target) : base(pos) {
             tar = new[] { target ?? "The target of a control-redirect-statement (like bread or continue) must not bei null".Report(pos, Statement.Error) };
         }
         public ref IStatement Target => ref tar[0];
@@ -33,7 +33,7 @@ namespace CompilerInfrastructure.Instructions {
     }
     [Serializable]
     public class BreakStatement : ControlRedirectStatement {
-        public BreakStatement(Position  pos, IStatement target) : base(pos, target) {
+        public BreakStatement(Position pos, IStatement target) : base(pos, target) {
         }
 
         public override IStatement ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
@@ -42,7 +42,7 @@ namespace CompilerInfrastructure.Instructions {
     }
     [Serializable]
     public class ContinueStatement : ControlRedirectStatement {
-        public ContinueStatement(Position  pos, IStatement target) : base(pos, target) {
+        public ContinueStatement(Position pos, IStatement target) : base(pos, target) {
         }
         public override IStatement ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
             return new ContinueStatement(Position, Target.Replace(genericActualParameter, curr, parent));

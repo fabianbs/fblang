@@ -26,3 +26,4 @@ x64/
 LLVMInterface/LLVMInterface/Release/
 LLVMInterface/LLVMInterface/Debug/
 CompilerInfrastructure/CompilerInfrastructure/bin/
+FB_JIT/BasicBitcodeJIT/Fibonacci.dir/Debug/

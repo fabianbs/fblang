@@ -18,7 +18,7 @@ using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
     [Serializable]
-    public class CallExpression : ExpressionImpl, IEphemeralExpression,ISideEffectFulExpression {
+    public class CallExpression : ExpressionImpl, IEphemeralExpression, ISideEffectFulExpression {
         readonly IExpression[] content;
         public CallExpression(Position pos, IType retTy, IMethod met, IExpression parent, ICollection<IExpression> args) : base(pos) {
             Callee = met ?? "A method which is called must not be null".Report(pos, Method.Error);
@@ -81,7 +81,7 @@ namespace CompilerInfrastructure.Expressions {
             if (!Callee.Arguments.Any())
                 yield break;
             int i;
-            for(i = 0; i < Callee.Arguments.Length-1; ++i) {
+            for (i = 0; i < Callee.Arguments.Length - 1; ++i) {
                 yield return (Arguments[i], Callee.Arguments[i]);
             }
             if (Callee.IsVariadic()) {
@@ -93,6 +93,25 @@ namespace CompilerInfrastructure.Expressions {
             else {
                 yield return (Arguments[i], Callee.Arguments[i]);
             }
+        }
+        public MultiMap<IVariable, IExpression> MapFormalToActualParameters() {
+            var ret = new MultiMap<IVariable, IExpression>();
+            if (!Callee.Arguments.Any())
+                return ret;
+            int i;
+            for (i = 0; i < Callee.Arguments.Length - 1; ++i) {
+                ret.Add(Callee.Arguments[i], Arguments[i]);
+            }
+            if (Callee.IsVariadic()) {
+                var vararg = Callee.Arguments[i];
+                for (; i < Arguments.Length; ++i) {
+                    ret.Add(vararg, Arguments[i]);
+                }
+            }
+            else {
+                ret.Add(Callee.Arguments[i], Arguments[i]);
+            }
+            return ret;
         }
 
         //public override IRefEnumerator<IASTNode> GetEnumerator() => RefEnumerator.FromArray<IASTNode>(content);

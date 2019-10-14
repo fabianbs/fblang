@@ -1,0 +1,45 @@
+Context-insensitive, flow-sensitive monotone capture-analysis:
+
+This analysis will be used for determining, which variables (locals, params, fields)
+are stored by a function.
+
+Since it is context-insensitive, it is great for deducing function-/parameter attributes.
+Hence an analysis-query will return a summary for the given function/method.
+
+This Summary consists of:
+    - A set of captured locals/params
+    - Thisptr captured
+    - optional: param-to-return flow
+    
+So an analysis basically computes the summary of the queried function.
+It does so by using a backward-analysis, which is like a taint-analysis, so I 
+will map the analysis specification to a taint analysis to make things easier.
+
+Definition: With the term 'variable' in the following we mean local-variables and 
+            function-parameters.
+Definition: With the term 'variable-value' we mean a variable or an identity-function
+            applied to a variable-value.
+            For the latter we will need the optional param-to-return flow in the summaries.
+
+Source:
+    - Assignment-statement, where the LHS is heap-memory (fields, array-elems, etc.)
+      and the rhs is a variable-value.
+      
+    - Return-statements, where the return-value is a variable-value.
+    
+    - Call-statement: all parameters, which are known to be captured (including the thisptr)
+      
+Sink: 
+    - Variable-declaration
+    - normal-flow to parameter
+
+Normal flow: 
+    - Assignment-statement, where the LHS is 'tainted' and the RHS is a variable-value.
+    - Call-statement => param-to-return flow
+    
+    
+Note : assignments include deconstruction statements
+Note2: calls include new-expressions (constructor calls)
+
+
+    

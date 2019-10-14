@@ -38,7 +38,7 @@ namespace CompilerInfrastructure.Instructions {
         public override IEnumerable<IStatement> GetStatements() => Enumerable.Empty<IStatement>();
     }
     [Serializable]
-    public class ReturnStatement : ControlReturnStatement {
+    public class ReturnStatement : ControlReturnStatement, ITerminatorStatement {
         public ReturnStatement(Position pos, IExpression returnValue = null) : base(pos, returnValue) {
         }
 
