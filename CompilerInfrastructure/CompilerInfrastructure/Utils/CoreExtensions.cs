@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CompilerInfrastructure.Utils {
     public static class CoreExtensions {
-        public static bool TryPop<T>(this Stack<T> stack, out T value) {
+        /*public static bool TryPop<T>(this Stack<T> stack, out T value) {
             if (stack.Count == 0) {
                 value = default;
                 return false;
@@ -21,7 +21,7 @@ namespace CompilerInfrastructure.Utils {
 
             dic.Add(ky, val);
             return true;
-        }
+        }*/
         /*
         public static Span<T> AsSpan<T>(this T[] arr, int offs) {
             return new Span<T>(arr, offs, Math.Max(0, arr.Length - offs));
@@ -30,7 +30,7 @@ namespace CompilerInfrastructure.Utils {
             return new Span<T>(arr, offs, Math.Min(count, arr.Length - offs));
         }*/
     }
-    public static class HashCode {
+    /*public static class HashCode {
         public static int Combine(params int[] hcs) {
             return Combine((IEnumerable<int>)hcs);
         }
@@ -48,19 +48,8 @@ namespace CompilerInfrastructure.Utils {
         public static int Combine(params object[] objs) {
             return Combine(objs?.Select(x => x != null ? x.GetHashCode() : 0));
         }
-        /* public static string AsString(this ReadOnlySpan<char> str) {
-             var arrs = str.AsArraySegment();
-             return new string(arrs.Array, arrs.Offset, arrs.Count);
-         }
-         public static string AsString(this Span<char> str) {
-             var arrs = str.AsArraySegment();
-             return new string(arrs.Array, arrs.Offset, arrs.Count);
-         }
-         public static int Read(this StreamReader sr, Span<char> buf) {
-             var seg = buf.AsArraySegment();
-             return sr.Read(seg.Array, seg.Offset, seg.Count);
-         }*/
-    }/*
+        
+    }*/ /*
     public readonly struct Span<T> : IEnumerable<T> {
         readonly T[] arr;
         readonly int offs;

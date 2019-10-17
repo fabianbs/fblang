@@ -40,6 +40,7 @@ namespace CompilerInfrastructure.Expressions {
             expr = new[] { this };
             return false;
         }
+        public override string ToString() => "this";
     }
     public class BaseExpression : ExpressionImpl {
         public BaseExpression(Position pos, IType retTy) : base(pos) {
@@ -63,5 +64,6 @@ namespace CompilerInfrastructure.Expressions {
             expr = new[] { this };
             return false;
         }
+        public override string ToString() => "base";
     }
 }

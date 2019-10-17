@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace CompilerInfrastructure.Utils {
     public struct Vector<T> : IEnumerable<T> {
@@ -26,6 +27,18 @@ namespace CompilerInfrastructure.Utils {
             arrVal = (T[]) other.arrVal?.Clone();
             capacity = other.capacity;
             size = other.size;
+        }
+        public Vector(IEnumerable<T> other) {
+            if (other is ICollection<T> coll) {
+                var cap = size = checked((uint) coll.Count);
+                capacity = cap; // TODO 
+                arrVal = new T[cap];
+                coll.CopyTo(arrVal, 0);
+            }
+            else {
+                arrVal = other.ToArray();
+                capacity = size = checked((uint) arrVal.LongLength);
+            }
         }
         void EnsureCapacity(uint minCap) {
             if (minCap > capacity) {
@@ -58,9 +71,9 @@ namespace CompilerInfrastructure.Utils {
                 if (index >= size) {
                     EnsureCapacity(index + 1);
                     size = index + 1;
+                    if (arrVal is null)
+                        throw new InvalidProgramException();
                 }
-                if (arrVal is null)
-                    throw new InvalidProgramException();
                 return ref arrVal[index];
             }
         }
@@ -78,6 +91,7 @@ namespace CompilerInfrastructure.Utils {
                 return ref arrVal[size - 1];
             throw new IndexOutOfRangeException();
         }
+
         public ref T Front() {
             if (size > 0)
                 return ref arrVal[0];

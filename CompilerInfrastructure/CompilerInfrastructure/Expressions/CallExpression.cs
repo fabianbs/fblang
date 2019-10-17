@@ -212,5 +212,6 @@ namespace CompilerInfrastructure.Expressions {
             expr = new[] { this };
             return false;
         }
+        public override string ToString() => "call " + Callee.Signature.ToString();
     }
 }

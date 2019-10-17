@@ -18,7 +18,8 @@ namespace CompilerInfrastructure.Utils {
                 }
             }
         }
-        Stack<Dictionary<TKey, TValue>> stack = new Stack<Dictionary<TKey, TValue>>();
+
+        readonly Stack<Dictionary<TKey, TValue>> stack = new Stack<Dictionary<TKey, TValue>>();
         Dictionary<TKey, TValue> tos = new Dictionary<TKey, TValue>();
         public void Push() {
             stack.Push(tos);
@@ -53,11 +54,12 @@ namespace CompilerInfrastructure.Utils {
             }
         }
 
-        public ICollection<TKey> Keys => throw new NotImplementedException();
+        public ICollection<TKey> Keys => tos.Keys;
 
-        public ICollection<TValue> Values => throw new NotImplementedException();
+        public ICollection<TValue> Values => tos.Values;
 
-        public int Count => throw new NotSupportedException();
+        public int Count => tos.Count;
+        public int Depth => 1 + stack.Count;
 
         public bool IsReadOnly => false;
 
@@ -82,7 +84,10 @@ namespace CompilerInfrastructure.Utils {
             return TryGetValue(key, out _);
         }
 
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) => throw new NotImplementedException();
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) {
+            (tos as ICollection<KeyValuePair<TKey, TValue>>).CopyTo(array, arrayIndex);
+        }
+
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() {
             var keySet = new HashSet<TKey>();
             foreach(var kvp in tos) {
@@ -96,8 +101,8 @@ namespace CompilerInfrastructure.Utils {
                 }
             }
         }
-        public bool Remove(TKey key) => throw new NotSupportedException();
-        public bool Remove(KeyValuePair<TKey, TValue> item) => throw new NotSupportedException();
+        public bool Remove(TKey key) => tos.Remove(key);
+        public bool Remove(KeyValuePair<TKey, TValue> item) => (tos as ICollection<KeyValuePair<TKey, TValue>>).Remove(item);
         public bool TryGetValue(TKey key, out TValue ret) {
             if (tos.TryGetValue(key, out ret))
                 return true;

@@ -20,6 +20,8 @@ namespace CompilerInfrastructure.Structure {
     /// </summary>
     [Serializable]
     public class BasicVariable : MutatingVariableImpl {
+        static Dictionary<(string ,IType, IType, IExpression), BasicVariable> variableCache
+            = new Dictionary<(string, IType, IType, IExpression), BasicVariable>();
         /// <summary>
         /// Initializes this unnamed variable/field with the given properties. Do not forget to assign <see cref="MutatingVariableImpl.Type"/>
         /// </summary>
@@ -40,9 +42,11 @@ namespace CompilerInfrastructure.Structure {
         public BasicVariable(Position pos, IType type, Variable.Specifier specs, string name, IType isField, Visibility vis = Visibility.Private)
             : base(pos, vis, type.Signature, specs, name, isField) {
             Type = type;
+            variableCache[(Signature.Name, type, isField, null)] = this;
         }
         ///<inheritdoc/>
         protected override IVariable ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
+
             var ret = this;
             var otherType = Type.Replace(genericActualParameter, curr, parent);
             var otherDefIn = DefinedInType?.Replace(genericActualParameter, curr, parent);
@@ -57,12 +61,14 @@ namespace CompilerInfrastructure.Structure {
                     Visibility) {
                     DefaultValue = otherDflt
                 };*/
-                ret = new BasicVariableReplace(this,
-                    genericActualParameter,
-                    otherType,
-                    otherDefIn,
-                    otherDflt
-                );
+                if (!variableCache.TryGetValue((Signature.Name, otherType, otherDefIn, otherDflt), out ret)) {
+                    ret = new BasicVariableReplace(this,
+                        genericActualParameter,
+                        otherType,
+                        otherDefIn,
+                        otherDflt
+                    );
+                }
             }
             return ret;
         }
@@ -86,6 +92,17 @@ namespace CompilerInfrastructure.Structure {
             }
             vr = this;
             return false;
+        }
+        public override string ToString() => Signature.ToString();
+        public override IExpression DefaultValue {
+            get => base.DefaultValue;
+            set {
+                if (DefaultValue != value) {
+                    variableCache.Remove((Signature.Name, Type, DefinedInType, DefaultValue));
+                    variableCache[(Signature.Name, Type, DefinedInType, value)] = this;
+                    base.DefaultValue = value;
+                }
+            }
         }
     }
     [Serializable]

@@ -106,7 +106,7 @@ namespace CompilerInfrastructure {
                 yield return it.Current;
             }
         }
-        public static IEnumerable<(T, U)> Zip<T, U>(this IEnumerable<T> it1, IEnumerable<U> it2) {
+        internal static IEnumerable<(T, U)> Zip<T, U>(this IEnumerable<T> it1, IEnumerable<U> it2) {
             using (var itit1 = it1.GetEnumerator()) {
                 using (var itit2 = it2.GetEnumerator()) {
                     while (itit1.MoveNext() && itit2.MoveNext()) {

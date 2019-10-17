@@ -215,7 +215,7 @@ namespace StrOpt {
         root->Lhs->replaceWith(ret);
         root->Rhs->replaceWith(ret);
         //llvm::errs() << "done\n";
-        llvm::verifyFunction(F, &llvm::errs());
+        //llvm::verifyFunction(F, &llvm::errs());
     }
 
     StrMultiConcatOptPass::StrMultiConcatOptPass() :FunctionPass(id) {

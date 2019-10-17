@@ -94,7 +94,7 @@ namespace CompilerInfrastructure.Expressions {
         }
 
         public ILiteral Evaluate(ref EvaluationContext context) {
-            var elems = Vector<ILiteral>.Reserve((uint) Elements.Length);
+            var elems = Utils.Vector<ILiteral>.Reserve((uint) Elements.Length);
             foreach (var el in Elements) {
                 if (el.TryEvaluate(out var res)) {
                     elems.Add(res);

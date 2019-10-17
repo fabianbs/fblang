@@ -420,7 +420,7 @@ namespace LLVMCodeGenerator {
                     ctx.Branch(endSwitch, irb);
 
             }
-
+            
             foreach (var (ast, cas) in caseAST.Distinct().Zip(cases.Distinct())) {
                 ctx.ResetInsertPoint(cas, irb);
                 succ &= TryInstructionCodeGen(ast.OnMatch);

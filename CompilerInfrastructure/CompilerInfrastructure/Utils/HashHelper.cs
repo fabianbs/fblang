@@ -16,7 +16,7 @@ namespace CompilerInfrastructure.Utils {
             }
             return hash;
         }
-        static unsafe ulong ToBEInt(Span<byte> bts) {
+        public static unsafe ulong ToBEInt(Span<byte> bts) {
             if (BitConverter.IsLittleEndian) {
                 bts.Reverse();
             }

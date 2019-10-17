@@ -21,6 +21,7 @@ namespace CompilerInfrastructure.Structure.Types {
         internal readonly Dictionary<GenericParameterMap<IGenericParameter, ITypeOrLiteral>, ClassType> genericCache
             = new Dictionary<GenericParameterMap<IGenericParameter, ITypeOrLiteral>, ClassType>();
         readonly HashSet<IType> interfaces = new HashSet<IType>();
+        readonly internal HashSet<IType> subtypes = new HashSet<IType>();
         public ClassType(Position pos, string name, Visibility vis, IContext definedIn) : this(pos, name, vis, null, definedIn) {
         }
         protected internal ClassType(Position pos, string name, Visibility vis, IReadOnlyList<ITypeOrLiteral> genericArguments, IContext definedIn) {
@@ -48,10 +49,22 @@ namespace CompilerInfrastructure.Structure.Types {
         public override Position Position {
             get;
         }
+
+        public IReadOnlyCollection<IType> SubTypes => subtypes.AsReadOnly();
+
+        private ClassType superclass = null;
         public ClassType Superclass {
-            get;
-            set;
-        } = null;
+            get => superclass;
+            set {
+                if (superclass != null) {
+                    superclass.subtypes.Remove(this);
+                }
+                superclass = value;
+                if (value != null) {
+                    value.subtypes.Add(this);
+                }
+            }
+        }
         public IContext Parent {
             get; set;
         } = null;
@@ -115,11 +128,12 @@ namespace CompilerInfrastructure.Structure.Types {
         }
 
         public override IType Replace(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
+            //DOLATER: handle subtypes
             if (!genericCache.TryGetValue(genericActualParameter, out var ret)) {
                 if (Signature.BaseGenericType != null) {
                     var gen = ClassTypeTemplate.FromList(Signature.BaseGenericType.Signature.GenericFormalparameter, Signature.GenericActualArguments)
                         .Then(genericActualParameter, curr, parent);
-                    ret = (ClassType)Signature.BaseGenericType.BuildType(gen, gen.ToValueList());
+                    ret = (ClassType) Signature.BaseGenericType.BuildType(gen, gen.ToValueList());
                     if (genericCache.TryAdd(genericActualParameter, ret))
                         return ret;
                     return genericCache[genericActualParameter];
@@ -152,7 +166,7 @@ namespace CompilerInfrastructure.Structure.Types {
                 ret.Signature.BaseGenericType = Signature.BaseGenericType;
                 genericCache.TryAdd(genericActualParameter, ret);
                 ret.genericCache.TryAdd(genericActualParameter, ret);
-                ret.Context = (ITypeContext)Context.Replace(genericActualParameter, curr, parent);
+                ret.Context = (ITypeContext) Context.Replace(genericActualParameter, curr, parent);
                 ret.Context.Type = ret;
                 ret.interfaces.AddRange(ImplementingInterfaces.Select(x => x.Replace(genericActualParameter, curr, parent)));
                 ret.Parent = parent;

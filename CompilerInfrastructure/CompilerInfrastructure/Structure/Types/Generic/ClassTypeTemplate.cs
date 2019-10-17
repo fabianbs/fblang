@@ -20,6 +20,7 @@ namespace CompilerInfrastructure.Structure.Types.Generic {
         readonly Dictionary<(GenericParameterMap<IGenericParameter, ITypeOrLiteral>, IContext), ClassTypeTemplate> genericCache
             = new Dictionary<(GenericParameterMap<IGenericParameter, ITypeOrLiteral>, IContext), ClassTypeTemplate>();
         readonly Dictionary<EquatableCollection<ITypeOrLiteral>, ClassType> builtTypes = new Dictionary<EquatableCollection<ITypeOrLiteral>, ClassType>();
+        //readonly HashSet<IType> subtypes = new HashSet<IType>();
         public ClassTypeTemplate(Position pos, IContext parentCtx, string name, IReadOnlyList<IGenericParameter> genArgs) {
             Position = pos;
             Parent = parentCtx;
@@ -51,7 +52,7 @@ namespace CompilerInfrastructure.Structure.Types.Generic {
         public IContext Parent {
             get;
         }
-        Type.Specifier typeSpecifiers=Type.Specifier.None;
+        Type.Specifier typeSpecifiers = Type.Specifier.None;
         public Type.Specifier TypeSpecifiers {
             get => typeSpecifiers; set {
                 if (typeSpecifiers != value) {
@@ -79,9 +80,11 @@ namespace CompilerInfrastructure.Structure.Types.Generic {
                 }
             }
         }
-        ClassType superType=null;
+        
+        ClassType superType = null;
         public ClassType SuperType {
-            get => superType; set {
+            get => superType;
+            set {
                 if (value != superType) {
                     superType = value;
                     foreach (var kvp in builtTypes) {
@@ -121,6 +124,9 @@ namespace CompilerInfrastructure.Structure.Types.Generic {
             }
             ret.Context = (ITypeContext) Context?.Replace(dic, Context, Context);
             ret.Context.Type = ret;
+            if (superType != null) {
+                superType.subtypes.Add(ret);
+            }
             ret.genericCache.TryAdd(dic, ret);
             return ret;
             // leads t ostack-overflow exception, since ClassType.Replace calls BuildType
@@ -192,10 +198,16 @@ namespace CompilerInfrastructure.Structure.Types.Generic {
             }
             ret.Context = (ITypeContext) Context?.Replace(dic, Context, Context);
             ret.Context.Type = ret;
+
+            if(superType != null) {
+                superType.subtypes.Add(ret);
+            }
+
             ret.genericCache.TryAdd(dic, ret);
             if (!builtTypes.TryAdd(genArgs, ret)) {
                 return builtTypes[genArgs];
             }
+
             return ret;
         }
         public IRefEnumerator<IASTNode> GetEnumerator() => throw new NotImplementedException();
