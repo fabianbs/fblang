@@ -6,6 +6,7 @@
  *****************************************************************************/
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -77,7 +78,7 @@ namespace CompilerInfrastructure.Expressions {
         public bool MayHaveSideEffects {
             get => Callee.MayHaveSideEffects(out _);
         }
-        public IEnumerable<(IExpression, IVariable)> MapActualToFormalParameters() {
+        public IEnumerable<(IExpression, IVariable)> ActualToFormalParameters() {
             if (!Callee.Arguments.Any())
                 yield break;
             int i;
@@ -93,6 +94,29 @@ namespace CompilerInfrastructure.Expressions {
             else {
                 yield return (Arguments[i], Callee.Arguments[i]);
             }
+        }
+        public IDictionary<IExpression, IVariable> MapActualToFormalParameters() {
+            var ret = new Dictionary<IExpression, IVariable>();
+            if (!Callee.Arguments.Any())
+                //yield break;
+                return ret;
+            int i;
+            for (i = 0; i < Callee.Arguments.Length - 1; ++i) {
+                //yield return (Arguments[i], Callee.Arguments[i]);
+                ret[Arguments[i]] = Callee.Arguments[i];
+            }
+            if (Callee.IsVariadic()) {
+                var vararg = Callee.Arguments[i];
+                for (; i < Arguments.Length; ++i) {
+                    //yield return (Arguments[i], vararg);
+                    ret[Arguments[i]] = vararg;
+                }
+            }
+            else {
+                //yield return (Arguments[i], Callee.Arguments[i]);
+                ret[Arguments[i]] = Callee.Arguments[i];
+            }
+            return ret;
         }
         public MultiMap<IVariable, IExpression> MapFormalToActualParameters() {
             var ret = new MultiMap<IVariable, IExpression>();

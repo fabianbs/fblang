@@ -16,8 +16,7 @@ namespace CompilerInfrastructure.Analysis {
             analysis.Analysis = this;
         }
 
-        protected abstract S ComputeSummary(ISet<D> flowFacts, MonoAnalysisDescription<S, D> analysis);
-       
+
         protected virtual ISet<D> Flow(ISet<D> In, IStatement stmt, out bool terminated) {
             switch (stmt) {
                 case null:
@@ -105,10 +104,17 @@ namespace CompilerInfrastructure.Analysis {
             }
         }
         S MaximalFixedPoint(IDeclaredMethod met) {
-            var facts = analysis.InitialSeeds();
-            if (met.Body.HasValue)
-                facts = Flow(facts, met.Body.Instruction, out _);
-            return ComputeSummary(facts, analysis);
+            analysis.Initialize();
+            try {
+                var facts = analysis.InitialSeeds();
+                if (met.Body.HasValue)
+                    facts = Flow(facts, met.Body.Instruction, out _);
+
+                return analysis.ComputeSummary(met, facts);
+            }
+            finally {
+                analysis.Finish();
+            }
         }
         public S Query(IDeclaredMethod node) {
             return summaries[node];

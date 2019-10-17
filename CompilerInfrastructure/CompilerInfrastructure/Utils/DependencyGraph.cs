@@ -75,7 +75,7 @@ namespace CompilerInfrastructure.Utils{
                     yield return set;
                 else{
                     throw new Exception("Circular dependency detected");
-                    yield break;
+                    //yield break;
                 }
                 foreach(var nod in set){
                     deg.Remove(NodeFromModule(nod));

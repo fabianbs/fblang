@@ -1,16 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using CompilerInfrastructure.Instructions;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
     public readonly struct TaintAnalysisSummary {
-        internal TaintAnalysisSummary(ISet<IVariable> _mfp, MultiMap<IStatement, (IVariable, TaintSource)> _leaks, ISet<IVariable> _returnFacts) {
+        private readonly TaintAnalysisState finalState;
+
+        internal TaintAnalysisSummary(ISet<IVariable> _mfp, TaintAnalysisState finalState) {
             MaximalFixedPoint = _mfp;
-            Leaks = _leaks;
-            ReturnFacts = _returnFacts;
+            this.finalState = finalState ?? throw new ArgumentNullException(nameof(finalState));
         }
         public ISet<IVariable> MaximalFixedPoint { get; }
-        public MultiMap<IStatement, (IVariable, TaintSource)> Leaks { get; }
-        public ISet<IVariable> ReturnFacts { get; }
+        public MultiMap<IStatement, IVariable> Leaks => finalState.leaks;
+        public MultiMap<IVariable, TaintSource> Sources => finalState.factToSrc;
+        public ISet<IVariable> ReturnFacts => finalState.returnFacts;
     }
 }

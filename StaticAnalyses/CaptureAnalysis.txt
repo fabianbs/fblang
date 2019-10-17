@@ -12,7 +12,7 @@ This Summary consists of:
     - optional: param-to-return flow
     
 So an analysis basically computes the summary of the queried function.
-It does so by using a backward-analysis, which is like a taint-analysis, so I 
+It does so by using a mono-analysis, which is like a taint-analysis, so I 
 will map the analysis specification to a taint analysis to make things easier.
 
 Definition: With the term 'variable' in the following we mean local-variables and 
@@ -21,25 +21,26 @@ Definition: With the term 'variable-value' we mean a variable or an identity-fun
             applied to a variable-value.
             For the latter we will need the optional param-to-return flow in the summaries.
 
+Dataflow-domain: 
+    - variables
 Source:
-    - Assignment-statement, where the LHS is heap-memory (fields, array-elems, etc.)
-      and the rhs is a variable-value.
-      
-    - Return-statements, where the return-value is a variable-value.
-    
-    - Call-statement: all parameters, which are known to be captured (including the thisptr)
+    - parameter-values
+    - local-variables declarations
       
 Sink: 
-    - Variable-declaration
-    - normal-flow to parameter
+    - Assignment-statement where the LHS is not a local variable-value and RHS is a tainted variable-value
+    - Call to functions, which capture their parameters (when known, which ones, the analysis can be more precise)
 
 Normal flow: 
-    - Assignment-statement, where the LHS is 'tainted' and the RHS is a variable-value.
-    - Call-statement => param-to-return flow
-    
+    - Assignment-statement, where the LHS is a variable-value and the RHS is a tainted variable-value
+    - function param-to-return flow
     
 Note : assignments include deconstruction statements
 Note2: calls include new-expressions (constructor calls)
-
+Note3: The dataflow-domain contains a special Variable.This value for instance-methods,
+       which is treated as local variable.
+Note4: This analysis can be changed easily to a reference-capture analysis,
+       which keeps track of stack-pointers. This can be done, just by giving more 
+       constraints to the flow-functions/dataflow-domain
 
     

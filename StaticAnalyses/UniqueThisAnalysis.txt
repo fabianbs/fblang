@@ -1,0 +1,6 @@
+UniqueThis analysis:
+    The uniqueThis analysis checks whether the this-pointer is captured by an 
+    instance method.
+    
+    Hence we run the CaptureAnalysis (see ./CaptureAnalysis.txt) and simply check,
+    whether the leak-set contains the special Variable.This value
