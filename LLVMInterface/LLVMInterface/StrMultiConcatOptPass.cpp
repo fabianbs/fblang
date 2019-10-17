@@ -34,7 +34,9 @@ namespace StrOpt {
         }
         virtual bool canBeRemoved()const = 0;
         virtual void print()const = 0;
-        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> & leaves, llvm::SmallVector<StringConcatNode const *, 3> & strconcatLeaves)const = 0;
+        virtual void eraseFromParent() const = 0;
+        virtual void replaceWith(llvm::Value *val)const = 0;
+        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> &leaves, llvm::SmallVector<StringConcatNode const *, 3> &strconcatLeaves)const = 0;
     };
     struct StringConcatNode :public StringNode {
         CallInst *Call;
@@ -63,9 +65,23 @@ namespace StrOpt {
 
             llvm::errs() << *Call << "\n";
         }
-
+        virtual void eraseFromParent()const override {
+            Call->eraseFromParent();
+            if (Lhs)
+                Lhs->eraseFromParent();
+            if (Rhs)
+                Rhs->eraseFromParent();
+        }
+        virtual void replaceWith(llvm::Value *val)const {
+            BasicBlock::iterator ii(Call);
+            ReplaceInstWithValue(ii->getParent()->getInstList(), ii, val);
+            if (Lhs)
+                Lhs->replaceWith(val);
+            if (Rhs)
+                Rhs->replaceWith(val);
+        }
         // Geerbt über StringNode
-        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> & leaves, llvm::SmallVector<StringConcatNode const *, 3> & strconcatLeaves) const override {
+        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> &leaves, llvm::SmallVector<StringConcatNode const *, 3> &strconcatLeaves) const override {
             if (!canBeRemoved()) {
                 leaves.push_back(this);
                 strconcatLeaves.push_back(this);
@@ -104,24 +120,24 @@ namespace StrOpt {
         virtual bool canBeRemoved() const override {
             // We always preserve leaf nodes
             //llvm::errs() << "Leaf\n";
-            llvm::errs().flush();
+           // llvm::errs().flush();
             return false;
         }
-
+        virtual void eraseFromParent()const override { }
         // Geerbt über StringNode
         virtual void print() const override {
             llvm::errs() << "LeafNode: " << *Val << "\n";
         }
-
+        virtual void replaceWith(llvm::Value *val)const { }
         // Geerbt über StringNode
-        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> & leaves, llvm::SmallVector<StringConcatNode const *, 3> & strconcatLeaves) const override {
+        virtual void collectLeaves(llvm::SmallVector<StringNode const *, 5> &leaves, llvm::SmallVector<StringConcatNode const *, 3> &strconcatLeaves) const override {
             leaves.push_back(this);
         }
     };
 
     char StrMultiConcatOptPass::id = 0;
 
-    void ReplaceStringConcat(Function &F, StringConcatNode const *root, const llvm::SmallVector<StringNode const *, 5> & leaves) {
+    void ReplaceStringConcat(Function &F, StringConcatNode const *root, const llvm::SmallVector<StringNode const *, 5> &leaves) {
 
         //TODO: constant folding
 
@@ -148,8 +164,8 @@ namespace StrOpt {
         llvm::Value *retPtr;
         llvm::Instruction *ret;
         llvm::Constant *sizeVal;
-        
-        
+
+
         {
             llvm::IRBuilder<> inserter(&F.getEntryBlock(), F.getEntryBlock().begin());
             arrPtr = inserter.CreateAlloca(stringTy, sizeVal = StringHelper::CreateIntSZ(*F.getParent(), leaves.size()));
@@ -166,7 +182,7 @@ namespace StrOpt {
             auto zero = StringHelper::CreateInt32(*F.getParent(), 0);
             auto one = StringHelper::CreateInt32(*F.getParent(), 1);
 
-            
+
             for (size_t i = 0; i < leaves.size(); ++i) {
 
                 auto strVal = leaves[i]->asStringValueNode() ? leaves[i]->asStringValueNode()->Val : irb.CreateExtractValue(leaves[i]->asStringConcatNode()->Call, { 0 });
@@ -185,18 +201,21 @@ namespace StrOpt {
             irb.CreateLifetimeStart(retPtr, strSz);
             irb.CreateCall(strmulticoncat, { arrPtr, sizeVal, retPtr });
             ret = irb.CreateLoad(retPtr);
-            
+
             irb.CreateLifetimeEnd(retPtr, strSz);
             irb.CreateLifetimeEnd(arrPtr, strArrSz);
         }
         BasicBlock::iterator ii(root->Call);
-        for (auto &use : root->Call->uses()) {
+
+        /*for (auto &use : root->Call->uses()) {
             use.set(ret);
-        }
-        //root->Call->eraseFromParent();
-        //ReplaceInstWithInst(ii->getParent()->getInstList(), ii, ret);
+        }*/
+        //root->eraseFromParent();
+        ReplaceInstWithValue(ii->getParent()->getInstList(), ii, ret);
+        root->Lhs->replaceWith(ret);
+        root->Rhs->replaceWith(ret);
         //llvm::errs() << "done\n";
-        //llvm::verifyFunction(F, &llvm::errs());
+        llvm::verifyFunction(F, &llvm::errs());
     }
 
     StrMultiConcatOptPass::StrMultiConcatOptPass() :FunctionPass(id) {
@@ -254,11 +273,13 @@ namespace StrOpt {
                     }
                     if (strconc->Lhs->canBeRemoved() || strconc->Rhs->canBeRemoved()) {
                         // strconc is a candidate for optimization
-                        //llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
+                        llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
                         llvm::SmallVector<const StringNode *, 5> leaves;
                         strconc->collectLeaves(leaves, strconcatLeaves);
-                        ret = true;
-                        ReplaceStringConcat(F, strconc, leaves);
+                        if (strconc->canBeRemoved()) {
+                            ret = true;
+                            ReplaceStringConcat(F, strconc, leaves);
+                        }
                     }
                 }
             }
@@ -273,7 +294,10 @@ namespace StrOpt {
                     //llvm::errs() << "::ROOT: " << *strconc->Call << "\n";
                     llvm::SmallVector<const StringNode *, 5> leaves;
                     strconc->collectLeaves(leaves, strconcatLeaves);
-                    ReplaceStringConcat(F, strconc, leaves);
+                    if (strconc->canBeRemoved()) {
+                        ret = true;
+                        ReplaceStringConcat(F, strconc, leaves);
+                    }
                 }
             }
             //llvm::errs() << "ROOTS END------------------------------------------\n";

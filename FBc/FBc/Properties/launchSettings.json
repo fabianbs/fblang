@@ -2,7 +2,7 @@
   "profiles": {
     "FBc": {
       "commandName": "Project",
-      "commandLineArgs": "IntegratedHashMapTest.fbs --emit-llvm -O0",
+      "commandLineArgs": "IntegratedHashMapTest.fbs --emit-llvm -O3",
       "workingDirectory": "D:\\Besitzer\\Desktop",
       "nativeDebugging": false
     }

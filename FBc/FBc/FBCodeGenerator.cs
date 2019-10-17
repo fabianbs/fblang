@@ -132,7 +132,7 @@ namespace FBc {
                             }
                         }
                         else {
-                            $"Cannot find the runtime {runtimeName}. It needs to be linked into the executable. Otherwise it will run.".Report();
+                            $"Cannot find the runtime {runtimeName}. It needs to be linked into the executable. Otherwise it will not run.".Report();
                         }
                     }
                     else {

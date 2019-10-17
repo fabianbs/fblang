@@ -36,6 +36,7 @@
 #include "GC_NEW.h"
 #include <gc.h>
 #include <utf8.h>
+#include <cassert>
 #define STRETURN(str){*_ret=(str);return;}
 
 #ifdef WIN32
@@ -46,9 +47,8 @@
 #define ENDL_LEN 1
 #endif
 
-std::unordered_set<std::string> stringpool;
 
-std::mutex stringpoolMx;
+//std::mutex stringpoolMx;
 std::mutex stdOutMx;
 static llvm::raw_ostream &couts() {
     std::error_code ec;
@@ -65,7 +65,8 @@ String fromStringPool(std::string &&str) {
         stringpool.insert(str);
         it = stringpool.find(str);
     }*/
-    std::lock_guard<decltype(stringpoolMx)> lock(stringpoolMx);
+    static std::unordered_set<std::string> stringpool;
+    //std::lock_guard<decltype(stringpoolMx)> lock(stringpoolMx);
     String toret = { /*it->c_str()*/stringpool.insert(str).first->data(), (uint32_t)str.size() };
 
     return toret;
@@ -83,12 +84,12 @@ void findAndReplaceAll(std::string &data, std::string &&toSearch, const std::str
         pos = data.find(toSearch, pos + toSearch.size());
     }
 }
-String fromStringPool(char *buf, uint32_t len) {
+/*String fromStringPool(char *buf, uint32_t len) {
 
     std::lock_guard<decltype(stringpoolMx)> lock(stringpoolMx);
     String toret = { stringpool.emplace(buf, len).first->data(), len };
     return toret;
-}
+}*/
 
 
 void negate(int64_t hi, int64_t lo, uint64_t &retHi, uint64_t &retLo) {

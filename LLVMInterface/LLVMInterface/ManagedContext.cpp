@@ -1465,7 +1465,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                         if (has)
                             pm.add(llvm::createAlwaysInlinerLegacyPass());
                     }
-                    else if (it != maxIterations - 1)
+                    else if (it == maxIterations - 1)
                         pm.add(llvm::createLoadStoreVectorizerPass());
                 }
 
