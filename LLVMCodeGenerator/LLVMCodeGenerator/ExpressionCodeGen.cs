@@ -116,7 +116,7 @@ namespace LLVMCodeGenerator {
                 if (vr.Variable.IsLocallyAllocated())
                     return false;
             }
-            return gen.IsReferenceType(exp.ReturnType);
+            return LLVMCodeGenerator.IsReferenceType(exp.ReturnType);
         }
         /// <summary>
         /// Tries the get indexer expression memory location.
@@ -379,7 +379,7 @@ namespace LLVMCodeGenerator {
                         return $"The non-primitive type {valTy.Signature} cannot be cast to string".Report(pos, false);
                     }
                 }
-                ret = CastPrimitiveToString(val, (PrimitiveType) valTy);
+                ret = CastPrimitiveToString(val, valTy.Cast<PrimitiveType>());
                 return true;
             }
             if (valTy.IsArray() && destTy.IsArraySlice()) {
@@ -429,7 +429,7 @@ namespace LLVMCodeGenerator {
                         ThrowIfNull(val);
                     Vector<uint> gepIdx = default;
                     gepIdx.Add(0);
-                    foreach (var sup in gen.GetAllSuperTypes(valTy)) {
+                    foreach (var sup in LLVMCodeGenerator.GetAllSuperTypes(valTy)) {
                         if (sup.ImplementsInterface(sup)) {
                             gepIdx.Add(0);
                         }
@@ -548,7 +548,7 @@ namespace LLVMCodeGenerator {
             else {
                 ret = IntPtr.Zero;
                 return gen.TryGetVariableType(destTy, isLocallyAllocated, out var tar)
-                    && TryCast(val, tar, destTy is PrimitiveType prim && prim.IsUnsignedInteger, out ret);
+                    && TryCast(val, tar, destTy.TryCast<PrimitiveType>(out var prim) && prim.IsUnsignedInteger, out ret);
             }
         }
         //both types are classTypes and not locally allocated
@@ -910,7 +910,7 @@ namespace LLVMCodeGenerator {
             }
             return ret;
         }
-        private bool TryStringMultiConcat(BinOp bo, out IntPtr ret) {
+        /*private bool TryStringMultiConcat(BinOp bo, out IntPtr ret) {
             return TryStringMultiConcat(bo, LinearizeStringAdd(bo), out ret);
         }
         private bool TryStringMultiConcat(IExpression expr, IEnumerable<IExpression> stringOperands, out IntPtr ret) {
@@ -948,7 +948,7 @@ namespace LLVMCodeGenerator {
             }
             ret = default;
             return false;
-        }
+        }*/
         /// <summary>
         /// Already tested, that objTy is Supertype of ty
         /// </summary>
@@ -1002,7 +1002,7 @@ namespace LLVMCodeGenerator {
             if (gen.interfaceVTableSlots.TryGetValue((tp, intf), out var slot)) {
                 Vector<uint> gepIdx = default;
                 gepIdx.Add(0);
-                foreach (var sup in gen.GetAllSuperTypes(tp)) {
+                foreach (var sup in LLVMCodeGenerator.GetAllSuperTypes(tp)) {
                     if (sup.ImplementsInterface(intf))
                         gepIdx.Add(0);
                     else

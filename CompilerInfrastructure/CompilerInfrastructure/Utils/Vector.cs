@@ -5,7 +5,7 @@ using System.Text;
 using System.Linq;
 
 namespace CompilerInfrastructure.Utils {
-    public struct Vector<T> : IEnumerable<T> {
+    public struct Vector<T> : IEnumerable<T>, IEquatable<Vector<T>> {
         T[] arrVal;
         uint capacity;
         uint size;
@@ -163,5 +163,38 @@ namespace CompilerInfrastructure.Utils {
                 yield return arrVal[i];
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public override bool Equals(object obj) => obj is Vector<T> vector && Equals(vector);
+        public bool Equals(Vector<T> other) {
+            var sz = size;
+            if (sz != other.size)
+                return false;
+            var comp = EqualityComparer<T>.Default;
+            var otherArr = other.arrVal;
+            for (uint i = 0; i < sz; ++i) {
+                if (!comp.Equals(arrVal[i], otherArr[i]))
+                    return false;
+            }
+            return true;
+            ;
+        }
+
+        public override int GetHashCode() {
+            if (arrVal is null)
+                return 0;
+            else {
+                
+                return arrVal.Fold(8).Select(x => x.Length switch {
+                    8 => HashCode.Combine(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]),
+                    7 => HashCode.Combine(x[0], x[1], x[2], x[3], x[4], x[5], x[6]),
+                    6 => HashCode.Combine(x[0], x[1], x[2], x[3], x[4], x[5]),
+                    5 => HashCode.Combine(x[0], x[1], x[2], x[3], x[4]),
+                    4 => HashCode.Combine(x[0], x[1], x[2], x[3]),
+                    3 => HashCode.Combine(x[0], x[1], x[2]),
+                    2 => HashCode.Combine(x[0], x[1]),
+                    1 => HashCode.Combine(x[0]),
+                    _ => 0
+                }).Sum();
+            }
+        }
     }
 }

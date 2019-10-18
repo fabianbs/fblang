@@ -20,7 +20,7 @@ namespace CompilerInfrastructure.Structure {
     /// </summary>
     [Serializable]
     public class BasicVariable : MutatingVariableImpl {
-        static Dictionary<(string ,IType, IType, IExpression), BasicVariable> variableCache
+        static readonly Dictionary<(string ,IType, IType, IExpression), BasicVariable> variableCache
             = new Dictionary<(string, IType, IType, IExpression), BasicVariable>();
         /// <summary>
         /// Initializes this unnamed variable/field with the given properties. Do not forget to assign <see cref="MutatingVariableImpl.Type"/>

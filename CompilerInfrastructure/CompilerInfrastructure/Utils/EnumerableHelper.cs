@@ -4,7 +4,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
+using SimdVec = System.Numerics.Vector;
 
 namespace CompilerInfrastructure {
     public static class EnumerableHelper {
@@ -36,17 +39,15 @@ namespace CompilerInfrastructure {
             public void CopyTo(T[] array, int arrayIndex) {
                 if (arrayIndex < 0)
                     throw new IndexOutOfRangeException(nameof(arrayIndex));
-                using (var it = underlying.GetEnumerator()) {
-                    for (int i = 0; it.MoveNext() && i < Count && arrayIndex < array.Length; ++i) {
-                        array[arrayIndex++] = it.Current;
-                    }
+                using var it = underlying.GetEnumerator();
+                for (int i = 0; it.MoveNext() && i < Count && arrayIndex < array.Length; ++i) {
+                    array[arrayIndex++] = it.Current;
                 }
             }
             public IEnumerator<T> GetEnumerator() {
-                using (var it = underlying.GetEnumerator()) {
-                    for (int i = 0; it.MoveNext() && i < Count; ++i) {
-                        yield return it.Current;
-                    }
+                using var it = underlying.GetEnumerator();
+                for (int i = 0; it.MoveNext() && i < Count; ++i) {
+                    yield return it.Current;
                 }
             }
             public bool Remove(T item) => throw new NotSupportedException();
@@ -107,28 +108,72 @@ namespace CompilerInfrastructure {
             }
         }
         internal static IEnumerable<(T, U)> Zip<T, U>(this IEnumerable<T> it1, IEnumerable<U> it2) {
-            using (var itit1 = it1.GetEnumerator()) {
-                using (var itit2 = it2.GetEnumerator()) {
-                    while (itit1.MoveNext() && itit2.MoveNext()) {
-                        yield return (itit1.Current, itit2.Current);
-                    }
-                }
+            using var itit1 = it1.GetEnumerator();
+            using var itit2 = it2.GetEnumerator();
+            while (itit1.MoveNext() && itit2.MoveNext()) {
+                yield return (itit1.Current, itit2.Current);
             }
         }
         public static bool HasCount<T>(this IEnumerable<T> iter, int count) {
             if (count <= 0)
                 return !iter.Any();
-            using (var it = iter.GetEnumerator()) {
-                while (count > 0 && it.MoveNext()) {
-                    count--;
-                }
-                return count == 0 && !it.MoveNext();
+            using var it = iter.GetEnumerator();
+            while (count > 0 && it.MoveNext()) {
+                count--;
             }
+            return count == 0 && !it.MoveNext();
         }
         public static IReadOnlyCollection<T> AsReadOnly<T>(this ICollection<T> coll) {
             if (coll is IReadOnlyCollection<T> roc)
                 return roc;
             return new AsReadOnlyCollection<T>(coll);
+        }
+        public static IEnumerable<T[]> Fold<T>(this IEnumerable<T> it, uint foldLen) {
+            using var iter = it.GetEnumerator();
+            var vec = new T[foldLen];
+            while (true) {
+                uint i;
+                for (i = 0; i < foldLen && iter.MoveNext(); ++i) {
+                    vec[i] = iter.Current;
+                }
+                if (i == foldLen) {
+                    yield return vec;
+                    vec = new T[foldLen];
+                }
+                else {
+                    Array.Resize(ref vec, (int) i);
+                    yield return vec;
+                    yield break;
+                }
+            }
+        }
+        public unsafe static int GetArrayHashCode<T>(T[] arr) {
+            if (arr is null)
+                return 0;
+            if (typeof(T).IsPrimitive) {
+                // vectorize
+                // TODO review and test
+                unchecked {
+                    var vectorLen = System.Numerics.Vector<byte>.Count;
+                    var ret = new System.Numerics.Vector<byte>(Enumerable.Repeat<byte>(31, vectorLen).ToArray());
+
+                    ref var ptr = ref Unsafe.As<T, byte>(ref arr[0]);
+                    Span<byte> buf = stackalloc byte[vectorLen]; // vectorlen is always small, so allocate on the stack...
+
+                    var arrLen = Marshal.SizeOf<T>() * arr.Length;
+                    for (int i = 0; i <= arrLen - vectorLen; i += vectorLen) {
+                        Unsafe.CopyBlock(ref buf[0], ref Unsafe.AddByteOffset(ref ptr, (IntPtr) i), (uint) vectorLen);
+                        ret += new System.Numerics.Vector<byte>(buf) * 17;
+                    }
+                    var ones = new System.Numerics.Vector<byte>(Enumerable.Repeat<byte>(1, vectorLen).ToArray());
+                    return SimdVec.Dot(ones, ret);
+                }
+            }
+            else {
+                // normal 
+                var comp = EqualityComparer<T>.Default;
+                return arr.Aggregate(31, (acc, x) => unchecked(17 + acc * comp.GetHashCode(x)));
+            }
         }
     }
     public static class Collection {

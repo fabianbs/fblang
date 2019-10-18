@@ -159,18 +159,14 @@ namespace CompilerInfrastructure.Expressions {
         public ILiteral Evaluate(ref EvaluationContext context) {
             if (!IsCompileTimeEvaluable || !SubExpression.TryEvaluate(ref context, out var sub))
                 return null;
-            switch (Operator) {
-                case OperatorKind.NEG:
-                    return Literal.WithRealType(sub, x => -x, x => ulong.MaxValue - x + 1, x => -x, x => -x);
-                case OperatorKind.NOT:
-                    return Literal.WithRealType(sub, x => ~x, x => ~x, x => ~x, null);
-                case OperatorKind.LNOT:
-                    return Literal.Bool(!sub.IsTrue());
-                case OperatorKind.BOOLCAST:
-                    return Literal.Bool(sub.IsTrue());
-                default:
-                    return null;
-            }
+            return Operator switch
+            {
+                OperatorKind.NEG => Literal.WithRealType(sub, x => -x, x => ulong.MaxValue - x + 1, x => -x, x => -x),
+                OperatorKind.NOT => Literal.WithRealType(sub, x => ~x, x => ~x, x => ~x, null),
+                OperatorKind.LNOT => Literal.Bool(!sub.IsTrue()),
+                OperatorKind.BOOLCAST => Literal.Bool(sub.IsTrue()),
+                _ => null,
+            };
         }
     }
     public static class UnOpOperatorHelper {

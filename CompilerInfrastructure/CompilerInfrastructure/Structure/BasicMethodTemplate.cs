@@ -145,16 +145,16 @@ namespace CompilerInfrastructure.Structure {
         public BasicMethod BuildMethod(IList<ITypeOrLiteral> genericActualParameters) {
             var dic = new Dictionary<IGenericParameter, ITypeOrLiteral>();
             int count = Math.Min(Signature.GenericFormalparameter.Count, genericActualParameters?.Count ?? 0);
-            SimpleMethodContext ctx;
+            // SimpleMethodContext ctx;
             if (count > 0) {
                 for (int i = 0; i < count; ++i) {
                     dic.Add(Signature.GenericFormalparameter[i], genericActualParameters[i]);
                 }
-                ctx = (SimpleMethodContext)Context.Replace(dic, Context, Context);
+                //ctx = (SimpleMethodContext)Context.Replace(dic, Context, Context);
             }
-            else {
-                ctx = Context;
-            }
+            //else {
+            //    ctx = Context;
+            //}
 
             var ret = /*new BasicMethod(Position,
                 Signature.Name,

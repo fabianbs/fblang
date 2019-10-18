@@ -25,8 +25,8 @@ namespace CompilerInfrastructure.Analysis {
                     return In;
                 case IfStatement ifStmt: {
                     In = analysis.NormalFlow(In, ifStmt.Condition, ifStmt);
-                    bool thenTerm, elseTerm=false;
-                    var OutThen = Flow(In, ifStmt.ThenStatement, out thenTerm);
+                    bool elseTerm = false;
+                    var OutThen = Flow(In, ifStmt.ThenStatement, out bool thenTerm);
                     var OutElse = ifStmt.ElseStatement != null ? Flow(In, ifStmt.ElseStatement, out elseTerm) : In;
                     terminated = elseTerm && thenTerm;
                     return analysis.Merge(OutThen, OutElse);

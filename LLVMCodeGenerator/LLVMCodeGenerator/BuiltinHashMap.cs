@@ -25,7 +25,8 @@ namespace LLVMCodeGenerator {
             ensureCapacity,
             insertInternal
         }
-        LLVMCodeGenerator gen;
+
+        readonly LLVMCodeGenerator gen;
         readonly Dictionary<IType, (IntPtr, IntPtr)> slotBucketType= new Dictionary<IType, (IntPtr, IntPtr)>();
         //readonly LazyDictionary<IMethod, IntPtr> methods;
         readonly Dictionary<IMethod, IntPtr> methods;

@@ -100,7 +100,7 @@ namespace CompilerInfrastructure.Structure.Summaries {
         protected abstract bool TryTakeObjectInternal<T>(uint id, out T obj) where T : ISummarizable;
     }
     public class JsonSummary : AbstractSummary {
-        Stack< JObject> jobj= new Stack<JObject>();
+        readonly Stack< JObject> jobj= new Stack<JObject>();
 
         public JObject Root { get; }
         public JObject ReferenceCache { get; } = new JObject();

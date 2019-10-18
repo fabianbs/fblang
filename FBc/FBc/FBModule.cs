@@ -102,7 +102,7 @@ namespace FBc {
             get => namespaces;
         }
         [NonSerialized]
-        private FBSemantics semantics = FBSemantics.Instance;
+        private readonly FBSemantics semantics = FBSemantics.Instance;
 
         public FBSemantics Semantics {
             get => semantics;
@@ -169,7 +169,7 @@ namespace FBc {
                 return Expression.Error;
             return new NewObjectExpression(pos, objectType, ctor, args);
         }
-        public bool IsRefIterableOver(IType range, IType over) {
+        public static bool IsRefIterableOver(IType range, IType over) {
             if (range is ModifierType mt)
                 range = mt.UnderlyingType;
             if (range.IsError())
@@ -200,7 +200,7 @@ namespace FBc {
                 }
             }
         }
-        public IEnumerable<IType> IsIterator(IType it) {
+        public static IEnumerable<IType> IsIterator(IType it) {
             if (it is ModifierType mt)
                 it = mt.UnderlyingType;
             if (it.IsError()) {
@@ -245,7 +245,7 @@ namespace FBc {
                 return met.Arguments.Length == 0 && IsIteratorOver(met.ReturnType, over);
             });
         }
-        public bool IsIteratorOver(IType it, IType over) {
+        public static bool IsIteratorOver(IType it, IType over) {
             if (it is ModifierType mt)
                 it = mt.UnderlyingType;
             if (it.IsError())

@@ -5,8 +5,8 @@ using System.Text;
 namespace LLVMCodeGenerator {
     public static class ContextHelper {
         class IRBContext : IDisposable {
-            IntPtr oldBB, irb;
-            NativeManagedContext.ManagedContext ctx;
+            readonly IntPtr oldBB, irb;
+            readonly NativeManagedContext.ManagedContext ctx;
             public IRBContext(NativeManagedContext.ManagedContext ctx, IntPtr oldBB, IntPtr irb) {
                 this.ctx = ctx;
                 this.irb = irb;

@@ -21,8 +21,8 @@ namespace FBc {
     using static CompilerInfrastructure.Contexts.SimpleMethodContext;
     [Serializable]
     public class ReduceExpression : ExpressionImpl {
-        IMethod reductionFunction;
-        BinOp.OperatorKind reductionOperator;
+        readonly IMethod reductionFunction;
+        readonly BinOp.OperatorKind reductionOperator;
         public IExpression DataSource {
             get;
         }

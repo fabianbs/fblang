@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace CompilerInfrastructure.Utils{
     public class DependencyGraph<TModule>{
-        Dictionary<TModule, Node> nodeCache = new Dictionary<TModule, Node>();
+        readonly Dictionary<TModule, Node> nodeCache = new Dictionary<TModule, Node>();
         class Node : IEnumerable<Node>{
             readonly HashSet<Node> directDependencies = new HashSet<Node>();
             readonly TModule module;

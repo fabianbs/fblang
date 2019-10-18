@@ -945,7 +945,7 @@ namespace LLVMCodeGenerator {
             }
             ctx.Store(dest, val, irb);
         }
-        [Obsolete]
+        /*[Obsolete]
         bool TryGetArrayLength(IType arrayTp, IntPtr arr, out IntPtr arrLen) {
             // array:  {i32, [0 x T]}*
             // fsArray:{i32, [length x T]}
@@ -972,7 +972,7 @@ namespace LLVMCodeGenerator {
                 return false;
             }
             return true;
-        }
+        }*/
         bool TryGetArrayElement(IType arrayTp, IntPtr arr, IntPtr index, out IntPtr elem) {
             // array:  {i32, [0 x T]}*
             // fsArray:{i32, [length x T]}

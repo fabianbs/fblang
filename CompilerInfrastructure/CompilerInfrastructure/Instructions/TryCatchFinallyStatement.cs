@@ -29,7 +29,7 @@ namespace CompilerInfrastructure.Instructions {
             blocks[0] = tryBlock ?? "The try-block must be present".Report(pos, Statement.Error);
             catchBlocks.CopyTo(blocks.AsSpan(1));
             if (lastIsFinally)
-                blocks[blocks.Length - 1] = finallyBlock;
+                blocks[^1] = finallyBlock;
         }
         public TryCatchFinallyStatement(Position pos, IStatement tryBlock, ICollection<IStatement> catchBlocks, IStatement finallyBlock = null)
             : base(pos) {
@@ -38,12 +38,12 @@ namespace CompilerInfrastructure.Instructions {
             blocks[0] = tryBlock ?? "The try-block must be present".Report(pos, Statement.Error);
             catchBlocks.CopyTo(blocks, 1);
             if (lastIsFinally)
-                blocks[blocks.Length - 1] = finallyBlock;
+                blocks[^1] = finallyBlock;
         }
 
         public IStatement TryBlock => blocks[0];
         public ReadOnlySpan<IStatement> CatchBlocks => blocks.AsSpan(1, blocks.Length - (lastIsFinally ? 2 : 1));
-        public IStatement FinallyBlock => lastIsFinally ? blocks[blocks.Length - 1] : null;
+        public IStatement FinallyBlock => lastIsFinally ? blocks[^1] : null;
 
         public bool HasFinally => lastIsFinally;
 

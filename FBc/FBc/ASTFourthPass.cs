@@ -210,15 +210,14 @@ namespace FBc {
                 }
             }
             currentMethod = Method.Specifier.None;
-            using (var mains = Module.MethodsByName("main").Skip(1).GetEnumerator()) {
-                // more than one main-method
-                while (mains.MoveNext()) {
-                    "The main-method cannot be overloaded".Report(mains.Current.Position);
-                }
+            using var mains = Module.MethodsByName("main").Skip(1).GetEnumerator();
+            // more than one main-method
+            while (mains.MoveNext()) {
+                "The main-method cannot be overloaded".Report(mains.Current.Position);
             }
         }
 
-        private void HandleIncludingField(BasicVariable fld, FieldInfo info) {
+        private static void HandleIncludingField(BasicVariable fld, FieldInfo info) {
             var fldTy = fld.Type.UnWrapAll();
             var methods = info.IncludingInterface.Context.InstanceContext.Methods.Values
                 .Where(x => x.Visibility == Visibility.Public)
@@ -254,8 +253,9 @@ namespace FBc {
                                                             x.DefinedInType,
                                                             x.Visibility)
                                                         ).ToArray()
-                            );
-                        met.NestedIn = tp.Context;
+                            ) {
+                            NestedIn = tp.Context
+                        };
                         met.Context = new SimpleMethodContext(tpCtx.Module, Context.DefiningRules.Variables, tpCtx, args: met.Arguments);
                         met.Specifiers = (dlgMet.Specifiers | FBMethodSpecifier.AutoIncluded) & ~Method.Specifier.Abstract & ~Method.Specifier.Overrides;
 
@@ -572,10 +572,10 @@ namespace FBc {
                 return err.Report($"The instance-variable {vr.Signature} is not defined in this context", pos, Expression.Error);
             }
         }
-        bool TryGetCallees(FBlangParser.ExContext parentAndName, IType expectedRetTy, out IEnumerable<IMethod> ret, ErrorBuffer err) {
-            //TODO get all possible callees
-            throw new NotImplementedException();
-        }
+        /* bool TryGetCallees(FBlangParser.ExContext parentAndName, IType expectedRetTy, out IEnumerable<IMethod> ret, ErrorBuffer err) {
+             //TODO get all possible callees
+             throw new NotImplementedException();
+         }*/
         bool TryGetCallInternal(FBlangParser.ExContext parentAndName, IExpression[] args, IType expectedRetTy, out IExpression ret, ErrorBuffer err, string fileName) {
             // retrieve method (and parent-expr) from parentAndName and create call
 
@@ -688,7 +688,7 @@ namespace FBc {
             TryGetCall(parentAndName, args, expectedRetTy, out var ret, null, fileName);
             return ret;
         }
-        IStatement GetRandomDeconstruction(Position pos, IEnumerable<IExpression> dest, IType randomDatasource) {
+        static IStatement GetRandomDeconstruction(Position pos, IEnumerable<IExpression> dest, IType randomDatasource) {
             //TODO overload static operator <-
             throw new NotImplementedException();
         }
@@ -827,7 +827,7 @@ namespace FBc {
 
                 if (blockCtx.captures.TryGetValue(vr, out cap))
                     return true;
-                if (!Module.Semantics.ContainVariable(vr, blockCtx.contextStack)) {
+                if (!FBSemantics.ContainVariable(vr, blockCtx.contextStack)) {
                     cap = new LambdaCapture(vr);
                     blockCtx.captures.Add(vr, cap);
                     return true;
@@ -1309,7 +1309,7 @@ namespace FBc {
             ret = new IsTypeExpression(ex.Position(fileName), lhs, rhs);
             return true;
         }
-        BinOp.OperatorKind GetOrderOp(FBlangParser.OrderOpContext context) {
+        static BinOp.OperatorKind GetOrderOp(FBlangParser.OrderOpContext context) {
             if (context.LT() != null)
                 return BinOp.OperatorKind.LT;
             else if (context.LE() != null)
@@ -1701,7 +1701,7 @@ namespace FBc {
             }
             return ret;
         }
-        VariableAccessExpression CreateVariableAccessExpression(Position pos, IType expectedRetTy, string name, IExpression parent) {
+        static VariableAccessExpression CreateVariableAccessExpression(Position pos, IType expectedRetTy, string name, IExpression parent) {
 
             return new VariableAccessExpression(pos, expectedRetTy, name, parent);
         }
@@ -2010,7 +2010,7 @@ namespace FBc {
             IStatement finallyBlock;
             bool hasFinally;
             if (context.Finally() != null) {
-                finallyBlock = VisitBlockInstruction(blocks[blocks.Length - 1]);
+                finallyBlock = VisitBlockInstruction(blocks[^1]);
                 hasFinally = true;
             }
             else {
@@ -2451,15 +2451,12 @@ namespace FBc {
         }
 
         private IStatement VisitMacroStmt(FBlangParser.MacroStmtContext context) {
-            switch (context) {
-                case FBlangParser.MacroCallContext mc:
-                    return VisitMacroCallStmt(mc);
-                case FBlangParser.MacroCaptureContext mc:
-                    return VisitMacroCaptureStmt(mc);
-                default:
-                    throw new ArgumentException(nameof(context));
-            }
-
+            return context switch
+            {
+                FBlangParser.MacroCallContext mc => VisitMacroCallStmt(mc),
+                FBlangParser.MacroCaptureContext mc => VisitMacroCaptureStmt(mc),
+                _ => throw new ArgumentException(nameof(context)),
+            };
         }
 
         private IStatement VisitMacroCaptureStmt(FBlangParser.MacroCaptureContext context) {
@@ -2524,7 +2521,7 @@ namespace FBc {
                 if (args.Length < macro.NamedArguments.Count) {
                     return $"The macro {macro.Name} has too few arguments: it needs {(macro.HasVarArgs ? "at least " : "")}{macro.NamedArguments.Count} arguments.".Report(context.Position(fileName), Statement.Error);
                 }
-                var requiredArgs = args.Take(macro.NamedArguments.Count).Zip(macro.NamedArguments.Values).ToDictionary(x => x.Item2, x => x.Item1);
+                var requiredArgs = args.Take(macro.NamedArguments.Count).Zip(macro.NamedArguments.Values).ToDictionary(x => x.Second, x => x.First);
 
                 var optionalArgs = macro.HasVarArgs ? (macro.VarArgs, args.Skip(macro.NamedArguments.Count).ToArray()) : ((ExpressionParameterPack, IExpression[])?) null;
 

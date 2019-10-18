@@ -13,7 +13,7 @@ namespace CompilerInfrastructure.Analysis.CallGraph {
     /// </summary>
     public class DefaultCallGraphAnalysis : ICallGraphAnalysis {
         //Dictionary<IDeclaredMethod, ISet<IDeclaredMethod>> cache = new Dictionary<IDeclaredMethod, ISet<IDeclaredMethod>>();
-        RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>> cache ;
+        readonly RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>> cache ;
         public DefaultCallGraphAnalysis() {
             cache = new RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>>(GetAllPossibleImplementations, ImmSet.Empty<IDeclaredMethod>());
         }

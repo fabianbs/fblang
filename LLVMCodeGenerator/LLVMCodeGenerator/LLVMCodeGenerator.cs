@@ -77,7 +77,7 @@ namespace LLVMCodeGenerator {
             semantics = sem ?? new BasicSemantics();
             bhm = new BuiltinHashMap(this);
         }
-        protected internal IEnumerable<IType> GetAllSuperTypes(IType tp) {
+        internal protected static IEnumerable<IType> GetAllSuperTypes(IType tp) {
             if (tp is null)
                 yield break;
             if (tp is IHierarchialType htp) {
@@ -927,7 +927,7 @@ namespace LLVMCodeGenerator {
                 return ret;
             return 0;
         }
-        public bool IsReferenceType(IType tp) {
+        public static bool IsReferenceType(IType tp) {
             // arrays are per default reference-types and spans are structs; interfaces are structs
             return !tp.IsValueType() && !tp.IsArraySlice() && !tp.IsInterface();
         }

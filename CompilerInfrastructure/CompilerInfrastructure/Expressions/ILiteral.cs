@@ -687,40 +687,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return this;
-                case PrimitiveName.Char:
-                    return new CharLiteral(Position, (char) Value);
-                case PrimitiveName.Short:
-                    return new ShortLiteral(Position, Value);
-                case PrimitiveName.UShort:
-                    return new UShortLiteral(Position, Value);
-                case PrimitiveName.Int:
-                    return new IntLiteral(Position, Value);
-                case PrimitiveName.UInt:
-                    return new UIntLiteral(Position, Value);
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value);
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return new ULongLiteral(Position, Value);
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, "0x" + Value.ToString("XX"));
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => this,
+                PrimitiveName.Char => new CharLiteral(Position, (char) Value),
+                PrimitiveName.Short => new ShortLiteral(Position, Value),
+                PrimitiveName.UShort => new UShortLiteral(Position, Value),
+                PrimitiveName.Int => new IntLiteral(Position, Value),
+                PrimitiveName.UInt => new UIntLiteral(Position, Value),
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value),
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => new ULongLiteral(Position, Value),
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, "0x" + Value.ToString("XX")),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -737,40 +722,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return this;
-                case PrimitiveName.Byte:
-                    return new ByteLiteral(Position, Value ? (byte) 1 : (byte) 0);
-                case PrimitiveName.Char:
-                    return new CharLiteral(Position, Value ? (char) 1 : '\0');
-                case PrimitiveName.Short:
-                    return new ShortLiteral(Position, Value ? (short) 1 : (short) 0);
-                case PrimitiveName.UShort:
-                    return new UShortLiteral(Position, Value ? (ushort) 1 : (ushort) 0);
-                case PrimitiveName.Int:
-                    return new IntLiteral(Position, Value ? 1 : 0);
-                case PrimitiveName.UInt:
-                    return new UIntLiteral(Position, Value ? 1u : 0u);
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value ? 1u : 0u);
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value ? 1 : 0);
-                case PrimitiveName.ULong:
-                    return new ULongLiteral(Position, Value ? 1u : 0u);
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value ? 1 : 0);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value ? 1 : 0, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value ? 1 : 0);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value ? 1 : 0);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value ? "true" : "false");
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => this,
+                PrimitiveName.Byte => new ByteLiteral(Position, Value ? (byte) 1 : (byte) 0),
+                PrimitiveName.Char => new CharLiteral(Position, Value ? (char) 1 : '\0'),
+                PrimitiveName.Short => new ShortLiteral(Position, Value ? (short) 1 : (short) 0),
+                PrimitiveName.UShort => new UShortLiteral(Position, Value ? (ushort) 1 : (ushort) 0),
+                PrimitiveName.Int => new IntLiteral(Position, Value ? 1 : 0),
+                PrimitiveName.UInt => new UIntLiteral(Position, Value ? 1u : 0u),
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value ? 1u : 0u),
+                PrimitiveName.Long => new LongLiteral(Position, Value ? 1 : 0),
+                PrimitiveName.ULong => new ULongLiteral(Position, Value ? 1u : 0u),
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value ? 1 : 0),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value ? 1 : 0, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value ? 1 : 0),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value ? 1 : 0),
+                PrimitiveName.String => new StringLiteral(Position, Value ? "true" : "false"),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -788,40 +758,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return this;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return new UShortLiteral(Position, Value);
-                case PrimitiveName.Int:
-                    return new IntLiteral(Position, Value);
-                case PrimitiveName.UInt:
-                    return new UIntLiteral(Position, Value);
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value);
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return new ULongLiteral(Position, Value);
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => this,
+                PrimitiveName.Short => Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => new UShortLiteral(Position, Value),
+                PrimitiveName.Int => new IntLiteral(Position, Value),
+                PrimitiveName.UInt => new UIntLiteral(Position, Value),
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value),
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => new ULongLiteral(Position, Value),
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -838,40 +793,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return this;
-                case PrimitiveName.UShort:
-                    return Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return new IntLiteral(Position, Value);
-                case PrimitiveName.UInt:
-                    return Value >= 0 ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return Value >= 0 ? new BigLongLiteral(Position, Value, true) : null;
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => this,
+                PrimitiveName.UShort => Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => new IntLiteral(Position, Value),
+                PrimitiveName.UInt => Value >= 0 ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => Value >= 0 ? new BigLongLiteral(Position, Value, true) : null,
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -888,40 +828,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return new CharLiteral(Position, (char) Value);
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return this;
-                case PrimitiveName.Int:
-                    return new IntLiteral(Position, Value);
-                case PrimitiveName.UInt:
-                    return new UIntLiteral(Position, Value);
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value);
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return new ULongLiteral(Position, Value);
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => new CharLiteral(Position, (char) Value),
+                PrimitiveName.Short => Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => this,
+                PrimitiveName.Int => new IntLiteral(Position, Value),
+                PrimitiveName.UInt => new UIntLiteral(Position, Value),
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value),
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => new ULongLiteral(Position, Value),
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -950,40 +875,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value >= 0 && Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return this;
-                case PrimitiveName.UInt:
-                    return Value >= 0 ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return Value >= 0 ? new BigLongLiteral(Position, Value, true) : null;
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value >= 0 && Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => this,
+                PrimitiveName.UInt => Value >= 0 ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => Value >= 0 ? new BigLongLiteral(Position, Value, true) : null,
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1012,40 +922,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue ? new IntLiteral(Position, (int) Value) : null;
-                case PrimitiveName.UInt:
-                    return this;
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value);
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return new ULongLiteral(Position, Value);
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue ? new IntLiteral(Position, (int) Value) : null,
+                PrimitiveName.UInt => this,
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value),
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => new ULongLiteral(Position, Value),
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1062,40 +957,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null;
-                case PrimitiveName.UInt:
-                    return Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return new LongLiteral(Position, Value);
-                case PrimitiveName.ULong:
-                    return Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return Value >= 0 ? new BigLongLiteral(Position, Value, true) : null;
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null,
+                PrimitiveName.UInt => Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => new LongLiteral(Position, Value),
+                PrimitiveName.ULong => Value >= 0 ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => Value >= 0 ? new BigLongLiteral(Position, Value, true) : null,
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1112,40 +992,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= (uint) short.MaxValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue ? new IntLiteral(Position, (int) Value) : null;
-                case PrimitiveName.UInt:
-                    return this;
-                case PrimitiveName.SizeT:
-                    return new SizeTLiteral(Position, Value);
-                case PrimitiveName.Long:
-                    return Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null;
-                case PrimitiveName.ULong:
-                    return this;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return new BigLongLiteral(Position, Value, true);
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= (uint) short.MaxValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value <= ushort.MaxValue ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue ? new IntLiteral(Position, (int) Value) : null,
+                PrimitiveName.UInt => this,
+                PrimitiveName.SizeT => new SizeTLiteral(Position, Value),
+                PrimitiveName.Long => Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null,
+                PrimitiveName.ULong => this,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => new BigLongLiteral(Position, Value, true),
+                PrimitiveName.Float => new FloatLiteral(Position, Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1177,40 +1042,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null;
-                case PrimitiveName.UInt:
-                    return Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null;
-                case PrimitiveName.ULong:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return !unsigned ? this : new BigLongLiteral(Position, Value);
-                case PrimitiveName.UBigLong:
-                    return unsigned ? this : Value >= 0 ? new BigLongLiteral(Position, Value, true) : null;
-                case PrimitiveName.Float:
-                    return new FloatLiteral(Position, (float) Value);
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, (double) Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null,
+                PrimitiveName.UInt => Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null,
+                PrimitiveName.ULong => Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => !unsigned ? this : new BigLongLiteral(Position, Value),
+                PrimitiveName.UBigLong => unsigned ? this : Value >= 0 ? new BigLongLiteral(Position, Value, true) : null,
+                PrimitiveName.Float => new FloatLiteral(Position, (float) Value),
+                PrimitiveName.Double => new DoubleLiteral(Position, (double) Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1227,40 +1077,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null;
-                case PrimitiveName.UInt:
-                    return Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null;
-                case PrimitiveName.ULong:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, (BigInteger) Value);
-                case PrimitiveName.UBigLong:
-                    return Value >= 0 ? new BigLongLiteral(Position, (BigInteger) Value, true) : null;
-                case PrimitiveName.Float:
-                    return this;
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null,
+                PrimitiveName.UInt => Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null,
+                PrimitiveName.ULong => Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, (BigInteger) Value),
+                PrimitiveName.UBigLong => Value >= 0 ? new BigLongLiteral(Position, (BigInteger) Value, true) : null,
+                PrimitiveName.Float => this,
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1277,40 +1112,25 @@ namespace CompilerInfrastructure.Expressions {
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;
-            switch (prim.PrimitiveName) {
-                case PrimitiveName.Bool:
-                    return Literal.Bool(IsTrue);
-                case PrimitiveName.Byte:
-                    return Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null;
-                case PrimitiveName.Char:
-                    return Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null;
-                case PrimitiveName.Short:
-                    return Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null;
-                case PrimitiveName.UShort:
-                    return Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null;
-                case PrimitiveName.Int:
-                    return Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null;
-                case PrimitiveName.UInt:
-                    return Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null;
-                case PrimitiveName.SizeT:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.Long:
-                    return Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null;
-                case PrimitiveName.ULong:
-                    return Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null;
-                case PrimitiveName.BigLong:
-                    return new BigLongLiteral(Position, (BigInteger) Value);
-                case PrimitiveName.UBigLong:
-                    return Value >= 0 ? new BigLongLiteral(Position, (BigInteger) Value, true) : null;
-                case PrimitiveName.Float:
-                    return Value <= float.MaxValue && Value >= float.MinValue ? new FloatLiteral(Position, (float) Value) : null;
-                case PrimitiveName.Double:
-                    return new DoubleLiteral(Position, Value);
-                case PrimitiveName.String:
-                    return new StringLiteral(Position, Value.ToString());
-                default:
-                    return null;
-            }
+            return prim.PrimitiveName switch
+            {
+                PrimitiveName.Bool => Literal.Bool(IsTrue),
+                PrimitiveName.Byte => Value >= 0 && Value < 256 ? new ByteLiteral(Position, (byte) Value) : null,
+                PrimitiveName.Char => Value >= 0 && Value <= char.MaxValue ? new CharLiteral(Position, (char) Value) : null,
+                PrimitiveName.Short => Value <= short.MaxValue && Value >= short.MinValue ? new ShortLiteral(Position, (short) Value) : null,
+                PrimitiveName.UShort => Value >= 0 ? new UShortLiteral(Position, (ushort) Value) : null,
+                PrimitiveName.Int => Value <= int.MaxValue && Value >= int.MinValue ? Literal.Int((int) Value) : null,
+                PrimitiveName.UInt => Value >= 0 && Value <= uint.MaxValue ? new UIntLiteral(Position, (uint) Value) : null,
+                PrimitiveName.SizeT => Value >= 0 && Value <= ulong.MaxValue ? new SizeTLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.Long => Value <= long.MaxValue ? new LongLiteral(Position, (long) Value) : null,
+                PrimitiveName.ULong => Value >= 0 && Value <= ulong.MaxValue ? new ULongLiteral(Position, (ulong) Value) : null,
+                PrimitiveName.BigLong => new BigLongLiteral(Position, (BigInteger) Value),
+                PrimitiveName.UBigLong => Value >= 0 ? new BigLongLiteral(Position, (BigInteger) Value, true) : null,
+                PrimitiveName.Float => Value <= float.MaxValue && Value >= float.MinValue ? new FloatLiteral(Position, (float) Value) : null,
+                PrimitiveName.Double => new DoubleLiteral(Position, Value),
+                PrimitiveName.String => new StringLiteral(Position, Value.ToString()),
+                _ => null,
+            };
         }
     }
     [Serializable]
@@ -1372,7 +1192,7 @@ namespace CompilerInfrastructure.Expressions {
         public override bool IsPositiveValue {
             get => true;
         }
-        public override bool IsTrue => Value != null && Value != "";
+        public override bool IsTrue => !string.IsNullOrEmpty(Value);
         public override IALiteral ValueCast(IType ty) {
             if (!(ty is PrimitiveType prim))
                 return null;

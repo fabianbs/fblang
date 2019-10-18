@@ -19,7 +19,7 @@ using System.Xml.Serialization;
 namespace FBc {
     class FBSerializer {
         //DataContractSerializer ser = new DataContractSerializer(typeof(FBModule));
-        BinaryFormatter bf = new BinaryFormatter();
+        readonly BinaryFormatter bf = new BinaryFormatter();
         public void Serialize(FBModule mod, Stream sOut) {
             //ser.WriteObject(sOut, mod);
             /*bf.Serialize(sOut, mod);
@@ -52,12 +52,11 @@ namespace FBc {
                 );
            var deser = JsonConvert.DeserializeObject<FBModule>(ser, serSettings);*/
             var ser = new XmlSerializer(typeof(FBModule));
-            
-            using (var mem = new MemoryStream()) {
-                ser.Serialize(mem, mod);
-                mem.Position = 0;
-                var deser = ser.Deserialize(mem);
-            }
+
+            using var mem = new MemoryStream();
+            ser.Serialize(mem, mod);
+            mem.Position = 0;
+            var deser = ser.Deserialize(mem);
 
         }
         public FBModule Deserialize(Stream sIn) {

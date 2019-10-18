@@ -9,7 +9,7 @@ using Imms;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
     public class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IAnalysisDomain<IVariable>, new() {
-        static Dom dom = new Dom();
+        static readonly Dom dom = new Dom();
         readonly ITaintSourceDescription sources;
         readonly ITaintSinkDescription sinks;
         readonly Stack<TaintAnalysisState> state = new Stack<TaintAnalysisState>();
