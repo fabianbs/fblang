@@ -53,5 +53,11 @@ namespace CompilerInfrastructure.Utils {
         public static ISet<T> Empty<T>() {
             return EmptySet<T>.Instance;
         }
+        public static ISet<T> Of<T>(T val, bool isReadonly = false) {
+            if (isReadonly) 
+                return Imms.ImmSet.Of(val);
+            else
+                return new HashSet<T> { val };
+        }
     }
 }
