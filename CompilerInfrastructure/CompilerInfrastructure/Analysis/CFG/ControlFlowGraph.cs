@@ -101,6 +101,40 @@ namespace CompilerInfrastructure.Analysis.CFG {
             else
                 return null;
         }
+        (ICFGNode start, ICFGNode exit) Chain(ICFGNode prev, IEnumerable<IExpression> _exprs) {
+            using var exprs = _exprs.GetEnumerator();
+            if (exprs.MoveNext()) {
+                var (start, entry) = CreateInternal(prev, exprs.Current);
+                while (exprs.MoveNext()) {
+                    (_, entry) = CreateInternal(entry, exprs.Current);
+                }
+                return (start, entry);
+            }
+            else {
+                var ret = new NopCFGNode(default);
+                Connect(prev, ret);
+                return (ret, ret);
+            }
+        }
+        (ICFGNode start, ICFGNode exit) ShortCircuitChain(ICFGNode prev, IEnumerable<IExpression> _exprs) {
+            using var exprs = _exprs.GetEnumerator();
+            var exit = new NopCFGNode(default);
+            if (exprs.MoveNext()) {
+                var (start, entry) = CreateInternal(prev, exprs.Current);
+                Connect(entry, exit);
+                while (exprs.MoveNext()) {
+                    (_, entry) = CreateInternal(entry, exprs.Current);
+                    Connect(entry, exit);
+                }
+                return (start, exit);
+            }
+            else {
+
+                Connect(prev, exit);
+                return (exit, exit);
+            }
+        }
+
 
         (ICFGNode start, ICFGNode exit) CreateInternal(ICFGNode prev, IStatement stmt) {
             switch (stmt) {
@@ -204,12 +238,48 @@ namespace CompilerInfrastructure.Analysis.CFG {
                     Connect(prev, nopNode);
                     return (nopNode, nopNode);
                 }
-                case SwitchStatement switchStmt:
-                    //TODO switch
-                    break;
-                case TryCatchFinallyStatement tcfStmt:
-                    // TODO trycatchfinally
-                    break;
+                case SwitchStatement switchStmt: {
+                    var (start, cond) = CreateInternal(prev, switchStmt.Condition);
+                    var prevPat = cond;
+                    var exit = new NopCFGNode(switchStmt.Position);
+                    foreach (var cas in switchStmt.Cases) {
+                        var (_, patEnd) = ShortCircuitChain(prevPat, cas.Patterns.SelectMany(x => x.GetExpressions()));
+                        var (_, blockEnd) = CreateInternal(patEnd, cas.OnMatch);
+                        Connect(blockEnd, exit);
+                        prevPat = patEnd;
+                    }
+                    if (!switchStmt.IsExhaustive())
+                        Connect(prevPat, exit);
+                    return (start, exit);
+                }
+                case TryCatchFinallyStatement tcfStmt: {
+                    var tryExit = new NopCFGNode(tcfStmt.Position);
+                    var tryStmts = (tcfStmt.TryBlock is BlockStatement blck && blck.Statements.Length > 0 ? blck.Statements : new[]{ tcfStmt.TryBlock});
+                    var (start, tryEnd) = CreateInternal(prev, tryStmts[0]);
+                    Connect(tryEnd, tryExit);
+                    foreach (var st in tryStmts.AsSpan(1)) {
+                        (_, tryEnd) = CreateInternal(tryEnd, st);
+                        Connect(tryEnd, tryExit);
+                    }
+                    ICFGNode catchExit;
+                    if (tcfStmt.CatchBlocks.IsEmpty) {
+                        catchExit = tryExit;
+                    }
+                    else {
+                        catchExit = new NopCFGNode(tcfStmt.Position);
+                        foreach (var catchSt in tcfStmt.CatchBlocks) {
+                            var (_, catchEnd) = CreateInternal(tryExit, catchSt);
+                            Connect(catchEnd, catchExit);
+                        }
+                    }
+                    if (tcfStmt.HasFinally) {
+                        var (finallyStart, finallyEnd) = CreateInternal(catchExit, tcfStmt.FinallyBlock);
+                        Connect(tryExit, finallyStart);
+                        return (start, finallyEnd);
+                    }
+                    else
+                        return (start, catchExit);
+                }
                 case WhileLoop whlStmt when whlStmt.IsHeadControlled: {
                     var (start, cond) = CreateInternal(prev, whlStmt.Condition);
                     var exit = new NopCFGNode(whlStmt.Position);

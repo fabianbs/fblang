@@ -13,6 +13,7 @@ using System.Text;
 using CompilerInfrastructure.Expressions;
 using CompilerInfrastructure.Structure;
 using CompilerInfrastructure.Structure.Macros;
+using CompilerInfrastructure.Structure.Types;
 using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
@@ -176,9 +177,11 @@ namespace CompilerInfrastructure.Instructions {
         }
 
         Case[] cases;
+        Lazy<bool> exhaustive;
         public SwitchStatement(Position pos, IExpression cond, params Case[] cases) : base(pos) {
             Condition = cond;
             this.cases = cases ?? Array.Empty<Case>();
+            exhaustive = new Lazy<bool>(IsExhaustiveInternal);
         }
         public Case[] Cases {
             get => cases;
@@ -187,6 +190,22 @@ namespace CompilerInfrastructure.Instructions {
         public IExpression Condition {
             get;
         }
+        bool IsExhaustiveInternal() {
+            if (cases.OfType<DefaultCase>().Any())
+                return true;
+            if (Condition.ReturnType.IsPrimitive() && Condition.ReturnType.TryCast<PrimitiveType>(out var prim)) {
+                if (prim.PrimitiveName == PrimitiveName.Bool)
+                    return cases.Sum(x => x.Patterns.Length) >= 2;
+                else if (prim.PrimitiveName == PrimitiveName.Char || prim.PrimitiveName == PrimitiveName.Byte)
+                    return cases.Sum(x => x.Patterns.Length) >= 256;
+            }
+            else if (Condition.ReturnType.IsEnum() & Condition.ReturnType.TryCast<EnumType>(out var enumTy)) {
+                return cases.Sum(x => x.Patterns.Length) >= enumTy.EnumItems.Count;
+            }
+
+            return false;
+        }
+        public bool IsExhaustive() => exhaustive.Value;
 
         //public override IRefEnumerator<IASTNode> GetEnumerator() => RefEnumerator.FromArray<IASTNode>(Cases);
         public override IStatement ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
