@@ -7,15 +7,21 @@ using System.Text;
 using CMethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
 using static System.Runtime.CompilerServices.MethodImplOptions;
 using System.Linq;
+using CompilerInfrastructure.Semantics;
 
 namespace CompilerInfrastructure.Analysis.CFG {
     public class ControlFlowGraph {
         LazyDictionary<IDeclaredMethod, ICFGNode> cache;
         Stack<(ICFGNode continueTarget, ICFGNode breakTarget)> controlRedirectTarget
             = new Stack<(ICFGNode continueTarget, ICFGNode breakTarget)>();
-        public ControlFlowGraph() {
+        ISemantics sem;
+        public ControlFlowGraph(ISemantics _sem) {
+            sem = _sem ?? throw new ArgumentNullException(nameof(_sem));
             cache = new LazyDictionary<IDeclaredMethod, ICFGNode>(CreateInternal);
             controlRedirectTarget.Push((null, null));
+        }
+        public static ControlFlowGraph New<T>() where T : ISemantics, new() {
+            return new ControlFlowGraph(new T());
         }
         public ICFGNode Create(IDeclaredMethod met) {
             return cache[met];
@@ -135,7 +141,6 @@ namespace CompilerInfrastructure.Analysis.CFG {
             }
         }
 
-
         (ICFGNode start, ICFGNode exit) CreateInternal(ICFGNode prev, IStatement stmt) {
             switch (stmt) {
                 case BlockStatement block: {
@@ -187,23 +192,49 @@ namespace CompilerInfrastructure.Analysis.CFG {
                 case ForeachLoop felStmt: {
                     var (start, range) = CreateInternal(prev, felStmt.Range);
                     ICFGNode vr = null;
+                    IType vrTy = null;
+
+                    var exit = new NopCFGNode(felStmt.Position);
+                    
                     if (felStmt.TryGetDeclaration(out var decl)) {
                         (_, vr) = CreateInternal(range, decl);
+                        vrTy = (decl as Declaration).Type;
                     }
                     else if (felStmt.TryGetLoopVariables(out var vrs)) {
                         (_, vr) = CreateInternal(range, vrs[0]);// assuming, we have at least one loop variable
+                        //TODO: tuples
+                        vrTy = vrs[0].ReturnType;
                         foreach (var loopVr in vrs.Slice(1)) {
                             (_, vr) = CreateInternal(vr, loopVr);
                         }
                     }// there is no else
 
-                    //TODO: iterator logic here?
+                    // iterator logic here:
+                    if (!sem.IsTriviallyIterable(felStmt.Range.ReturnType, vrTy)
+                        && sem.IsIterable(felStmt.Range.ReturnType, vrTy, out var getIterator, out var tryGetNext)) {
 
-                    var (bodyStart, bodyEnd) = CreateInternal(vr, felStmt.Body);
+                        // Note:  These artificial callexpressions do not match the exact function call/signature, but it does not matter for dataflow analysis.
+                        // Note2: Use NopExpressions instead of felStmt.Range/the call to getIterator to avoid repeated execution behaviour.
+                        (_, vr) = CreateInternal(vr, new CallExpression(felStmt.Range.Position, null, getIterator, new NopExpression(felStmt.Range.Position, felStmt.Range.ReturnType), Array.Empty<IExpression>()));
+                        var (tgnStart, tgnEnd) = CreateInternal(vr, new CallExpression(felStmt.Range.Position, null, tryGetNext, new NopExpression(felStmt.Range.Position, getIterator.ReturnType), Array.Empty<IExpression>()));
 
-                    Connect(bodyEnd, bodyStart);// iterator::tryGetNext() call?
+                        using (Push(tgnStart, exit)) {
+                            var (bodyStart, bodyEnd) = CreateInternal(tgnEnd, felStmt.Body);
+                            Connect(bodyEnd, tgnStart);
+                            Connect(bodyEnd, exit);
+                            Connect(tgnEnd, exit);
+                            return (start, exit);
+                        }
+                    }
+                    else {
+                        using var _ = Push(vr, exit);
+                        var (bodyStart, bodyEnd) = CreateInternal(vr, felStmt.Body);
+                        Connect(bodyEnd, bodyStart);// iterator::tryGetNext() call?
+                        Connect(vr, exit);
+                        Connect(bodyEnd, exit);
+                        return (start, exit);
+                    }
 
-                    return (start, bodyEnd);
                 }
                 case ForLoop forlStmt: {
                     var (start, init) = CreateInternal(prev, forlStmt.Initialization);
@@ -242,6 +273,7 @@ namespace CompilerInfrastructure.Analysis.CFG {
                     var (start, cond) = CreateInternal(prev, switchStmt.Condition);
                     var prevPat = cond;
                     var exit = new NopCFGNode(switchStmt.Position);
+                    using var _ = PushBreak(exit);
                     foreach (var cas in switchStmt.Cases) {
                         var (_, patEnd) = ShortCircuitChain(prevPat, cas.Patterns.SelectMany(x => x.GetExpressions()));
                         var (_, blockEnd) = CreateInternal(patEnd, cas.OnMatch);

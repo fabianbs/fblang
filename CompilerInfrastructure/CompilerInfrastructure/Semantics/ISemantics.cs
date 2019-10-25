@@ -24,6 +24,8 @@ namespace CompilerInfrastructure.Semantics {
         bool IsFunctional(IType tp, out FunctionType fnTy);
         bool IsIterator(IType tp, IType over);
         bool IsIterable(IType tp, IType over);
+        bool IsIterable(IType tp, IType over, out IMethod getIterator, out IMethod tryGetNext);
+        bool IsTriviallyIterable(IType tp, IType over);
         bool CanBePassedAsParameterTo(IType actualTy, IType formalTy, out int diff);
 
         IMethod BestFittingMethod(Position pos, IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType, ErrorBuffer err = null);

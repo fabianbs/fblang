@@ -251,6 +251,12 @@ namespace FBc {
                 args = _args.ToArray();
             return new CallExpression(pos, retTy, met, parent, args) { IsCallVirt = false };
         }
+        public override bool IsTriviallyIterable(IType tp, IType over) {
+            if (tp is ContiguousRangeExpression rng) {
+                return rng.ReturnType.Cast<AggregateType>().ItemType == over;
+            }
+            return base.IsTriviallyIterable(tp, over);
+        }
     }
 
 }

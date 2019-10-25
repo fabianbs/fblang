@@ -901,5 +901,11 @@ namespace CompilerInfrastructure.Semantics {
         }
 
         public virtual bool CanBePassedAsParameterTo(IType actualTy, IType formalTy, out int diff) => Type.IsAssignable(actualTy, formalTy, out diff);
+        public virtual bool IsTriviallyIterable(IType tp, IType over) {
+            if (tp.IsArray() || tp.IsArraySlice() || tp.IsVarArg()) {
+                return over == tp.Cast<AggregateType>().ItemType;
+            }
+            return false;
+        }
     }
 }
