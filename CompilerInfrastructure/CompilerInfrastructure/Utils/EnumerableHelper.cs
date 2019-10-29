@@ -147,7 +147,7 @@ namespace CompilerInfrastructure {
                 }
             }
         }
-        public unsafe static int GetArrayHashCode<T>(T[] arr) {
+        public unsafe static int GetArrayHashCode<T>(this T[] arr) {
             if (arr is null)
                 return 0;
             if (typeof(T).IsPrimitive) {
@@ -155,18 +155,24 @@ namespace CompilerInfrastructure {
                 // TODO review and test
                 unchecked {
                     var vectorLen = System.Numerics.Vector<byte>.Count;
-                    var ret = new System.Numerics.Vector<byte>(Enumerable.Repeat<byte>(31, vectorLen).ToArray());
+                    var ret = new System.Numerics.Vector<byte>(31);
 
                     ref var ptr = ref Unsafe.As<T, byte>(ref arr[0]);
                     Span<byte> buf = stackalloc byte[vectorLen]; // vectorlen is always small, so allocate on the stack...
-
+                    buf.Fill(0);
                     var arrLen = Marshal.SizeOf<T>() * arr.Length;
-                    for (int i = 0; i <= arrLen - vectorLen; i += vectorLen) {
+                    int i;
+                    for (i = 0; i <= arrLen - vectorLen; i += vectorLen) {
                         Unsafe.CopyBlock(ref buf[0], ref Unsafe.AddByteOffset(ref ptr, (IntPtr) i), (uint) vectorLen);
                         ret += new System.Numerics.Vector<byte>(buf) * 17;
                     }
-                    var ones = new System.Numerics.Vector<byte>(Enumerable.Repeat<byte>(1, vectorLen).ToArray());
-                    return SimdVec.Dot(ones, ret);
+                    if (i < arrLen) {
+                        Unsafe.CopyBlock(ref buf[0], ref Unsafe.AddByteOffset(ref ptr, (IntPtr) i), (uint) (arrLen - i));
+                        ret += new System.Numerics.Vector<byte>(buf) * 17;
+                    }
+                    var ones = new System.Numerics.Vector<int>(1);
+
+                    return SimdVec.Dot(ones, SimdVec.AsVectorInt32(ret));
                 }
             }
             else {
