@@ -147,17 +147,36 @@ namespace CompilerInfrastructure {
                 }
             }
         }
-        public unsafe static int GetArrayHashCode<T>(this T[] arr) {
+        public static int GetArrayHashCode<T>(this T[] arr) {
             if (arr is null)
                 return 0;
+            return GetArrayHashCode(arr.AsSpan());
+        }
+        /*public static int GetArrayHashCode<T>(this ReadOnlySpan<T> arr) {
+            if (typeof(T).IsPrimitive) {
+                Unsafe.AsRef()
+            }
+            else {
+                // normal 
+                var comp = EqualityComparer<T>.Default;
+                //return arr.Aggregate(31, (acc, x) => unchecked(17 + acc * comp.GetHashCode(x)));
+                int hc = 31;
+                foreach (var x in arr) {
+                    hc = 17 + hc * comp.GetHashCode(x);
+                }
+                return hc;
+            }
+        }*/
+        public static int GetArrayHashCode<T>(this Span<T> arr) {
+            return GetArrayHashCode((ReadOnlySpan<T>)arr);
+        }
+        public static int GetArrayHashCode<T>(this ReadOnlySpan<T> arr) {
             if (typeof(T).IsPrimitive) {
                 // vectorize
-                // TODO review and test
                 unchecked {
                     var vectorLen = System.Numerics.Vector<byte>.Count;
                     var ret = new System.Numerics.Vector<byte>(31);
-
-                    ref var ptr = ref Unsafe.As<T, byte>(ref arr[0]);
+                    ref var ptr = ref Unsafe.As<T, byte>(ref Unsafe.AsRef<T>(arr[0]));
                     Span<byte> buf = stackalloc byte[vectorLen]; // vectorlen is always small, so allocate on the stack...
                     buf.Fill(0);
                     var arrLen = Marshal.SizeOf<T>() * arr.Length;
@@ -178,7 +197,12 @@ namespace CompilerInfrastructure {
             else {
                 // normal 
                 var comp = EqualityComparer<T>.Default;
-                return arr.Aggregate(31, (acc, x) => unchecked(17 + acc * comp.GetHashCode(x)));
+                //return arr.Aggregate(31, (acc, x) => unchecked(17 + acc * comp.GetHashCode(x)));
+                int hc = 31;
+                foreach(var x in arr) {
+                    hc = 17 + hc * comp.GetHashCode(x);
+                }
+                return hc;
             }
         }
     }

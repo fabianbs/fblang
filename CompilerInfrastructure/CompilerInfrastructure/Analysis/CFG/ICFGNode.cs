@@ -18,6 +18,13 @@ namespace CompilerInfrastructure.Analysis.CFG {
         bool IsExitNode { get; }
         ISet<ICFGNode> Previous { get; }
         ISet<ICFGNode> Next { get; }
+        void ForEach<TState>(TState state, Func<ICFGNode, TState, bool> fn) {
+            if(fn(this, state)) {
+                foreach(var succ in Next) {
+                    succ.ForEach(state, fn);
+                }
+            }
+        }
     }
     public class StatementCFGNode : ICFGNode {
         public StatementCFGNode(IStatement _stmt, bool terminator = false, bool exit = false) {
@@ -33,6 +40,8 @@ namespace CompilerInfrastructure.Analysis.CFG {
         public Position Position => Statement.Position;
         public bool IsTerminatingNode { get; }
         public bool IsExitNode { get; }
+
+        
     }
     public class ExpressionCFGNode : ICFGNode {
         public ExpressionCFGNode(IExpression _expr) {
@@ -46,6 +55,8 @@ namespace CompilerInfrastructure.Analysis.CFG {
         public Position Position => Expression.Position;
 
         public bool IsExitNode => false;
+
+        
     }
     public class NopCFGNode : ICFGNode {
         public NopCFGNode(Position pos) {
@@ -57,5 +68,7 @@ namespace CompilerInfrastructure.Analysis.CFG {
         public ISet<ICFGNode> Next { get; }
         public Position Position { get; }
         public bool IsExitNode => false;
+
+        
     }
 }

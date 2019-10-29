@@ -175,11 +175,12 @@ namespace CompilerInfrastructure.Utils {
                     return false;
             }
             return true;
-            ;
+
         }
 
         public override int GetHashCode() {
-            if (arrVal is null)
+            return arrVal.AsSpan(0, (int)size).GetArrayHashCode();
+            /*if (arrVal is null)
                 return 0;
             else {
                 
@@ -194,7 +195,15 @@ namespace CompilerInfrastructure.Utils {
                     1 => HashCode.Combine(x[0]),
                     _ => 0
                 }).Sum();
-            }
+            }*/
+        }
+        public static bool operator ==(Vector<T> v1, Vector<T> v2) {
+            return v1.capacity == v2.capacity
+                && v1.size == v2.size
+                && v1.arrVal == v2.arrVal;
+        }
+        public static bool operator !=(Vector<T> v1, Vector<T> v2) {
+            return !(v1 == v2);
         }
     }
 }

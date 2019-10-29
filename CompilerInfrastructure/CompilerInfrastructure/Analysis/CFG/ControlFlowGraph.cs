@@ -69,8 +69,10 @@ namespace CompilerInfrastructure.Analysis.CFG {
             }
         }
         (ICFGNode start, ICFGNode exit) CreateInternal(ICFGNode prev, IExpression expr) {
-            //TODO
-            throw new NotImplementedException();
+            var (start, prevEnd) = Chain(prev, expr.GetExpressions());
+            var nod = new ExpressionCFGNode(expr);
+            Connect(prevEnd, nod);
+            return (start, nod);
         }
         /* (ISet<ICFGNode> start, ISet<ICFGNode> exit) CreateInternal(IEnumerable<ICFGNode> prev, IExpression expr) {
              HashSet<ICFGNode>

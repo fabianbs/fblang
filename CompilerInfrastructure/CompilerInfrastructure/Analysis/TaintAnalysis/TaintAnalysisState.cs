@@ -7,7 +7,7 @@ using System.Text;
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
     class TaintAnalysisState {
         internal readonly MultiMap<IVariable, TaintSource> factToSrc = new MultiMap<IVariable, TaintSource>();
-        internal readonly MultiMap<IStatement, IVariable> leaks = new MultiMap<IStatement, IVariable>();
+        internal readonly MultiMap<ISourceElement, IVariable> leaks = new MultiMap<ISourceElement, IVariable>();
         internal readonly ISet<IVariable> returnFacts = new HashSet<IVariable>();
     }
 }

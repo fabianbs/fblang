@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using CompilerInfrastructure.Analysis.Lattice;
 using CompilerInfrastructure.Expressions;
 using CompilerInfrastructure.Instructions;
 using CompilerInfrastructure.Utils;
 using Imms;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
-    public class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IAnalysisDomain<IVariable>, new() {
+    public class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IDataFlowDomain<IVariable>, new() {
         static readonly Dom dom = new Dom();
         readonly ITaintSourceDescription sources;
         readonly ITaintSinkDescription sinks;
@@ -36,13 +37,13 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 state.Peek().factToSrc.Add(fact, src);
             }
         }
-        public void TaintLeak(IStatement stmt, IEnumerable<IVariable> leakedFacts) {
+        public void TaintLeak(ISourceElement stmt, IEnumerable<IVariable> leakedFacts) {
             foreach (var lfact in leakedFacts) {
                 TaintLeak(stmt, lfact);
             }
         }
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public void TaintLeak(IStatement stmt, IVariable lfact) {
+        public void TaintLeak(ISourceElement stmt, IVariable lfact) {
             state.Peek().leaks.Add(stmt, lfact);
         }
 
@@ -80,17 +81,16 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             return !In.ToImmSet().IsDisjointWith(vars);
         }
 
-        public virtual ISet<IVariable> CallFlow(ISet<IVariable> In, CallExpression call, IStatement parent) {
+        public virtual ISet<IVariable> CallFlow(ISet<IVariable> In, CallExpression call) {
             bool needAnalysis = true;
             var Out = In.ToImmSet();
-            //TODO CallGraphAnalysis
             if (sinks.IsSinkMethod(call.Callee, out var paramLeaks)) {
                 var leaks = paramLeaks
                     .Select(x => call.Arguments[x])
                     .SelectMany(x => IsVariableValue(x, out var vars) ? vars : ImmSet.Empty<IVariable>())
                     .Where(x => IsTainted(x, In));
 
-                TaintLeak(parent, leaks);
+                TaintLeak(call, leaks);
 
                 needAnalysis = false;
             }
@@ -110,7 +110,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 foreach (var actual in mapActualsToFormal) {
                     if (IsVariableValue(actual.Key, out var vars) && vars.Any(x => IsTainted(x, In))) {
                         if (summary.MaximalFixedPoint.Contains(actual.Value)) {
-                            TaintLeak(parent, vars.Where(x => IsTainted(x, In)));
+                            TaintLeak(call, vars.Where(x => IsTainted(x, In)));
                         }
                     }
                 }
@@ -118,13 +118,13 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
 
             return Out;
         }
-        public override ISet<IVariable> NormalFlow(ISet<IVariable> In, IExpression expr, IStatement parent) {
+        public override ISet<IVariable> NormalFlow(ISet<IVariable> In, IExpression expr) {
             switch (expr) {
                 case CallExpression call:
-                    return CallFlow(In, call, parent);
+                    return CallFlow(In, call);
                 case BinOp bo: {
-                    In = NormalFlow(In, bo.Left, parent);
-                    In = NormalFlow(In, bo.Right, parent);
+                    In = NormalFlow(In, bo.Left);
+                    In = NormalFlow(In, bo.Right);
                     var Out = In.ToImmSet();
                     if (bo.Operator.IsAssignment()) {
                         if (IsVariableValue(bo.Right, out var rhsFacts)) {
@@ -145,7 +145,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 }
                 default: {
                     foreach (var ex in expr.GetExpressions()) {
-                        In = NormalFlow(In, ex, parent);
+                        In = NormalFlow(In, ex);
                     }
                     return In;
                 }
@@ -175,5 +175,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         public override TaintAnalysisSummary ComputeSummary(IDeclaredMethod met, ISet<IVariable> mfp) {
             return new TaintAnalysisSummary(mfp, state.Peek());
         }
+
+        public override ISet<IVariable> SummaryFlow(ISet<IVariable> In, IDeclaredMethod met) => throw new NotImplementedException();
     }
 }
