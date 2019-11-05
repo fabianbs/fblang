@@ -19,7 +19,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             throw new NotImplementedException();
         }
         public ISet<IVariable> MaximalFixedPoint { get; }
-        public MultiMap<IStatement, IVariable> Leaks => finalState.leaks;
+        public MultiMap<ISourceElement, IVariable> Leaks => finalState.leaks;
         public MultiMap<IVariable, TaintSource> Sources => finalState.factToSrc;
         public ISet<IVariable> ReturnFacts => finalState.returnFacts;
     }

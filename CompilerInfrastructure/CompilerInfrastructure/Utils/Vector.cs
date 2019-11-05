@@ -3,15 +3,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace CompilerInfrastructure.Utils {
+    /// <summary>
+    /// A lightweight, high-performance array-list with similar API as <see cref="List{T}"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public struct Vector<T> : IEnumerable<T>, IEquatable<Vector<T>> {
-        T[] arrVal;
+        // Use StructBox<T>[] instead of T[] here to bypass .Net's array-covariance. May increase performance (in tests by 1,5)
+        StructBox<T>[] arrVal;
         uint capacity;
         uint size;
         public Vector(uint initialSize) {
             if (initialSize > 0) {
-                arrVal = new T[capacity = Math.Max(4, initialSize)];
+                arrVal = Unsafe.As<StructBox<T>[]>(new T[capacity = Math.Max(4, initialSize)]);
                 size = initialSize;
             }
             else {
@@ -19,25 +25,38 @@ namespace CompilerInfrastructure.Utils {
             }
         }
         public Vector(in Vector<T> other) {
-            arrVal = (T[]) other.arrVal?.Clone();
+            arrVal = (StructBox<T>[]) other.arrVal?.Clone();
             capacity = other.capacity;
             size = other.size;
         }
         public Vector(Vector<T> other) {
-            arrVal = (T[]) other.arrVal?.Clone();
+            arrVal = (StructBox<T>[]) other.arrVal?.Clone();
             capacity = other.capacity;
             size = other.size;
         }
         public Vector(IEnumerable<T> other) {
-            if (other is ICollection<T> coll) {
-                var cap = size = checked((uint) coll.Count);
-                capacity = cap; // TODO 
-                arrVal = new T[cap];
-                coll.CopyTo(arrVal, 0);
+            if (other is Vector<T> vec) {
+                arrVal = (StructBox<T>[]) vec.arrVal?.Clone();
+                capacity = vec.capacity;
+                size = vec.size;
             }
             else {
-                arrVal = other.ToArray();
-                capacity = size = checked((uint) arrVal.LongLength);
+                T[] arr;
+                if(other is T[] tarr) {
+                    arr = tarr.Clone() as T[];
+                    capacity = size = checked((uint) arr.LongLength);
+                }
+                else if (other is ICollection<T> coll) {
+                    var cap = size = checked((uint) coll.Count);
+                    capacity = cap; 
+                    arr = new T[cap];
+                    coll.CopyTo(arr, 0);
+                }
+                else {
+                    arr = other.ToArray();
+                    capacity = size = checked((uint) arr.LongLength);
+                }
+                arrVal = Unsafe.As<StructBox<T>[]>(arr);
             }
         }
         void EnsureCapacity(uint minCap) {
@@ -51,7 +70,9 @@ namespace CompilerInfrastructure.Utils {
                 }
                 if (capacity == 0)// overflow
                     capacity = uint.MaxValue;
-                Array.Resize(ref arrVal, (int) capacity);
+                var arr = Unsafe.As<T[]>(arrVal);
+                Array.Resize<T>(ref arr, (int) capacity);
+                arrVal = Unsafe.As<StructBox<T>[]>(arr);
             }
         }
         public static Vector<T> Reserve(uint minCap) {
@@ -74,9 +95,20 @@ namespace CompilerInfrastructure.Utils {
                     if (arrVal is null)
                         throw new InvalidProgramException();
                 }
-                return ref arrVal[index];
+                return ref arrVal[index].Value;
             }
         }
+        /*public ref T this[Index index] {
+            get {
+                var i = checked((uint)index.Value);
+                if (index.IsFromEnd) {
+                    if (i > size)
+                        throw new IndexOutOfRangeException();
+                    i = size - i;
+                }
+                return ref this[i];
+            }
+        }*/
 
         public T PopBack() {
             if (size > 0) {
@@ -88,13 +120,13 @@ namespace CompilerInfrastructure.Utils {
         }
         public ref T Back() {
             if (size > 0)
-                return ref arrVal[size - 1];
+                return ref arrVal[size - 1].Value;
             throw new IndexOutOfRangeException();
         }
 
         public ref T Front() {
             if (size > 0)
-                return ref arrVal[0];
+                return ref arrVal[0].Value;
             throw new IndexOutOfRangeException();
         }
         public void PushBack(in T val) {
@@ -109,7 +141,7 @@ namespace CompilerInfrastructure.Utils {
             if (vals is null)
                 return;
             EnsureCapacity(checked(size + (uint) vals.LongLength));
-            Array.Copy(vals, 0, arrVal, size, vals.LongLength);
+            Array.Copy(vals, 0, Unsafe.As<T[]>(arrVal), size, vals.LongLength);
             size += (uint) vals.LongLength;
         }
         public T[] ToArray() {
@@ -121,6 +153,7 @@ namespace CompilerInfrastructure.Utils {
         }
         public void Fill(T val) {
             if (arrVal != null) {
+
                 var len = size;
                 var count = Math.Min(len, 20);
                 int i;
@@ -141,11 +174,13 @@ namespace CompilerInfrastructure.Utils {
         public T[] AsArray() {
             if (size == 0)
                 return Array.Empty<T>();
+            var ret = Unsafe.As<T[]>(arrVal);
             if (size != capacity) {
-                Array.Resize(ref arrVal, (int) size);
+                Array.Resize(ref ret, (int) size);
+                arrVal = Unsafe.As<StructBox<T>[]>(ret);
                 capacity = size;
             }
-            return arrVal;
+            return ret;
         }
         public T[] AsArray(uint offset, uint count) {
             if (offset > 0) {
@@ -179,7 +214,7 @@ namespace CompilerInfrastructure.Utils {
         }
 
         public override int GetHashCode() {
-            return arrVal.AsSpan(0, (int)size).GetArrayHashCode();
+            return arrVal.AsSpan(0, (int) size).GetArrayHashCode();
             /*if (arrVal is null)
                 return 0;
             else {
