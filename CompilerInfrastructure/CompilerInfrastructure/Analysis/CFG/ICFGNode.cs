@@ -53,6 +53,7 @@ namespace CompilerInfrastructure.Analysis.CFG {
         public ISet<ICFGNode> Previous { get; }
         public ISet<ICFGNode> Next { get; }
         public Position Position => Expression.Position;
+        public bool IsTerminatingNode => false;
 
         public bool IsExitNode => false;
 
@@ -64,6 +65,7 @@ namespace CompilerInfrastructure.Analysis.CFG {
             Next = new HashSet<ICFGNode>();
             Previous = new HashSet<ICFGNode>();
         }
+        public bool IsTerminatingNode => false;
         public ISet<ICFGNode> Previous { get; }
         public ISet<ICFGNode> Next { get; }
         public Position Position { get; }

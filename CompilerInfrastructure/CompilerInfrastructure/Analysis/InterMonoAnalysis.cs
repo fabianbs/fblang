@@ -9,7 +9,7 @@ using CompilerInfrastructure.Utils;
 using Imms;
 
 namespace CompilerInfrastructure.Analysis {
-    public abstract class InterMonoAnalysis<S, D> : IDataFlowAnalysis<S, ISet<D>, IDeclaredMethod> {
+    public class InterMonoAnalysis<S, D> : IDataFlowAnalysis<S, ISet<D>, IDeclaredMethod> {
         readonly RecursiveLazyDictionary<IDeclaredMethod, S> summaries;
         readonly MonoAnalysisDescription<S, D> analysis;
         readonly ControlFlowGraph cfgBuilder ;
@@ -46,10 +46,12 @@ namespace CompilerInfrastructure.Analysis {
             #region initialize
 
             foreach (var entry in entries) {
+                solution[entry] = seeds;
                 foreach (var succ in entry.Next) {
                     worklist.Enqueue((entry, succ));
-                    solution[entry] = seeds;
                 }
+                if (entry.Next.Count == 0)
+                    worklist.Enqueue((entry, entry));
             }
             #endregion
             #region MFP computation
@@ -79,9 +81,9 @@ namespace CompilerInfrastructure.Analysis {
             return finalResult;
         }
         S MaximalFixpoint(IDeclaredMethod met) {
-            analysis.Initialize();
+            analysis.Initialize(met);
             try {
-                var facts = analysis.InitialSeeds();
+                var facts = analysis.InitialSeeds(met);
                 if (met.Body.HasValue) {
                     var root = cfgBuilder.Create(met);
                     facts = FinalFacts(facts, root, new[] { root });

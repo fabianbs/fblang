@@ -9,7 +9,7 @@ using CompilerInfrastructure.Utils;
 using Imms;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
-    public class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IDataFlowDomain<IVariable>, new() {
+    public abstract class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IDataFlowDomain<IVariable>, new() {
         static readonly Dom dom = new Dom();
         readonly ITaintSourceDescription sources;
         readonly ITaintSinkDescription sinks;
@@ -57,8 +57,8 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                     return IsVariableValue(ass.Right, out vars);
                 case CallExpression call: {
                     var  _vars = ImmSet.Empty<IVariable>();
-                    //TODO CallGraphAnalysis
-                    //TODO explicit param-to-return flow
+                    // No CallGraphAnalysis (would require whole-program CG)
+                    // explicit param-to-return flow
                     var summary = Analysis.Query(call.Callee);
                     var returnedVariableFacts = summary.ReturnFacts.SelectMany(x => summary.Sources[x]).Where(x => x.IsSourceVariable).Select(x => x.SourceVariable).ToImmSet();
                     foreach (var arg in call.MapActualToFormalParameters()) {
@@ -130,6 +130,8 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                         if (IsVariableValue(bo.Right, out var rhsFacts)) {
                             if (IsAnyTainted(rhsFacts, Out)) {
                                 if (IsVariableValue(bo.Left, out var leftFacts)) {
+                                    if (leftFacts.Any(x => sinks.IsSinkVariable(x)))
+                                        TaintLeak(expr, rhsFacts);
                                     TaintPropagation(Out.Intersect(rhsFacts), leftFacts);
                                 }
                             }
@@ -162,9 +164,13 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             }
             return In;
         }
-        public override void Initialize() {
-            state.Push(new TaintAnalysisState());
-            base.Initialize();
+        public override void Initialize(IDeclaredMethod met) {
+            var nwState = new TaintAnalysisState();
+            foreach (var seed in InitialSeeds(met)) {
+                nwState.factToSrc.Add(seed, new TaintSource(seed));
+            }
+            state.Push(nwState);
+            base.Initialize(met);
         }
 
         public override void Finish() {
@@ -176,6 +182,5 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             return new TaintAnalysisSummary(mfp, state.Peek());
         }
 
-        public override ISet<IVariable> SummaryFlow(ISet<IVariable> In, IDeclaredMethod met) => throw new NotImplementedException();
     }
 }
