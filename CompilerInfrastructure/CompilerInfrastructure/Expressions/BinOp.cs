@@ -94,7 +94,8 @@ namespace CompilerInfrastructure.Expressions {
             get => Operator.IsAssignment() && Left.ReadsMutableData();
         }
 
-
+        public bool IsAssignment => Operator.IsAssignment();
+        public bool IsRefReassignment => IsAssignment && Right is ReferenceExpression;
         //public override IRefEnumerator<IASTNode> GetEnumerator() => RefEnumerator.FromArray<IASTNode>(content);
         protected override IExpression ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
             return new BinOp(Position,

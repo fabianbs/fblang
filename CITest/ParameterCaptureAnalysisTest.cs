@@ -20,12 +20,13 @@ namespace CITest {
         ITestOutputHelper cout;
         Module mod;
         CaptureAnalysisDescription desc;
-        InterMonoAnalysis<TaintAnalysisSummary, IVariable> analysis;
+        InterMonoAnalysis<TaintAnalysisSummary<IVariable>, IVariable> analysis;
         public ParameterCaptureAnalysisTest(ITestOutputHelper _cout) {
             cout = _cout;
             mod = new Module();
-            desc = new CaptureAnalysisDescription();
-            analysis = new InterMonoAnalysis<TaintAnalysisSummary, IVariable>(desc, new TaintAnalysisSummary(), new BasicSemantics());
+            analysis = new InterMonoAnalysis<TaintAnalysisSummary<IVariable>, IVariable>(new TaintAnalysisSummary<IVariable>(), new BasicSemantics());
+            desc = new CaptureAnalysisDescription(analysis);
+            analysis.SetAnalysis(desc);
         }
         [Fact]
         public void TestSimpleFunction() {
@@ -41,7 +42,7 @@ namespace CITest {
             
             var result = analysis.Query(met);
             Assert.Empty(result.Leaks);
-            Assert.Equal(2, result.MaximalFixedPoint.Count);
+            Assert.Equal(2, result.MaximalFixpoint.Count);
             Assert.Single(result.ReturnFacts);
             Assert.Equal(met.Arguments[0], result.ReturnFacts.FirstOrDefault());
         }
@@ -66,7 +67,7 @@ namespace CITest {
             Assert.Single(result.Leaks);
             Assert.Single(result.Leaks.Values.FirstOrDefault());
             Assert.Equal(met.Arguments[0], result.Leaks.Values.FirstOrDefault()?.FirstOrDefault());
-            Assert.Equal(2, result.MaximalFixedPoint.Count);
+            Assert.Equal(2, result.MaximalFixpoint.Count);
            
         }
     }

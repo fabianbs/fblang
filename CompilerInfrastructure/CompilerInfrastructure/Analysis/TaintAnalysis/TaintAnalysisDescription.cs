@@ -9,46 +9,46 @@ using CompilerInfrastructure.Utils;
 using Imms;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
-    public abstract class TaintAnalysisDescription<Dom> : MonoAnalysisDescription<TaintAnalysisSummary, IVariable> where Dom : IDataFlowDomain<IVariable>, new() {
-        static readonly Dom dom = new Dom();
-        readonly ITaintSourceDescription sources;
-        readonly ITaintSinkDescription sinks;
-        readonly Stack<TaintAnalysisState> state = new Stack<TaintAnalysisState>();
-        public TaintAnalysisDescription(ITaintSourceDescription sources, ITaintSinkDescription sinks)
+    public abstract class TaintAnalysisDescription<D> : MonoAnalysisDescription<TaintAnalysisSummary<D>, D> {
+
+        readonly ITaintSourceDescription<D> sources;
+        readonly ITaintSinkDescription<D> sinks;
+        readonly Stack<TaintAnalysisState<D>> state = new Stack<TaintAnalysisState<D>>();
+        public TaintAnalysisDescription(ITaintSourceDescription<D> sources, ITaintSinkDescription<D> sinks, ITaintAnalysisDomain<D> dom)
             : base(dom) {
             this.sources = sources ?? throw new ArgumentNullException(nameof(sources));
             this.sinks = sinks ?? throw new ArgumentNullException(nameof(sinks));
         }
-
-        public void TaintPropagation(ISet<IVariable> from, IVariable to) {
-            if (dom.IsInDomain(to)) {
+        public new ITaintAnalysisDomain<D> Domain => (ITaintAnalysisDomain<D>) base.Domain;
+        public void TaintPropagation(ISet<D> from, D to) {
+            if (Domain.IsInDomain(to)) {
                 var src = from.SelectMany(x => state.Peek().factToSrc[x]);
                 state.Peek().factToSrc.Add(to, src);
             }
         }
-        public void TaintPropagation(ISet<IVariable> from, IEnumerable<IVariable> tos) {
+        public void TaintPropagation(ISet<D> from, IEnumerable<D> tos) {
             var src = from.SelectMany(x => state.Peek().factToSrc[x]).ToArray();// avoid recomputation
-            foreach (var to in tos.Where(x => dom.IsInDomain(x))) {
+            foreach (var to in tos.Where(x => Domain.IsInDomain(x))) {
                 state.Peek().factToSrc.Add(to, src);
             }
         }
-        public void TaintSource(TaintSource src, IEnumerable<IVariable> facts) {
+        public void TaintSource(TaintSource<D> src, IEnumerable<D> facts) {
             foreach (var fact in facts) {
                 state.Peek().factToSrc.Add(fact, src);
             }
         }
-        public void TaintLeak(ISourceElement stmt, IEnumerable<IVariable> leakedFacts) {
+        public void TaintLeak(ISourceElement stmt, IEnumerable<D> leakedFacts) {
             foreach (var lfact in leakedFacts) {
                 TaintLeak(stmt, lfact);
             }
         }
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        public void TaintLeak(ISourceElement stmt, IVariable lfact) {
+        public void TaintLeak(ISourceElement stmt, D lfact) {
             state.Peek().leaks.Add(stmt, lfact);
         }
 
 
-        public virtual bool IsVariableValue(IExpression expr, out ISet<IVariable> vars) {
+        /*public virtual bool IsVariableValue(IExpression expr, out ISet<IVariable> vars) {
             switch (expr) {
                 case VariableAccessExpression vrx:
                     vars = ImmSet.Of(vrx.Variable);
@@ -73,21 +73,21 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                     vars = ImmSet.Empty<IVariable>();
                     return false;
             }
-        }
-        protected bool IsTainted(IVariable vr, ISet<IVariable> In) {
+        }*/
+        protected bool IsTainted(D vr, ISet<D> In) {
             return In.Contains(vr)/* || sources.IsSourceVariable(vr)*/;
         }
-        protected bool IsAnyTainted(ISet<IVariable> vars, ISet<IVariable> In) {
+        protected bool IsAnyTainted(ISet<D> vars, ISet<D> In) {
             return !In.ToImmSet().IsDisjointWith(vars);
         }
 
-        public virtual ISet<IVariable> CallFlow(ISet<IVariable> In, CallExpression call) {
+        public virtual ISet<D> CallFlow(ISet<D> In, CallExpression call) {
             bool needAnalysis = true;
             var Out = In.ToImmSet();
             if (sinks.IsSinkMethod(call.Callee, out var paramLeaks)) {
                 var leaks = paramLeaks
                     .Select(x => call.Arguments[x])
-                    .SelectMany(x => IsVariableValue(x, out var vars) ? vars : ImmSet.Empty<IVariable>())
+                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : ImmSet.Empty<D>())
                     .Where(x => IsTainted(x, In));
 
                 TaintLeak(call, leaks);
@@ -96,10 +96,10 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             }
             if (sources.IsSourceMethod(call.Callee, out var paramTaints, out _)) {
                 var nwTaints = paramTaints
-                    .Select(x=>call.Arguments[x])
-                    .SelectMany(x => IsVariableValue(x, out var vars) ? vars : ImmSet.Empty<IVariable>());
+                    .Select(x => call.Arguments[x])
+                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : ImmSet.Empty<D>());
                 Out = Out.Union(nwTaints);
-                TaintSource(new TaintSource(call.Callee), nwTaints);
+                TaintSource(new TaintSource<D>(call.Callee), nwTaints);
                 needAnalysis = false;
             }
 
@@ -108,8 +108,8 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 var mapActualsToFormal = call.MapActualToFormalParameters();
 
                 foreach (var actual in mapActualsToFormal) {
-                    if (IsVariableValue(actual.Key, out var vars) && vars.Any(x => IsTainted(x, In))) {
-                        if (summary.MaximalFixedPoint.Contains(actual.Value)) {
+                    if (Domain.ContainsFacts(actual.Key, out var vars) && vars.Any(x => IsTainted(x, In))) {
+                        if (summary.MaximalFixpoint.Contains(Domain.FactFromVariable(actual.Value))) {
                             TaintLeak(call, vars.Where(x => IsTainted(x, In)));
                         }
                     }
@@ -118,7 +118,10 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
 
             return Out;
         }
-        public override ISet<IVariable> NormalFlow(ISet<IVariable> In, IExpression expr) {
+        public override ISet<D> NormalFlow(ISet<D> In, IExpression expr) {
+            if (sources.IsSourceExpression(expr, out var facts)) {
+                return In.ToImmSet() + facts;
+            }
             switch (expr) {
                 case CallExpression call:
                     return CallFlow(In, call);
@@ -126,18 +129,18 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                     In = NormalFlow(In, bo.Left);
                     In = NormalFlow(In, bo.Right);
                     var Out = In.ToImmSet();
-                    if (bo.Operator.IsAssignment()) {
-                        if (IsVariableValue(bo.Right, out var rhsFacts)) {
+                    if (bo.Operator.IsAssignment() && Domain.IsPropagatingAssignment(bo)) {
+                        if (Domain.ContainsFacts(bo.Right, out var rhsFacts)) {
                             if (IsAnyTainted(rhsFacts, Out)) {
-                                if (IsVariableValue(bo.Left, out var leftFacts)) {
-                                    if (leftFacts.Any(x => sinks.IsSinkVariable(x)))
+                                if (Domain.ContainsFacts(bo.Left, out var leftFacts)) {
+                                    if (leftFacts.Any(x => sinks.IsSinkFact(x)))
                                         TaintLeak(expr, rhsFacts);
                                     TaintPropagation(Out.Intersect(rhsFacts), leftFacts);
                                 }
                             }
                             else {
                                 // strong update
-                                if (IsVariableValue(bo.Left, out var leftFacts)) {
+                                if (Domain.ContainsFacts(bo.Left, out var leftFacts)) {
                                     Out -= leftFacts;
                                 }
                             }
@@ -153,21 +156,23 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 }
             }
         }
-        public override ISet<IVariable> NormalFlow(ISet<IVariable> In, IStatement stmt) {
+        public override ISet<D> NormalFlow(ISet<D> In, IStatement stmt) {
             if (sources.IsSourceStatement(stmt, out var facts)) {
-                TaintSource(new TaintAnalysis.TaintSource(stmt), facts);
+                TaintSource(new TaintAnalysis.TaintSource<D>(stmt), facts);
                 return In.ToImmSet().Union(facts);
             }
             else if (stmt is ControlReturnStatement retStmt && retStmt.HasReturnValue) {
-                if (IsVariableValue(retStmt.ReturnValue, out var vars))
+                if (Domain.ContainsFacts(retStmt.ReturnValue, out var vars)) {
                     state.Peek().returnFacts.UnionWith(In.ToImmSet().Intersect(vars));
+                    TaintLeak(stmt, vars.Where(x => sinks.IsSinkReturn(x)));
+                }
             }
             return In;
         }
         public override void Initialize(IDeclaredMethod met) {
-            var nwState = new TaintAnalysisState();
+            var nwState = new TaintAnalysisState<D>();
             foreach (var seed in InitialSeeds(met)) {
-                nwState.factToSrc.Add(seed, new TaintSource(seed));
+                nwState.factToSrc.Add(seed, new TaintSource<D>(seed));
             }
             state.Push(nwState);
             base.Initialize(met);
@@ -178,8 +183,8 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             state.Pop();
         }
 
-        public override TaintAnalysisSummary ComputeSummary(IDeclaredMethod met, ISet<IVariable> mfp) {
-            return new TaintAnalysisSummary(mfp, state.Peek());
+        public override TaintAnalysisSummary<D> ComputeSummary(IDeclaredMethod met, ISet<D> mfp) {
+            return new TaintAnalysisSummary<D>(mfp, state.Peek());
         }
 
     }

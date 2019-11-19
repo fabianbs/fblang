@@ -4,33 +4,33 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
-    public readonly struct TaintSource {
-        readonly IVariable srcVar;
+    public readonly struct TaintSource<D> {
+        readonly D srcVar;
         readonly IDeclaredMethod srcMet;
         readonly IStatement srcStmt;
-        public TaintSource(IVariable _srcVar) {
+        public TaintSource(D _srcVar) {
             srcVar = _srcVar;
             srcMet = null;
             srcStmt = null;
         }
         public TaintSource(IDeclaredMethod _srcMet) {
-            srcVar = null;
+            srcVar = default;
             srcMet = _srcMet;
             srcStmt = null;
         }
         public TaintSource(IStatement _srcStmt) {
-            srcVar = null;
+            srcVar = default;
             srcMet = null;
             srcStmt = _srcStmt;
         }
         public bool IsSourceMethod => srcMet != null;
         public bool IsSourceVariable => srcVar != null;
         public bool IsSourceStatement => srcStmt != null;
-        public IVariable SourceVariable => srcVar;
+        public D SourceFact => srcVar;
         public IDeclaredMethod SourceMethod => srcMet;
         public IStatement SourceStatement => srcStmt;
 
-        public bool TryGetSourceVariable(out IVariable vr) {
+        public bool TryGetSourceVariable(out D vr) {
             if (IsSourceVariable) {
                 vr = srcVar;
                 return true;

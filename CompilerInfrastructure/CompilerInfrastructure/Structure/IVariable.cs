@@ -57,6 +57,10 @@ namespace CompilerInfrastructure {
         public static bool IsFinal(this IVariable vr) {
             return vr != null && vr.VariableSpecifiers.HasFlag(Variable.Specifier.Final);
         }
+        public static bool IsNoCapture(this IVariable vr) {
+            return vr != null && (vr.VariableSpecifiers.HasFlag(Variable.Specifier.NoCapture) || vr.Type.IsUnique() && vr.IsFinal());
+        }
+
     }
     [Serializable]
     internal class ErrorVariable : IVariable {
@@ -280,6 +284,7 @@ IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();*/
             Volatile = 0x04,
             LocalVariable = 0x08,
             Static = 0x10,
+            NoCapture = 0x20,
         }
         public static IVariable Error => ErrorVariable.Instance;
         static readonly LazyDictionary<IType, IVariable> thisCache = new LazyDictionary<IType, IVariable>(ty=>{

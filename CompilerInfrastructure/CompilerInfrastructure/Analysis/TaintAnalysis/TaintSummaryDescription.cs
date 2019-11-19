@@ -6,7 +6,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
     /// <summary>
     /// Provides a default- or specialized summary for functions, which have no body, or are imported
     /// </summary>
-    public interface TaintSummaryDescription {
-        TaintAnalysisSummary GetSummary(IDeclaredMethod met);
+    public interface TaintSummaryDescription<D> {
+        TaintAnalysisSummary<D> GetSummary(IDeclaredMethod met);
     }
 }

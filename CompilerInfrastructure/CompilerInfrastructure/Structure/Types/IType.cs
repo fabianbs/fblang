@@ -244,6 +244,9 @@ namespace CompilerInfrastructure {
             brt = null;
             return false;
         }
+        public static bool IsRef(this IType tp) {
+            return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Ref);
+        }
         public static bool IsByConstRef(this IType tp) {
             return tp.IsByRef() && tp.IsConstant() && tp.TryCastWhere<RefConstrainedType>(out _, rct => !rct.ReferenceCapability.CanWrite());
         }
@@ -310,6 +313,9 @@ namespace CompilerInfrastructure {
         public static ByRefType AsByRef(this IType tp) {
             return ByRefType.Get(tp);
         }
+        public static ReferenceType AsRef(this IType tp) {
+            return ReferenceType.Get(tp);
+        }
         public static SpanType AsSpan(this IType tp) {
             return SpanType.Get(tp);
         }
@@ -365,6 +371,8 @@ namespace CompilerInfrastructure {
             return ReferenceValueType.Get(tp, false);
         }
         public static IType AsNotNullable(this IType tp) {
+            if (tp is ReferenceType rty)
+                return rty.AsNotNullable();
             return NotNullableType.Get(tp);
         }
         public static IType UnWrap(this IType tp) {
@@ -612,6 +620,7 @@ namespace CompilerInfrastructure {
             NotNullable = 0x100000,
             ValueType = 0x200000 | NotNullable | NoInheritance,
             Builtin = 0x400000,
+            Ref = 0x800000,
         }
         public static IType GetPrimitive(string name) {
             if (Enum.TryParse<PrimitiveName>(name, out var pname)) {

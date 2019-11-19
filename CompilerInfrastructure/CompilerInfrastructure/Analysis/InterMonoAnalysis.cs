@@ -11,7 +11,7 @@ using Imms;
 namespace CompilerInfrastructure.Analysis {
     public class InterMonoAnalysis<S, D> : IDataFlowAnalysis<S, ISet<D>, IDeclaredMethod> {
         readonly RecursiveLazyDictionary<IDeclaredMethod, S> summaries;
-        readonly MonoAnalysisDescription<S, D> analysis;
+        MonoAnalysisDescription<S, D> analysis;
         readonly ControlFlowGraph cfgBuilder ;
         public InterMonoAnalysis(MonoAnalysisDescription<S, D> _analysis, S dflt, ISemantics sem) {
             summaries = new RecursiveLazyDictionary<IDeclaredMethod, S>(MaximalFixpoint, dflt);
@@ -19,8 +19,15 @@ namespace CompilerInfrastructure.Analysis {
             analysis.Analysis = this;
             cfgBuilder = new ControlFlowGraph(sem);
         }
-
-
+        public InterMonoAnalysis(S dflt, ISemantics sem) {
+            summaries = new RecursiveLazyDictionary<IDeclaredMethod, S>(MaximalFixpoint, dflt);
+            analysis = null;
+            cfgBuilder = new ControlFlowGraph(sem);
+        }
+        public void SetAnalysis(MonoAnalysisDescription<S, D> _analysis) {
+            analysis = _analysis ?? throw new ArgumentNullException(nameof(_analysis));
+            analysis.Analysis = this;
+        }
         ISet<D> FinalFacts(ISet<D> seeds, ICFGNode root, IEnumerable<ICFGNode> entries) {
             var solution = new Dictionary<ICFGNode, ISet<D>>();
             Vector<ICFGNode> finalNodes = default;
@@ -98,6 +105,13 @@ namespace CompilerInfrastructure.Analysis {
             }
         }
         public S Query(IDeclaredMethod node) {
+            if (analysis is null)
+                throw new ArgumentNullException(nameof(analysis));
+            return summaries[node];
+        }
+        public S Query(IDeclaredMethod node, MonoAnalysisDescription<S, D> _analysis) {
+            analysis = _analysis ?? throw new ArgumentNullException(nameof(_analysis));
+            analysis.Analysis = this;
             return summaries[node];
         }
     }

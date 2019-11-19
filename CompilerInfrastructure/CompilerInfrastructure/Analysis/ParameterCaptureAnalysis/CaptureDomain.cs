@@ -1,10 +1,16 @@
-﻿using System;
+﻿using CompilerInfrastructure.Analysis.TaintAnalysis;
+using CompilerInfrastructure.Expressions;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
-    public class CaptureDomain : IDataFlowDomain<IVariable> {
-        public bool IsInDomain(IVariable fact) {
+    public class CaptureDomain : TaintAnalysisVariableDomain {
+        public CaptureDomain(InterMonoAnalysis<TaintAnalysisSummary<IVariable>, IVariable> analysis) 
+            : base(analysis) {
+        }
+
+        public override bool IsInDomain(IVariable fact) {
             return fact != null;
         }
     }

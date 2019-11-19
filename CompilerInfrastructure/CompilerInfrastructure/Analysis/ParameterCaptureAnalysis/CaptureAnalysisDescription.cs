@@ -7,9 +7,9 @@ using CompilerInfrastructure.Contexts;
 using CompilerInfrastructure.Structure;
 
 namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
-    public class CaptureAnalysisDescription : TaintAnalysis.TaintAnalysisDescription<CaptureDomain> {
-        public CaptureAnalysisDescription()
-            : base(CaptureSourceSinkDescription.Instance, CaptureSourceSinkDescription.Instance) {
+    public class CaptureAnalysisDescription : TaintAnalysis.TaintAnalysisDescription<IVariable> {
+        public CaptureAnalysisDescription(InterMonoAnalysis<TaintAnalysisSummary<IVariable>,IVariable> analysis)
+            : base(CaptureSourceSinkDescription.Instance, CaptureSourceSinkDescription.Instance, new CaptureDomain(analysis)) {
         }
 
         public override ISet<IVariable> SummaryFlow(ISet<IVariable> In, IDeclaredMethod met) {
@@ -17,7 +17,7 @@ namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
             if (!met.IsStatic() && !met.HasUniqueThis() && met.NestedIn is ITypeContext tcx && tcx.Type != null) {
                 ret += Variable.This(tcx.Type);
             }
-            ret.AddRange(met.Arguments.Where(x => !x.IsFinal() || !x.Type.IsUnique()));
+            ret.AddRange(met.Arguments.Where(x => !x.IsNoCapture()));
             return ret;
         }
         public override ISet<IVariable> InitialSeeds(IDeclaredMethod met) => Imms.ImmSet.Of(met.Arguments);
