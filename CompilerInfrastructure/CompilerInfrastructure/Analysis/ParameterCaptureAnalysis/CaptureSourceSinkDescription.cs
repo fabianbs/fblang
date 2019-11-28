@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
     public class CaptureSourceSinkDescription : ITaintSourceDescription<IVariable>, ITaintSinkDescription<IVariable> {
         public static CaptureSourceSinkDescription Instance { get; } = new CaptureSourceSinkDescription();
@@ -25,7 +26,7 @@ namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
         }
         public bool IsSourceStatement(IStatement stmt, out ISet<IVariable> facts) {
             if (stmt is Declaration decl) {
-                facts = Imms.ImmSet.Of(decl.Variables);
+                facts = MonoSet.Of(decl.Variables);
                 return true;
             }
             facts = Set.Empty<IVariable>();

@@ -15,13 +15,13 @@ namespace CompilerInfrastructure.Analysis.CallGraph {
         //Dictionary<IDeclaredMethod, ISet<IDeclaredMethod>> cache = new Dictionary<IDeclaredMethod, ISet<IDeclaredMethod>>();
         readonly RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>> cache ;
         public DefaultCallGraphAnalysis() {
-            cache = new RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>>(GetAllPossibleImplementations, ImmSet.Empty<IDeclaredMethod>());
+            cache = new RecursiveLazyDictionary<IMethod, ISet<IDeclaredMethod>>(GetAllPossibleImplementations, MonoSet.Empty<IDeclaredMethod>());
         }
         public ISet<IDeclaredMethod> GetAllCallees(CallExpression call) {
             if (call is null)
                 throw new ArgumentNullException(nameof(call));
             if (!call.IsCallVirt)
-                return ImmSet.Of<IDeclaredMethod>(call.Callee);
+                return MonoSet.Of<IDeclaredMethod>(call.Callee);
 
             return GetAllPossibleImplementations(call.Callee);
 
@@ -29,7 +29,7 @@ namespace CompilerInfrastructure.Analysis.CallGraph {
         }
         ISet<IDeclaredMethod> GetAllPossibleImplementations(IMethod met) {
 
-            var ret = ImmSet.Of<IDeclaredMethod>(met);
+            var ret = MonoSet.Of<IDeclaredMethod>(met);
             if ((met.NestedIn is ITypeContext tcx) && (tcx.Type is ClassType staticType)) {//DOLATER: work on arbitrary IHierarchialTypes
                 
                 foreach (var subty in staticType.SubTypes) {

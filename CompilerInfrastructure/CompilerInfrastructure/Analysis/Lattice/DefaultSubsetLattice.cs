@@ -13,7 +13,7 @@ namespace CompilerInfrastructure.Analysis.Lattice {
             Bound = int.MaxValue;
         }
         public int Bound { get; }
-        public ISet<D> Bottom { get; } = ImmSet.Empty<D>();
+        public ISet<D> Bottom { get; } = MonoSet.Empty<D>();
 
         public bool IsTop(ISet<D> d) => !(d is null) && d.Count >= Bound;
         public ISet<D> Join(ISet<D> d1, ISet<D> d2) {
@@ -21,7 +21,7 @@ namespace CompilerInfrastructure.Analysis.Lattice {
                 return d2;
             if (d2 is null)
                 return d1;
-            return d1.ToImmSet().Union(d2);
+            return d1.ToMonoSet().Union(d2);
         }
 
         public bool SqSubsetEqual(ISet<D> d1, ISet<D> d2) {

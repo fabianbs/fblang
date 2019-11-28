@@ -19,7 +19,7 @@ namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
         }
 
         public override ISet<StackCaptureFact> SummaryFlow(ISet<StackCaptureFact> In, IDeclaredMethod met) {
-            var ret = Imms.ImmSet.Empty<StackCaptureFact>();
+            var ret = MonoSet.Empty<StackCaptureFact>();
             ret.AddRange(met.Arguments.Where(x => x.Type.IsRef() && (!x.IsFinal() || !x.Type.IsUnique())).Select(Domain.FactFromVariable));
             return ret;
         }

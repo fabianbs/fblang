@@ -7,6 +7,7 @@ using CompilerInfrastructure.Expressions;
 using CompilerInfrastructure.Instructions;
 using CompilerInfrastructure.Utils;
 using Imms;
+using CompilerInfrastructure.Analysis;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
     public abstract class TaintAnalysisDescription<D> : MonoAnalysisDescription<TaintAnalysisSummary<D>, D> {
@@ -48,46 +49,21 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         }
 
 
-        /*public virtual bool IsVariableValue(IExpression expr, out ISet<IVariable> vars) {
-            switch (expr) {
-                case VariableAccessExpression vrx:
-                    vars = ImmSet.Of(vrx.Variable);
-                    return true;
-                case BinOp ass when ass.Operator.IsAssignment():
-                    return IsVariableValue(ass.Right, out vars);
-                case CallExpression call: {
-                    var  _vars = ImmSet.Empty<IVariable>();
-                    // No CallGraphAnalysis (would require whole-program CG)
-                    // explicit param-to-return flow
-                    var summary = Analysis.Query(call.Callee);
-                    var returnedVariableFacts = summary.ReturnFacts.SelectMany(x => summary.Sources[x]).Where(x => x.IsSourceVariable).Select(x => x.SourceVariable).ToImmSet();
-                    foreach (var arg in call.MapActualToFormalParameters()) {
-                        if (returnedVariableFacts.Contains(arg.Value) && IsVariableValue(arg.Key, out var argVars)) {
-                            _vars += argVars;
-                        }
-                    }
-                    vars = _vars;
-                    return !_vars.IsEmpty;
-                }
-                default:
-                    vars = ImmSet.Empty<IVariable>();
-                    return false;
-            }
-        }*/
+       
         protected bool IsTainted(D vr, ISet<D> In) {
             return In.Contains(vr)/* || sources.IsSourceVariable(vr)*/;
         }
         protected bool IsAnyTainted(ISet<D> vars, ISet<D> In) {
-            return !In.ToImmSet().IsDisjointWith(vars);
+            return !In.ToMonoSet().IsDisjointWith(vars);
         }
 
         public virtual ISet<D> CallFlow(ISet<D> In, CallExpression call) {
             bool needAnalysis = true;
-            var Out = In.ToImmSet();
+            var Out = In.ToMonoSet();
             if (sinks.IsSinkMethod(call.Callee, out var paramLeaks)) {
                 var leaks = paramLeaks
                     .Select(x => call.Arguments[x])
-                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : ImmSet.Empty<D>())
+                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : Set.Empty<D>())
                     .Where(x => IsTainted(x, In));
 
                 TaintLeak(call, leaks);
@@ -97,8 +73,8 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             if (sources.IsSourceMethod(call.Callee, out var paramTaints, out _)) {
                 var nwTaints = paramTaints
                     .Select(x => call.Arguments[x])
-                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : ImmSet.Empty<D>());
-                Out = Out.Union(nwTaints);
+                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : Set.Empty<D>());
+                Out += nwTaints;
                 TaintSource(new TaintSource<D>(call.Callee), nwTaints);
                 needAnalysis = false;
             }
@@ -120,7 +96,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         }
         public override ISet<D> NormalFlow(ISet<D> In, IExpression expr) {
             if (sources.IsSourceExpression(expr, out var facts)) {
-                return In.ToImmSet() + facts;
+                return In.ToMonoSet() + facts;
             }
             switch (expr) {
                 case CallExpression call:
@@ -128,7 +104,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 case BinOp bo: {
                     In = NormalFlow(In, bo.Left);
                     In = NormalFlow(In, bo.Right);
-                    var Out = In.ToImmSet();
+                    var Out = In.ToMonoSet();
                     if (bo.Operator.IsAssignment() && Domain.IsPropagatingAssignment(bo)) {
                         if (Domain.ContainsFacts(bo.Right, out var rhsFacts)) {
                             if (IsAnyTainted(rhsFacts, Out)) {
@@ -159,11 +135,11 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         public override ISet<D> NormalFlow(ISet<D> In, IStatement stmt) {
             if (sources.IsSourceStatement(stmt, out var facts)) {
                 TaintSource(new TaintAnalysis.TaintSource<D>(stmt), facts);
-                return In.ToImmSet().Union(facts);
+                return In.ToMonoSet().Union(facts);
             }
             else if (stmt is ControlReturnStatement retStmt && retStmt.HasReturnValue) {
                 if (Domain.ContainsFacts(retStmt.ReturnValue, out var vars)) {
-                    state.Peek().returnFacts.UnionWith(In.ToImmSet().Intersect(vars));
+                    state.Peek().returnFacts.UnionWith(In.ToMonoSet().Intersect(vars));
                     TaintLeak(stmt, vars.Where(x => sinks.IsSinkReturn(x)));
                 }
             }

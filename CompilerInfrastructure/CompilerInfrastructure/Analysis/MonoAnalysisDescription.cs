@@ -13,7 +13,7 @@ namespace CompilerInfrastructure.Analysis {
         }
         public IDataFlowDomain<D> Domain { get; }
         public InterMonoAnalysis<S, D> Analysis { get; internal set; }
-        public virtual ISet<D> InitialSeeds(IDeclaredMethod met) => ImmSet.Empty<D>();
+        public virtual ISet<D> InitialSeeds(IDeclaredMethod met) => MonoSet.Empty<D>();
         public abstract ISet<D> NormalFlow(ISet<D> In, IStatement stmt);
         public abstract ISet<D> NormalFlow(ISet<D> In, IExpression expr);
         public abstract S ComputeSummary(IDeclaredMethod met, ISet<D> mfp);

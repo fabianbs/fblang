@@ -15,12 +15,12 @@ namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
         public bool ContainsFacts(IExpression expr, out ISet<StackCaptureFact> vars) {
             switch (expr) {
                 case VariableAccessExpression vrx:
-                    vars = ImmSet.Of(FactFromVariable(vrx.Variable));
+                    vars = MonoSet.Of(FactFromVariable(vrx.Variable));
                     return true;
                 case BinOp ass when ass.Operator.IsAssignment():
                     return ContainsFacts(ass.Right, out vars);
                 case CallExpression call: {
-                    var  _vars = ImmSet.Empty<StackCaptureFact>();
+                    var  _vars = MonoSet.Empty<StackCaptureFact>();
                     // No CallGraphAnalysis (would require whole-program CG)
                     // explicit param-to-return flow
                     var summary = Analysis.Query(call.Callee);
@@ -28,7 +28,7 @@ namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
                         .SelectMany(x => summary.Sources[x])
                         .Where(x => x.IsSourceVariable)
                         .Select(x => x.SourceFact)
-                        .ToImmSet();
+                        .ToMonoSet();
                     foreach (var arg in call.MapActualToFormalParameters()) {
                         if (returnedVariableFacts.Contains(FactFromVariable(arg.Value)) && ContainsFacts(arg.Key, out var argVars)) {
                             _vars += argVars;
@@ -38,7 +38,7 @@ namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
                     return !_vars.IsEmpty;
                 }
                 default:
-                    vars = ImmSet.Empty<StackCaptureFact>();
+                    vars = MonoSet.Empty<StackCaptureFact>();
                     return false;
             }
         }

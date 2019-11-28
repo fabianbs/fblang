@@ -42,13 +42,13 @@ namespace CompilerInfrastructure.Utils {
             }
             else {
                 T[] arr;
-                if(other is T[] tarr) {
+                if (other is T[] tarr) {
                     arr = tarr.Clone() as T[];
                     capacity = size = checked((uint) arr.LongLength);
                 }
                 else if (other is ICollection<T> coll) {
                     var cap = size = checked((uint) coll.Count);
-                    capacity = cap; 
+                    capacity = cap;
                     arr = new T[cap];
                     coll.CopyTo(arr, 0);
                 }
@@ -109,6 +109,9 @@ namespace CompilerInfrastructure.Utils {
                 return ref this[i];
             }
         }*/
+        public Vector<T> Clone() {
+            return new Vector<T>(this);
+        }
 
         public T PopBack() {
             if (size > 0) {
@@ -192,10 +195,32 @@ namespace CompilerInfrastructure.Utils {
             }
             return AsArray();
         }
+        public Span<T> ToSpan() {
+            return new Span<T>(Unsafe.As<T[]>(arrVal), 0, (int) size);
+        }
+        public Span<T> ToSpan(int offset) {
+            return new Span<T>(Unsafe.As<T[]>(arrVal), offset, (int) size - offset);
+        }
+        public Span<T> ToSpan(uint offset) {
+            return new Span<T>(Unsafe.As<T[]>(arrVal), (int)offset, (int) (size - offset));
+        }
+        public Span<T> ToSpan(int offset, int len) {
+            return new Span<T>(Unsafe.As<T[]>(arrVal), offset, Math.Max(0, Math.Min((int) size - offset, len)));
+        }
 
         public IEnumerator<T> GetEnumerator() {
             for (uint i = 0; i < size; ++i)
                 yield return arrVal[i];
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ForEach(Action<T> fn) {
+            for (uint i = 0; i < size; ++i)
+                fn(arrVal[i]);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ForEach<TState>(TState state, Action<TState, T> fn) {
+            for (uint i = 0; i < size; ++i)
+                fn(state, arrVal[i]);
         }
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         public override bool Equals(object obj) => obj is Vector<T> vector && Equals(vector);

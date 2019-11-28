@@ -13,13 +13,13 @@ namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
         }
 
         public override ISet<IVariable> SummaryFlow(ISet<IVariable> In, IDeclaredMethod met) {
-            var ret = Imms.ImmSet.Empty<IVariable>();
+            var ret = MonoSet.Empty<IVariable>();
             if (!met.IsStatic() && !met.HasUniqueThis() && met.NestedIn is ITypeContext tcx && tcx.Type != null) {
                 ret += Variable.This(tcx.Type);
             }
             ret.AddRange(met.Arguments.Where(x => !x.IsNoCapture()));
             return ret;
         }
-        public override ISet<IVariable> InitialSeeds(IDeclaredMethod met) => Imms.ImmSet.Of(met.Arguments);
+        public override ISet<IVariable> InitialSeeds(IDeclaredMethod met) => MonoSet.Of(met.Arguments);
     }
 }

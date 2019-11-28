@@ -18,12 +18,12 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         public bool ContainsFacts(IExpression expr, out ISet<IVariable> vars) {
             switch (expr) {
                 case VariableAccessExpression vrx:
-                    vars = ImmSet.Of(vrx.Variable);
+                    vars = MonoSet.Of(vrx.Variable);
                     return true;
                 case BinOp ass when ass.Operator.IsAssignment():
                     return ContainsFacts(ass.Right, out vars);
                 case CallExpression call: {
-                    var  _vars = ImmSet.Empty<IVariable>();
+                    var  _vars = MonoSet.Empty<IVariable>();
                     // No CallGraphAnalysis (would require whole-program CG)
                     // explicit param-to-return flow
                     var summary = Analysis.Query(call.Callee);
@@ -31,7 +31,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                         .SelectMany(x => summary.Sources[x])
                         .Where(x => x.IsSourceVariable)
                         .Select(x => x.SourceFact)
-                        .ToImmSet();
+                        .ToMonoSet();
                     foreach (var arg in call.MapActualToFormalParameters()) {
                         if (returnedVariableFacts.Contains(arg.Value) && ContainsFacts(arg.Key, out var argVars)) {
                             _vars += argVars;
@@ -41,7 +41,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                     return !_vars.IsEmpty;
                 }
                 default:
-                    vars = ImmSet.Empty<IVariable>();
+                    vars = MonoSet.Empty<IVariable>();
                     return false;
             }
         }
