@@ -5,12 +5,58 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Utils {
-    public class BitVectorSet<T> : ISet<T> {
+    public class BitVectorSet<T> : ISet<T>, IComparable<ISet<T>> {
+        class BitVectorSetIterator : IEnumerator<T> {
+            Vector<ulong> bitmap;
+            uint index;
+            ulong offset;
+            uint globIdx;
+            public BitVectorSetIterator(in Vector<ulong> bm) {
+                bitmap = bm;
+                index = ~0u;
+                offset = 1ul << 63;
+                globIdx = ~0u;
+            }
+            public T Current => backward[globIdx];
+            object IEnumerator.Current => Current;
+
+            public void Dispose() {
+
+            }
+            public bool MoveNext() {
+                do {
+                    globIdx++;
+                    offset <<= 1;
+                    if (offset == 0) {
+                        if (++index >= bitmap.Length)
+                            return false;
+                        offset = 1;
+                    }
+                } while ((bitmap[index] & offset) == 0);
+                return true;
+            }
+            public void Reset() {
+                index = ~0u;
+                offset = 1ul << 63;
+                globIdx = ~0u;
+            }
+        }
         static readonly Dictionary<T, uint> forward  = new Dictionary<T, uint>();
         //static readonly Dictionary<uint, T> backward = new Dictionary<uint, T>();
-        static readonly Vector<T> backward = default;
+        static Vector<T> backward = default;
         Vector<ulong> bitmap;
         public BitVectorSet() { }
+        public BitVectorSet(params T[] elems) : this((IEnumerable<T>) elems) { }
+        public BitVectorSet(IEnumerable<T> elems) {
+            foreach (var el in elems) {
+                Add(el);
+            }
+        }
+        public BitVectorSet(BitVectorSet<T> other) {
+            if (other != null) {
+                bitmap = new Vector<ulong>(other.bitmap);
+            }
+        }
         uint GetOrCreateIndex(T val) {
             if (!forward.TryGetValue(val, out var ret)) {
                 ret = (uint) forward.Count;
@@ -51,8 +97,9 @@ namespace CompilerInfrastructure.Utils {
                 }
             }
         }
-        //TODO be more efficient here...
-        public IEnumerator<T> GetEnumerator() => bitmap.GetSetPositions().Select(x => backward[x]).GetEnumerator();
+        
+        public IEnumerator<T> GetEnumerator() //=> bitmap.GetSetPositions().Select(x => backward[x]).GetEnumerator();
+            => new BitVectorSetIterator(bitmap);
         public void IntersectWith(IEnumerable<T> other) {
             if (this == other)
                 return;
@@ -78,7 +125,7 @@ namespace CompilerInfrastructure.Utils {
             if (other == this)
                 return false;
             if (other is BitVectorSet<T> bvs) {
-                
+
                 if (bitmap.Length > bvs.bitmap.Length) {
                     if (bitmap.ToSpan(bvs.bitmap.Length).PopCount() > 0)
                         return false;
@@ -97,7 +144,7 @@ namespace CompilerInfrastructure.Utils {
                 if (set.Count <= Count)
                     return false;
                 //DOLATER be more performant here
-                
+
                 foreach (var x in this) {
                     if (!set.Contains(x))
                         return false;
@@ -149,7 +196,7 @@ namespace CompilerInfrastructure.Utils {
             else {
                 ISet<T> set = other is ISet<T>?other as ISet<T>:new HashSet<T>(other);
                 //DOLATER be more performant here
-                foreach(var x in this) {
+                foreach (var x in this) {
                     if (!set.Contains(x))
                         return false;
                 }
@@ -276,5 +323,59 @@ namespace CompilerInfrastructure.Utils {
         }
         void ICollection<T>.Add(T item) => Add(item);
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public int CompareTo(ISet<T> other) {
+            //TODO be more efficient here
+            if (IsSubsetOf(other)) {
+                if (SetEquals(other))
+                    return 0;
+                return -1;
+            }
+            return 1;
+        }
+
+        #region Operators
+        public static BitVectorSet<T> operator |(BitVectorSet<T> set1, IEnumerable<T> other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.UnionWith(other);
+            return copy;
+        }
+        public static BitVectorSet<T> operator &(BitVectorSet<T> set1, IEnumerable<T> other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.IntersectWith(other);
+            return copy;
+        }
+        public static BitVectorSet<T> operator -(BitVectorSet<T> set1, IEnumerable<T> other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.ExceptWith(other);
+            return copy;
+        }
+        public static BitVectorSet<T> operator -(BitVectorSet<T> set1, T other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.Remove(other);
+            return copy;
+        }
+        public static BitVectorSet<T> operator +(BitVectorSet<T> set1, IEnumerable<T> other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.UnionWith(other);
+            return copy;
+        }
+        public static BitVectorSet<T> operator +(BitVectorSet<T> set1, T other) {
+            var copy = new BitVectorSet<T>(set1);
+            copy.Add(other);
+            return copy;
+        }
+        public static bool operator <=(BitVectorSet<T> set1, BitVectorSet<T> set2) {
+            return set1.IsSubsetOf(set2);
+        }
+        public static bool operator >=(BitVectorSet<T> set1, BitVectorSet<T> set2) {
+            return set1.IsSupersetOf(set2);
+        }
+        public static bool operator <(BitVectorSet<T> set1, BitVectorSet<T> set2) {
+            return set1.IsProperSubsetOf(set2);
+        }
+        public static bool operator >(BitVectorSet<T> set1, BitVectorSet<T> set2) {
+            return set1.IsProperSupersetOf(set2);
+        }
+        #endregion
     }
 }

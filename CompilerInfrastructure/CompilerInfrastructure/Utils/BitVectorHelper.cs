@@ -4,9 +4,9 @@ using System.Text;
 using BitVector = CompilerInfrastructure.Utils.Vector<ulong>;
 namespace CompilerInfrastructure.Utils {
     public static class BitVectorHelper {
-        public static bool Get(this BitVector vec, uint idx) {
+        public static bool Get(this ref BitVector vec, uint idx) {
             uint index = idx >> 6;
-            uint offset = 1u << (int)(index & 63);
+            ulong offset = 1ul << (int)(idx & 63);
             return (vec[index] & offset) != 0;
         }
         static byte BitCount(this ulong value) {
@@ -32,27 +32,27 @@ namespace CompilerInfrastructure.Utils {
             }
             return ret;
         }
-        public static void Set(this BitVector vec, uint idx, bool value) {
+        public static void Set(this ref BitVector vec, uint idx, bool value) {
             uint index = idx >> 6;
-            uint offset = 1u << (int)(index & 63);
+            ulong offset = 1ul << (int)(idx & 63);
             if (value)
                 vec[index] |= offset;
             else
                 vec[index] &= ~offset;
         }
-        public static void Set(this BitVector vec, uint idx) {
+        public static void Set(this ref BitVector vec, uint idx) {
             uint index = idx >> 6;
-            uint offset = 1u << (int)(index & 63);
+            ulong offset = 1ul << (int)(idx & 63);
             vec[index] |= offset;
         }
-        public static void Unset(this BitVector vec, uint idx) {
+        public static void Unset(this ref BitVector vec, uint idx) {
             uint index = idx >> 6;
-            uint offset = 1u << (int)(index & 63);
+            ulong offset = 1ul << (int)(idx & 63);
             vec[index] &= ~offset;
         }
-        public static bool Exchange(this BitVector vec, uint idx, bool nwVal) {
+        public static bool Exchange(this ref BitVector vec, uint idx, bool nwVal) {
             uint index = idx >> 6;
-            uint offset = 1u << (int)(index & 63);
+            ulong offset = 1ul << (int)(idx & 63);
             bool ret = (vec[index] & offset) != 0;
             if (nwVal != ret) {
                 if (nwVal)

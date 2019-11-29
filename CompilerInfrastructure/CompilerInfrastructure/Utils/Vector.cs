@@ -30,7 +30,7 @@ namespace CompilerInfrastructure.Utils {
             size = other.size;
         }
         public Vector(Vector<T> other) {
-            arrVal = (StructBox<T>[]) other.arrVal?.Clone();
+            arrVal = Unsafe.As<StructBox<T>[]>((T[]) other.arrVal?.Clone());
             capacity = other.capacity;
             size = other.size;
         }
