@@ -109,6 +109,9 @@ namespace CompilerInfrastructure.Utils {
                 return ref this[i];
             }
         }*/
+        public ref T UnsafeGet(uint index) {
+            return ref arrVal[index].Value;
+        }
         public Vector<T> Clone() {
             return new Vector<T>(this);
         }
@@ -202,10 +205,13 @@ namespace CompilerInfrastructure.Utils {
             return new Span<T>(Unsafe.As<T[]>(arrVal), offset, (int) size - offset);
         }
         public Span<T> ToSpan(uint offset) {
-            return new Span<T>(Unsafe.As<T[]>(arrVal), (int)offset, (int) (size - offset));
+            return new Span<T>(Unsafe.As<T[]>(arrVal), (int) offset, (int) (size - offset));
         }
         public Span<T> ToSpan(int offset, int len) {
             return new Span<T>(Unsafe.As<T[]>(arrVal), offset, Math.Max(0, Math.Min((int) size - offset, len)));
+        }
+        public Span<T> ToSpan(uint offset, uint len) {
+            return new Span<T>(Unsafe.As<T[]>(arrVal), (int) offset, (int)(offset + len > size ? (offset > size ? 0 : size - offset) : len));
         }
 
         public IEnumerator<T> GetEnumerator() {

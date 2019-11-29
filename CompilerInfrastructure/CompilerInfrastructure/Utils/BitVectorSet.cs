@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Utils {
-    public class BitVectorSet<T> : ISet<T>, IComparable<ISet<T>> {
-        class BitVectorSetIterator : IEnumerator<T> {
+    public class BitVectorSet<T> : ISet<T>, IComparable<ISet<T>>, IEquatable<BitVectorSet<T>> {
+        struct BitVectorSetIterator : IEnumerator<T> {
             Vector<ulong> bitmap;
             uint index;
             ulong offset;
@@ -30,6 +31,8 @@ namespace CompilerInfrastructure.Utils {
                     if (offset == 0) {
                         if (++index >= bitmap.Length)
                             return false;
+                        if (bitmap[index].PopCount() == 0) // little optimization for sparse sets
+                            continue;
                         offset = 1;
                     }
                 } while ((bitmap[index] & offset) == 0);
@@ -48,9 +51,7 @@ namespace CompilerInfrastructure.Utils {
         public BitVectorSet() { }
         public BitVectorSet(params T[] elems) : this((IEnumerable<T>) elems) { }
         public BitVectorSet(IEnumerable<T> elems) {
-            foreach (var el in elems) {
-                Add(el);
-            }
+            UnionWith(elems);
         }
         public BitVectorSet(BitVectorSet<T> other) {
             if (other != null) {
@@ -65,7 +66,9 @@ namespace CompilerInfrastructure.Utils {
             }
             return ret;
         }
+
         public int Count => (int) bitmap.PopCount();
+        public bool IsEmpty => bitmap.PopCount() == 0;
         public bool IsReadOnly => false;
 
         public bool Add(T item) {
@@ -97,7 +100,7 @@ namespace CompilerInfrastructure.Utils {
                 }
             }
         }
-        
+
         public IEnumerator<T> GetEnumerator() //=> bitmap.GetSetPositions().Select(x => backward[x]).GetEnumerator();
             => new BitVectorSetIterator(bitmap);
         public void IntersectWith(IEnumerable<T> other) {
@@ -323,6 +326,27 @@ namespace CompilerInfrastructure.Utils {
         }
         void ICollection<T>.Add(T item) => Add(item);
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public bool IsDisjointWith(IEnumerable<T> other) {
+            if (other == this)
+                return false;
+            if (other is BitVectorSet<T> bvs) {
+                var len = Math.Min(bitmap.Length, bvs.bitmap.Length);
+                for (uint i = 0; i < len; ++i) {
+                    if ((bitmap[i] & bvs.bitmap[i]) != 0)
+                        return false;
+                }
+                return true;
+            }
+            else {
+                //DOLATER: more cases (ICollection, ISet, ...) for being more efficient
+
+                foreach (var x in other) {
+                    if (Contains(x))
+                        return false;
+                }
+                return true;
+            }
+        }
         public int CompareTo(ISet<T> other) {
             //TODO be more efficient here
             if (IsSubsetOf(other)) {
@@ -331,6 +355,18 @@ namespace CompilerInfrastructure.Utils {
                 return -1;
             }
             return 1;
+        }
+
+        public override bool Equals(object obj) => Equals(obj as BitVectorSet<T>);
+        public bool Equals([AllowNull] BitVectorSet<T> other) => other != null && SetEquals(other);
+        public override int GetHashCode() {
+            uint len = 0;
+            for (uint i = 0; i < bitmap.Length; ++i) {
+                if (bitmap[i] != 0)
+                    len = i + 1;
+            }
+            // trailing zero-words do not contribute
+            return bitmap.ToSpan(0, len).GetArrayHashCode();
         }
 
         #region Operators

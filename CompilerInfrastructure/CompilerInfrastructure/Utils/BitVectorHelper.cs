@@ -1,7 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Runtime.Intrinsics.X86;
+using System.Numerics;
 using BitVector = CompilerInfrastructure.Utils.Vector<ulong>;
+using RTMethodImpl = System.Runtime.CompilerServices.MethodImplAttribute;
+using RTMethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
+using System.Runtime.CompilerServices;
+
 namespace CompilerInfrastructure.Utils {
     public static class BitVectorHelper {
         public static bool Get(this ref BitVector vec, uint idx) {
@@ -15,10 +21,19 @@ namespace CompilerInfrastructure.Utils {
             result = (result & 0x3333333333333333UL) + ((result >> 2) & 0x3333333333333333UL);
             return (byte) (unchecked(((result + (result >> 4)) & 0xF0F0F0F0F0F0F0FUL) * 0x101010101010101UL) >> 56);
         }
+        [RTMethodImpl(RTMethodImplOptions.AggressiveInlining)]
+        public static uint PopCount(this ulong val) {
+            unchecked {
+                if (Popcnt.X64.IsSupported)
+                    return (uint) Popcnt.X64.PopCount(val);
+                return (uint)BitOperations.PopCount(val);
+            }
+        }
         public static uint PopCount(this BitVector vec) {
             uint ret = 0;
-            foreach(var x in vec) {
-                ret += BitCount(x);
+            foreach (var x in vec) {
+                ret += //BitCount(x);
+                    PopCount(x);
             }
             return ret;
         }

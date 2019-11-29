@@ -1,4 +1,5 @@
-﻿using Imms;
+﻿using CompilerInfrastructure.Utils;
+using Imms;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,30 +7,83 @@ using System.Text;
 
 namespace CompilerInfrastructure.Analysis {
     public struct MonoSet<T> : ISet<T> {
-        ImmSet<T> underlying;
-        readonly static ImmSet<T> EMPTY= ImmSet.Empty<T>();
-        internal MonoSet(ImmSet<T> und) {
-            underlying = und;
+        readonly BitVectorSet<T> underlying;
+        readonly static BitVectorSet<T> EMPTY = new BitVectorSet<T>();
+        internal MonoSet(BitVectorSet<T> und) {
+            underlying = und ?? throw new ArgumentNullException(nameof(und));
         }
 
-        public int Count => ((ISet<T>) underlying).Count;
-        public bool IsReadOnly => ((ISet<T>) underlying).IsReadOnly;
-        public bool Add(T item) => ((ISet<T>) underlying).Add(item);
-        public void Clear() => ((ISet<T>) underlying).Clear();
+        public int Count => underlying.Count;
+
+
+
+        public bool IsReadOnly => underlying.IsReadOnly;
+        public bool Add(T item) => underlying.Add(item);
+        public void Clear() => underlying.Clear();
         public bool Contains(T item) => underlying.Contains(item);
         public void CopyTo(T[] array, int arrayIndex) => underlying.CopyTo(array, arrayIndex);
-        public void ExceptWith(IEnumerable<T> other) => ((ISet<T>) underlying).ExceptWith(other);
+        public void ExceptWith(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                underlying.ExceptWith(m.underlying);
+            underlying.ExceptWith(other);
+        }
+
         public IEnumerator<T> GetEnumerator() => underlying.GetEnumerator();
-        public void IntersectWith(IEnumerable<T> other) => ((ISet<T>) underlying).IntersectWith(other);
-        public bool IsProperSubsetOf(IEnumerable<T> other) => underlying.IsProperSubsetOf(other);
-        public bool IsProperSupersetOf(IEnumerable<T> other) => underlying.IsProperSupersetOf(other);
-        public bool IsSubsetOf(IEnumerable<T> other) => underlying.IsSubsetOf(other);
-        public bool IsSupersetOf(IEnumerable<T> other) => underlying.IsSupersetOf(other);
-        public bool Overlaps(IEnumerable<T> other) => ((ISet<T>) underlying).Overlaps(other);
-        public bool Remove(T item) => ((ISet<T>) underlying).Remove(item);
-        public bool SetEquals(IEnumerable<T> other) => underlying.SetEquals(other);
-        public void SymmetricExceptWith(IEnumerable<T> other) => ((ISet<T>) underlying).SymmetricExceptWith(other);
-        public void UnionWith(IEnumerable<T> other) => ((ISet<T>) underlying).UnionWith(other);
+        public void IntersectWith(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                underlying.IntersectWith(m.underlying);
+            underlying.IntersectWith(other);
+        }
+
+        public bool IsProperSubsetOf(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                return underlying.IsProperSubsetOf(m.underlying);
+            return underlying.IsProperSubsetOf(other);
+        }
+
+        public bool IsProperSupersetOf(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                return underlying.IsProperSupersetOf(m.underlying);
+            return underlying.IsProperSupersetOf(other);
+        }
+
+        public bool IsSubsetOf(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                return underlying.IsSubsetOf(m.underlying);
+            return underlying.IsSubsetOf(other);
+        }
+
+        public bool IsSupersetOf(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                return underlying.IsSupersetOf(m.underlying);
+            return underlying.IsSupersetOf(other);
+        }
+
+        public bool Overlaps(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                return underlying.Overlaps(m.underlying);
+            return underlying.Overlaps(other);
+        }
+
+        public bool Remove(T item) => underlying.Remove(item);
+        public bool SetEquals(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                underlying.SetEquals(m.underlying);
+            return underlying.SetEquals(other);
+        }
+
+        public void SymmetricExceptWith(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                underlying.SymmetricExceptWith(m.underlying);
+            underlying.SymmetricExceptWith(other);
+        }
+
+        public void UnionWith(IEnumerable<T> other) {
+            if (other is MonoSet<T> m)
+                underlying.UnionWith(m.underlying);
+            underlying.UnionWith(other);
+        }
+
         void ICollection<T>.Add(T item) => ((ISet<T>) underlying).Add(item);
         IEnumerator IEnumerable.GetEnumerator() => underlying.GetEnumerator();
 
@@ -52,23 +106,31 @@ namespace CompilerInfrastructure.Analysis {
             return underlying.IsDisjointWith(other);
         }
         public MonoSet<T> Intersect(IEnumerable<T> other) {
-            return new MonoSet<T>(underlying.Intersect(other));
+            if (other is MonoSet<T> m)
+                return new MonoSet<T>(underlying & m.underlying);
+            return new MonoSet<T>(underlying & other);
         }
         public MonoSet<T> Union(IEnumerable<T> other) {
-            return new MonoSet<T>(underlying.Union(other));
+            if (other is MonoSet<T> m)
+                return new MonoSet<T>(underlying | m.underlying);
+            return new MonoSet<T>(underlying | other);
         }
         public bool IsEmpty => underlying.IsEmpty;
 
     }
     public static class MonoSet {
         public static MonoSet<T> ToMonoSet<T>(this IEnumerable<T> en) {
-            return new MonoSet<T>(en.ToImmSet());
+            if (en is MonoSet<T> m)
+                return m;
+            if (en is BitVectorSet<T> bvs)
+                return new MonoSet<T>(bvs);
+            return new MonoSet<T>(new BitVectorSet<T>(en));
         }
         public static MonoSet<T> Of<T>(params T[] elems) {
-            return new MonoSet<T>(ImmSet.Of(elems));
+            return new MonoSet<T>(new BitVectorSet<T>(elems));
         }
         public static MonoSet<T> Empty<T>() {
-            return new MonoSet<T>(ImmSet.Empty<T>());
+            return new MonoSet<T>(new BitVectorSet<T>());
         }
     }
 }
