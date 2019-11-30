@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace CompilerInfrastructure.Utils {
     public static class HashHelper {
         //static SHA1 sha= SHA1.Create();
-        public static unsafe ulong UniqueHash(this string str) {
+        public static ulong UniqueHash(this string str) {
             ulong prime = 1099511628211uL;
             ulong hash = 14695981039346656037uL;
             var bytes = Encoding.UTF8.GetBytes(str);

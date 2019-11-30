@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CompilerInfrastructure.Analysis.TaintAnalysis;
-using CompilerInfrastructure.Contexts;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
     public class StackRefCaptureAnalysisDescription : TaintAnalysis.TaintAnalysisDescription<StackCaptureFact> {

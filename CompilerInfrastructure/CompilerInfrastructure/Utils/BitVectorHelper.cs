@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Runtime.Intrinsics.X86;
 using System.Numerics;
 using BitVector = CompilerInfrastructure.Utils.Vector<ulong>;
 using RTMethodImpl = System.Runtime.CompilerServices.MethodImplAttribute;
 using RTMethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
-using System.Runtime.CompilerServices;
 
 namespace CompilerInfrastructure.Utils {
     public static class BitVectorHelper {

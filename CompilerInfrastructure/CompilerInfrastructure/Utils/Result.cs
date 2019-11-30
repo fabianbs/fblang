@@ -69,9 +69,9 @@ namespace CompilerInfrastructure.Utils {
     public readonly struct BooleanResult<U> : IEquatable<BooleanResult<U>> {
         private readonly U failure;
 
-        public BooleanResult(bool _result, U _failure) {
-            IsSuccess = _result;
-            failure = _failure;
+        public BooleanResult(bool result, U failure) {
+            IsSuccess = result;
+            this.failure = failure;
         }
         public static bool operator true(BooleanResult<U> res) => res.IsSuccess;
         public static bool operator false(BooleanResult<U> res) => !res.IsSuccess;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
     public readonly struct StackCaptureFact : IEquatable<StackCaptureFact> {

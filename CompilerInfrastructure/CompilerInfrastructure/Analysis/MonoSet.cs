@@ -1,14 +1,12 @@
 ﻿using CompilerInfrastructure.Utils;
-using Imms;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CompilerInfrastructure.Analysis {
     public struct MonoSet<T> : ISet<T> {
         readonly BitVectorSet<T> underlying;
-        readonly static BitVectorSet<T> EMPTY = new BitVectorSet<T>();
+        static readonly BitVectorSet<T> EMPTY = new BitVectorSet<T>();
         internal MonoSet(BitVectorSet<T> und) {
             underlying = und ?? throw new ArgumentNullException(nameof(und));
         }
@@ -68,7 +66,7 @@ namespace CompilerInfrastructure.Analysis {
         public bool Remove(T item) => underlying.Remove(item);
         public bool SetEquals(IEnumerable<T> other) {
             if (other is MonoSet<T> m)
-                underlying.SetEquals(m.underlying);
+                return underlying.SetEquals(m.underlying);
             return underlying.SetEquals(other);
         }
 
@@ -84,7 +82,7 @@ namespace CompilerInfrastructure.Analysis {
             underlying.UnionWith(other);
         }
 
-        void ICollection<T>.Add(T item) => ((ISet<T>) underlying).Add(item);
+        void ICollection<T>.Add(T item) => underlying.Add(item);
         IEnumerator IEnumerable.GetEnumerator() => underlying.GetEnumerator();
 
         public static MonoSet<T> operator +(MonoSet<T> s1, MonoSet<T> s2) {
