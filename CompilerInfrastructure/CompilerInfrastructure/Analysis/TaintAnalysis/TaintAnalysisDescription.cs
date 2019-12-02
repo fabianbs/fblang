@@ -49,7 +49,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
         }
 
 
-       
+
         protected bool IsTainted(D vr, ISet<D> In) {
             return In.Contains(vr)/* || sources.IsSourceVariable(vr)*/;
         }
@@ -73,7 +73,7 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
             if (sources.IsSourceMethod(call.Callee, out var paramTaints, out _)) {
                 var nwTaints = paramTaints
                     .Select(x => call.Arguments[x])
-                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : Set.Empty<D>());
+                    .SelectMany(x => Domain.ContainsFacts(x, out var vars) ? vars : Set.Empty<D>()).ToArray();
                 Out += nwTaints;
                 TaintSource(new TaintSource<D>(call.Callee), nwTaints);
                 needAnalysis = false;
@@ -106,12 +106,13 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                     In = NormalFlow(In, bo.Right);
                     var Out = In.ToMonoSet();
                     if (bo.Operator.IsAssignment() && Domain.IsPropagatingAssignment(bo)) {
-                        if (Domain.ContainsFacts(bo.Right, out var rhsFacts)) {
+                        bool notSrc;
+                        if ((notSrc = Domain.ContainsFacts(bo.Right, out var rhsFacts)) || sources.IsSourceExpression(bo.Right, out rhsFacts)) {
                             if (IsAnyTainted(rhsFacts, Out)) {
                                 if (Domain.ContainsFacts(bo.Left, out var leftFacts)) {
                                     if (leftFacts.Any(x => sinks.IsSinkFact(x)))
                                         TaintLeak(expr, rhsFacts);
-                                    TaintPropagation(Out.Intersect(rhsFacts), leftFacts);
+                                    TaintPropagation(notSrc ? Out.Intersect(rhsFacts) : rhsFacts, leftFacts);
                                 }
                             }
                             else {
@@ -138,8 +139,17 @@ namespace CompilerInfrastructure.Analysis.TaintAnalysis {
                 return In.ToMonoSet().Union(facts);
             }
             else if (stmt is ControlReturnStatement retStmt && retStmt.HasReturnValue) {
+                bool has;
                 if (Domain.ContainsFacts(retStmt.ReturnValue, out var vars)) {
-                    state.Peek().returnFacts.UnionWith(In.ToMonoSet().Intersect(vars));
+                    vars.IntersectWith(In);
+                    has = true;
+                }
+                else {
+                    has = sources.IsSourceExpression(retStmt.ReturnValue, out vars);
+                }
+
+                if (has) {
+                    state.Peek().returnFacts.UnionWith(vars);
                     TaintLeak(stmt, vars.Where(x => sinks.IsSinkReturn(x)));
                 }
             }

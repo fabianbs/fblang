@@ -24,7 +24,7 @@ namespace CompilerInfrastructure.Utils {
             unchecked {
                 if (Popcnt.X64.IsSupported)
                     return (uint) Popcnt.X64.PopCount(val);
-                return (uint)BitOperations.PopCount(val);
+                return (uint) BitOperations.PopCount(val);
             }
         }
         public static uint PopCount(this BitVector vec) {
@@ -105,14 +105,18 @@ namespace CompilerInfrastructure.Utils {
         }
         public static void Or(this ref BitVector vec, BitVector vec2) {
             var len = Math.Max(vec.Length, vec2.Length);
-            ref var dummy = ref vec[len-1];// resize vec
+            if (len > 0) {
+                ref var dummy = ref vec[len-1];// resize vec
+            }
             for (uint i = 0; i < len; ++i) {
                 vec[i] |= vec2[i];
             }
         }
         public static void Xor(this ref BitVector vec, BitVector vec2) {
             var len = Math.Max(vec.Length, vec2.Length);
-            ref var dummy = ref vec[len-1];// resize vec
+            if (len > 0) {
+                ref var dummy = ref vec[len-1]; // resize vec
+            }
             for (uint i = 0; i < len; ++i) {
                 vec[i] ^= vec2[i];
             }

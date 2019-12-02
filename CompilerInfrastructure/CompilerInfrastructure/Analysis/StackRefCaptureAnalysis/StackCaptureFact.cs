@@ -19,5 +19,10 @@ namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
         public static implicit operator StackCaptureFact((IVariable vr, bool frst) tup) {
             return new StackCaptureFact(tup.vr, tup.frst);
         }
+
+        /// <inheritdoc />
+        public override string ToString() {
+            return "(" + Variable + (FirstClass ? ")" : ")*");
+        }
     }
 }

@@ -40,7 +40,7 @@
 
         public bool IsSourceExpression(IExpression expr, out ISet<StackCaptureFact> facts) {
             if (expr is ReferenceExpression rx)
-                return dom.ContainsFacts(rx, out facts);
+                return dom.ContainsFacts(rx.Underlying, out facts);
             facts = Set.Empty<StackCaptureFact>();
             return false;
         }

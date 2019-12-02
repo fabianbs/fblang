@@ -30,12 +30,13 @@ namespace CITest {
         }
         [Fact]
         public void TestSimpleFunction() {
-            
-            var met = new BasicMethod(default, "func",Visibility.Public,PrimitiveType.Int,new[]{
+
+            var met = new BasicMethod(default, "func", Visibility.Public, PrimitiveType.Int, new[]{
                 new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.LocalVariable, "x", null),
                 new BasicVariable(default, PrimitiveType.Double,Variable.Specifier.LocalVariable, "y",null)
-            } );
-            met.NestedIn = mod;
+            }) {
+                NestedIn = mod
+            };
             met.Specifiers |= Method.Specifier.Static;
             met.Body.Instruction = new ReturnStatement(default, new VariableAccessExpression(default, null, met.Arguments[0]));
 
@@ -48,11 +49,12 @@ namespace CITest {
         }
         [Fact]
         public void TestSimpleLeak() {
-            var met = new BasicMethod(default, "func",Visibility.Public,PrimitiveType.Void, new[]{
+            var met = new BasicMethod(default, "func", Visibility.Public, PrimitiveType.Void, new[]{
                 new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.LocalVariable, "x", null),
                 new BasicVariable(default, PrimitiveType.Int.AsByRef(), Variable.Specifier.LocalVariable, "y",null)
-            } );
-            met.NestedIn = mod;
+            }) {
+                NestedIn = mod
+            };
             met.Specifiers |= Method.Specifier.Static;
             met.Body.Instruction = new BlockStatement(default, new IStatement[] {
                 new ExpressionStmt(default, new BinOp(default, null,
