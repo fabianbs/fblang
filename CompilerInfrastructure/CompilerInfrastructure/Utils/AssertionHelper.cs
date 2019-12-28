@@ -9,13 +9,13 @@ namespace CompilerInfrastructure.Utils {
 #pragma warning disable IDE1006 // Benennungsstile
         public static void assert<T>(T value, string message) {
 #pragma warning restore IDE1006 // Benennungsstile
-            Debug.Assert(value != default, message);
+            Debug.Assert(!Equals(value, default), message);
         }
         [Conditional("DEBUG")]
 #pragma warning disable IDE1006 // Benennungsstile
         public static void assert<T>(T value) {
 #pragma warning restore IDE1006 // Benennungsstile
-            Debug.Assert(value != default);
+            Debug.Assert(!Equals(value, default));
         }
     }
 }

@@ -98,7 +98,7 @@ namespace CompilerInfrastructure.Expressions {
 
         public bool IsCompileTimeEvaluable => true;
 
-        public virtual bool IsTrue => Value != default;
+        public virtual bool IsTrue => !Equals(Value, default);
     }
     public static class LiteralHelper {
         public static bool TryConvertToUInt(this ILiteral lit, out uint ret) {
