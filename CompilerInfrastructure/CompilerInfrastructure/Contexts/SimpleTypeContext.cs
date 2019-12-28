@@ -15,6 +15,8 @@ using System.Linq;
 using System.Text;
 //using static CompilerInfrastructure.Context.DefiningRules;
 namespace CompilerInfrastructure {
+    using Structure.Types;
+
     [Serializable]
     public class SimpleTypeContext : HierarchialContext, ITypeContext {
         public SimpleTypeContext(Module mod, Context.DefiningRules defRules = Context.DefiningRules.All, Position pos = default)//DOLATER: Not sure whether or nor to serialize non-public members

@@ -15,9 +15,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     [Serializable]
     class ContiguousRangeExpression : ExpressionImpl {
         readonly IExpression[] exprs;

@@ -18,6 +18,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Type = Structure.Types.Type;
+
     [Serializable]
     public class CallExpression : ExpressionImpl, IEphemeralExpression, ISideEffectFulExpression {
         readonly IExpression[] content;

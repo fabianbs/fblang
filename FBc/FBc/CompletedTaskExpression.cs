@@ -17,6 +17,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     [Serializable]
     class CompletedTaskExpression : ExpressionImpl {
         public CompletedTaskExpression(Position pos, IExpression underlying) : base(pos) {

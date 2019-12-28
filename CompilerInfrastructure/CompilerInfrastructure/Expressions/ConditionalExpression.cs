@@ -15,6 +15,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     [Serializable]
     public class ConditionalExpression : ExpressionImpl, ICompileTimeEvaluable {
         readonly IExpression[] content;

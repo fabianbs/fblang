@@ -14,6 +14,8 @@ using System.Linq;
 using System.Text;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     static class TypeHelper {
         public static bool OverloadsOperator(this IType tp, OverloadableOperator op, out IEnumerable<IDeclaredMethod> overloads, 
                                             SimpleMethodContext.VisibleMembers vis = SimpleMethodContext.VisibleMembers.Both) {

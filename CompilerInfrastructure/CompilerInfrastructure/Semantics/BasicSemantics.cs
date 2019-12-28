@@ -19,6 +19,8 @@ using CompilerInfrastructure.Utils;
 using static CompilerInfrastructure.Contexts.SimpleMethodContext;
 
 namespace CompilerInfrastructure.Semantics {
+    using Type = Structure.Types.Type;
+
     public partial class BasicSemantics : ISemantics {
         /* public Func<IMethod, IExpression, bool> IsCallVirt {
              get;
@@ -647,7 +649,7 @@ namespace CompilerInfrastructure.Semantics {
             return new BinOp(pos, retTy, lhs, op, rhs);
         }
         public virtual IExpression CreateBinOp(Position pos, IType retTy, IExpression lhs, BinOp.OperatorKind op, IExpression rhs, ErrorBuffer err = null) {
-            retTy = BinOp.InferredReturnType(op, lhs.ReturnType, rhs.ReturnType, retTy);
+            retTy = BinOp.InferredReturnType(pos, op, lhs.ReturnType, rhs.ReturnType, retTy);
             if (retTy.IsString() && op == BinOp.OperatorKind.ADD) {
                 if (lhs is StringLiteral slit && string.IsNullOrEmpty(slit.Value))
                     return rhs.ReturnType.IsString() ? rhs : new TypecastExpression(pos, rhs, PrimitiveType.String);

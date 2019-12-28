@@ -5,24 +5,22 @@
  *
  *****************************************************************************/
 
-using CompilerInfrastructure.Contexts;
-using CompilerInfrastructure.Expressions;
-using CompilerInfrastructure.Structure;
-using CompilerInfrastructure.Structure.Types;
-using CompilerInfrastructure.Structure.Types.Generic;
-using CompilerInfrastructure.Utils;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using static CompilerInfrastructure.Utils.CoreExtensions;
 using RTMethodImpl = System.Runtime.CompilerServices.MethodImplAttribute;
 using RTMethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
 
-namespace CompilerInfrastructure {
+namespace CompilerInfrastructure.Structure.Types {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using Contexts;
+    using Expressions;
+    using Generic;
+    using Structure;
+    using Utils;
+
     public interface IType : IVisible, ISourceElement, ITypeOrLiteral, IRangeScope, IReplaceableStructureElement<IType>, ISigned<Type.Signature>, IPrintable {
         new IType Replace(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent);
         new ITypeContext Context {
@@ -188,7 +186,7 @@ namespace CompilerInfrastructure {
         }
         public static bool IsArrayOf(this IType tp, IType itemTy) {
             if (tp.IsArray()) {
-                return tp.Cast<AggregateType>().ItemType == itemTy;
+                return ReferenceEquals(tp.Cast<AggregateType>().ItemType, itemTy);
             }
             return false;
         }
@@ -283,10 +281,10 @@ namespace CompilerInfrastructure {
             return tp.IsPrimitive() && tp.TryCast<PrimitiveType>(out var prim) && prim.IsFloatingPoint;
         }
         public static bool IsString(this IType tp) {
-            return tp == PrimitiveType.String;
+            return ReferenceEquals(tp, PrimitiveType.String);
         }
         public static bool IsVoid(this IType tp) {
-            return tp is null || tp == PrimitiveType.Void;
+            return tp is null || ReferenceEquals(tp, PrimitiveType.Void);
         }
         public static bool IsAwaitable(this IType tp) {
             return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Awaitable);
@@ -313,6 +311,10 @@ namespace CompilerInfrastructure {
         public static ByRefType AsByRef(this IType tp) {
             return ByRefType.Get(tp);
         }
+
+        public static IType AsByConstRef(this IType tp) {
+            return RefConstrainedType.Get(tp.AsByRef(), ReferenceCapability.box);
+        }
         public static ReferenceType AsRef(this IType tp) {
             return ReferenceType.Get(tp);
         }
@@ -332,22 +334,22 @@ namespace CompilerInfrastructure {
             return AwaitableType.Get(tp);
         }
         public static bool IsError(this IType tp) {
-            return tp == ErrorType.Instance;
+            return ReferenceEquals(tp, ErrorType.Instance);
         }
         public static bool IsNullOrError(this IType tp) {
-            return tp is null || tp == ErrorType.Instance;
+            return tp is null || ReferenceEquals(tp, ErrorType.Instance);
         }
         public static bool IsTop(this IType tp) {
-            return tp != null && tp.UnWrapAll() == TopType.Instance;
+            return tp != null && ReferenceEquals(tp.UnWrapAll(), TopType.Instance);
         }
         public static bool IsBot(this IType tp) {
-            return tp != null && tp.UnWrapAll() == BottomType.Instance;
+            return tp != null && ReferenceEquals(tp.UnWrapAll(), BottomType.Instance);
         }
         public static bool IsTopOrBot(this IType tp) {
             if (tp is null)
                 return false;
             var uwt = tp.UnWrapAll();
-            return uwt == TopType.Instance || uwt == BottomType.Instance;
+            return ReferenceEquals(uwt, TopType.Instance) || ReferenceEquals(uwt, BottomType.Instance);
         }
         public static RefConstrainedType AsImmutable(this IType tp) {
             return RefConstrainedType.Get(tp, ReferenceCapability.val);
@@ -386,6 +388,9 @@ namespace CompilerInfrastructure {
                 tp = mtp.UnderlyingType;
             return tp;
         }
+        /// <summary>
+        /// Unwraps everything except <see cref="ReferenceValueType"/> (which is typically the $ symbol)
+        /// </summary>
         public static IType UnWrapNatural(this IType tp) {
             while (tp is ModifierType mtp && !(mtp is ReferenceValueType))
                 tp = mtp.UnderlyingType;
@@ -450,70 +455,86 @@ namespace CompilerInfrastructure {
 
         [RTMethodImpl(RTMethodImplOptions.AggressiveInlining)]
         public static T Cast<T>(this IType tp) where T : IType {
-            if (tp is null)
-                throw new InvalidCastException("Cannot cast null to " + typeof(T).FullName);
-            else if (tp is T t)
-                return t;
-            else {
-                var uw = tp.UnWrap();
-                if (uw is T tt)
-                    return tt;
-                else if (uw != tp)
-                    return Cast<T>(uw);
-                else
-                    throw new InvalidCastException($"Cannot cast {tp} to {typeof(T).FullName}");
+            while (true) { // auto converted tail recursion to loop
+                switch (tp) {
+                    case null:
+                        throw new InvalidCastException("Cannot cast null to " + typeof(T).FullName);
+                    case T t:
+                        return t;
+                    default: {
+                        var uw = tp.UnWrap();
+                        if (uw is T tt)
+                            return tt;
+                        if (!ReferenceEquals(uw, tp)) {
+                            tp = uw;
+                            continue;
+                        }
+
+                        throw new InvalidCastException($"Cannot cast {tp} to {typeof(T).FullName}");
+                    }
+                }
             }
         }
+
         [RTMethodImpl(RTMethodImplOptions.AggressiveInlining)]
         public static bool TryCast<T>(this IType tp, out T ret) where T : IType {
-            if (tp is null) {
-                ret = default;
-                return false;
-            }
-            else if (tp is T t) {
-                ret = t;
-                return true;
-            }
-            else {
-                var uw = tp.UnWrap();
-                if (uw is T tt) {
-                    ret = tt;
-                    return true;
-                }
-                else if (uw != tp) {
-                    return TryCast(uw, out ret);
-                }
-                else {
-                    ret = default;
-                    return false;
+            while (true) {
+                switch (tp) {
+                    case null:
+                        ret = default;
+                        return false;
+                    case T t:
+                        ret = t;
+                        return true;
+                    default: {
+                        var uw = tp.UnWrap();
+                        if (uw is T tt) {
+                            ret = tt;
+                            return true;
+                        }
+
+                        if (!ReferenceEquals(uw, tp)) {
+                            tp = uw;
+                            continue;
+                        }
+
+                        ret = default;
+                        return false;
+                    }
                 }
             }
         }
+
         [RTMethodImpl(RTMethodImplOptions.AggressiveInlining)]
         public static bool TryCastWhere<T>(this IType tp, out T ret, Func<T, bool> predicate) {
-            if (tp is null) {
-                ret = default;
-                return false;
-            }
-            else if (tp is T t && (predicate is null || predicate(t))) {
-                ret = t;
-                return true;
-            }
-            else {
-                var uw = tp.UnWrap();
-                if (uw is T tt && (predicate is null || predicate(tt))) {
-                    ret = tt;
-                    return true;
+            while (true) {
+                switch (tp) {
+                    case null:
+                        ret = default;
+                        return false;
+                    case T t when (predicate is null || predicate(t)):
+                        ret = t;
+                        return true;
+                    default: {
+                        var uw = tp.UnWrap();
+                        if (uw is T tt && (predicate is null || predicate(tt))) {
+                            ret = tt;
+                            return true;
+                        }
+                        if (!ReferenceEquals(uw, tp)) {
+                            tp = uw;
+                            continue;
+                        }
+
+                        ret = default;
+                        return false;
+
+                    }
                 }
-                else if (uw != tp) {
-                    return TryCastWhere(uw, out ret, predicate);
-                }
-                else {
-                    ret = default;
-                    return false;
-                }
+
             }
         }
+
         public static bool MayRelyOnGenericParameters(this IType @this) {
             if (@this is IGenericParameter)
                 return true;
@@ -682,7 +703,7 @@ namespace CompilerInfrastructure {
             if (tps is null || !tps.Any()) {
                 return Type.Error;
             }
-            return tps.Aggregate(Type.Top, (x, y) => MostSpecialCommonSuperType(x, y));
+            return tps.Aggregate(Type.Top, MostSpecialCommonSuperType);
         }
         public static IType MostSpecialCommonSuperType(params IType[] tps) {
             if (tps is null || tps.Length == 0) {
@@ -713,8 +734,8 @@ namespace CompilerInfrastructure {
             var uwaVarTy = uwVarTy.UnWrapAll();
             var uwaObjTy = uwObjTy.UnWrapAll();
 
-            if (uwVarTy.IsValueType() && !uwVarTy.IsPrimitive()) {// no polymorphism fo r value-types, except for string/bool conversion
-                if (uwObjTy == uwVarTy)
+            if (uwVarTy.IsValueType() && !uwVarTy.IsPrimitive()) {// no polymorphism for value-types, except for string/bool conversion
+                if (ReferenceEquals(uwObjTy, uwVarTy))
                     return true;
             }
             else if (uwaObjTy.IsSubTypeOf(uwaVarTy, out diff) && (diff >= 0 || allowNegativeDiff)) {

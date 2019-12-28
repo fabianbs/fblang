@@ -14,6 +14,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Structure.Macros {
+    using Types;
+
     [Serializable]
     public class ExpressionParameter :IPositional{
         public class Constraint {

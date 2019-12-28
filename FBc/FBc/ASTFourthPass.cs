@@ -21,8 +21,7 @@ using CompilerInfrastructure.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
     class ASTFourthPass : ASTThirdPass {
@@ -2260,24 +2259,38 @@ namespace FBc {
                 // contextStack.Push(ctx);
                 ctxFrame = PushContext(ctx);
                 //var decl = VisitDecl(context.foreachInit().decl());
-                var declInfos = DeclarationInfos(context.foreachInit().decl());
+                var (ty, spec, names, vis) = DeclarationInfos(context.foreachInit().decl());
+                bool isByRef = ty.IsByRef();
+                bool isByConstRef = ty.IsByConstRef();
+                if (!range.ReturnType.IsArraySlice() && !range.ReturnType.IsArray()) {
+                    "ByRef iteration is only supported for arrays and slices. Try to iterate by value or copy the range into an array first".Report(range.Position); //DOLATER: support byref iterators
+                }
+                var tyStem = isByRef ? ty.UnWrap() : ty;
                 Declaration decl;
-                if (declInfos.Item1.IsTop()) {
+                if (tyStem.IsTop()) {
                     if (!range.ReturnType.IsTop()) {
+
                         var over = Module.IsIterable(range.ReturnType);
-                        if (over.Any() && !over.HasCount(2))
-                            decl = new Declaration(context.Position(fileName), over.First(), declInfos.Item2, declInfos.Item3, vis: declInfos.Item4);
+
+                        if (over.IsSingelton(out ty)) {
+                            if (isByRef) {
+                                ty = isByConstRef ? ty.AsByConstRef() : ty.AsByRef();
+                               
+                            }
+
+                            decl = new Declaration(context.Position(fileName), ty, spec, names, vis: vis);
+                        }
                         else {
-                            decl = new Declaration(context.Position(fileName), declInfos.Item1, declInfos.Item2, declInfos.Item3, vis: declInfos.Item4);
-                            $"The type of the loop-variable{(declInfos.Item3.Length > 1 ? "s" : "")} {string.Join(", ", declInfos.Item3)} cannot be inferred from the range".Report(context.expr().Position(fileName));
+                            decl = new Declaration(context.Position(fileName), ty, spec, names, vis: vis);
+                            $"The type of the loop-variable{(names.Length > 1 ? "s" : "")} {string.Join(", ", names)} cannot be inferred from the range".Report(context.expr().Position(fileName));
                         }
                     }
                     else
-                        decl = new Declaration(context.Position(fileName), declInfos.Item1, declInfos.Item2, declInfos.Item3, vis: declInfos.Item4);
+                        decl = new Declaration(context.Position(fileName), ty, spec, names, vis: vis);
                 }
                 else {
-                    decl = new Declaration(context.Position(fileName), declInfos.Item1, declInfos.Item2, declInfos.Item3, vis: declInfos.Item4);
-                    if (!range.ReturnType.IsTop() && !Module.IsIterableOver(range.ReturnType, decl.Type))
+                    decl = new Declaration(context.Position(fileName), ty, spec, names, vis: vis);
+                    if (!range.ReturnType.IsTop() && !Module.IsIterableOver(range.ReturnType, tyStem))
                         $"The range-object of the foreach-loop is not iterable over {decl.Type.Signature}".Report(context.expr().Position(fileName));
                 }
                 DoDefineVariables(decl, ctx);

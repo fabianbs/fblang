@@ -16,6 +16,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     [Serializable]
     public class DeclarationExpression : ExpressionImpl, SwitchStatement.IPattern {
         public override IType ReturnType => Variable.Type;

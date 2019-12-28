@@ -15,6 +15,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     [Serializable]
     class DeconstructDeclaration : Declaration {
         public DeconstructDeclaration(Position pos, IType type, Variable.Specifier specs, IEnumerable<string> names, IExpression range, Visibility vis)

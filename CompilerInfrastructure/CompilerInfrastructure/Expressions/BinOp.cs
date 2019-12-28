@@ -18,6 +18,8 @@ using CompilerInfrastructure.Utils;
 using static CompilerInfrastructure.Expressions.BinOp;
 
 namespace CompilerInfrastructure.Expressions {
+    using Type = Structure.Types.Type;
+
     [Serializable]
     public class BinOp : ExpressionImpl, ISideEffectFulExpression, ICompileTimeEvaluable {
         [Serializable]
@@ -48,16 +50,16 @@ namespace CompilerInfrastructure.Expressions {
             content[1] = rhs ?? "The right-hand-side of a binary expression must not be null".Report(pos, Expression.Error);
             Operator = op;
 
-            ReturnType = InferredReturnType(op, Left.ReturnType, Right.ReturnType, retTy);
+            ReturnType = InferredReturnType(pos, op, Left.ReturnType, Right.ReturnType, retTy);
         }
-        public static IType InferredReturnType(OperatorKind op, IType lhsTy, IType rhsTy, IType retTy = null) {
+        public static IType InferredReturnType(Position pos, OperatorKind op, IType lhsTy, IType rhsTy, IType retTy = null) {
             if (retTy is null) {
                 switch (op) {
                     case OperatorKind.ASSIGN_NEW:
-                        retTy = lhsTy;
+                        retTy = lhsTy.UnWrapNatural();
                         break;
                     case OperatorKind.ASSIGN_OLD:
-                        retTy = rhsTy;
+                        retTy = rhsTy.UnWrapNatural();
                         break;
                     case OperatorKind.LOR:
                     case OperatorKind.LAND:
@@ -73,6 +75,9 @@ namespace CompilerInfrastructure.Expressions {
                         retTy = Type.MostSpecialCommonSuperType(lhsTy, rhsTy);
                         break;
                 }
+            }
+            if (op.IsAssignment() && lhsTy.IsByConstRef()) {
+                "Cannot assign to a const reference".Report(pos);
             }
             return retTy;
         }

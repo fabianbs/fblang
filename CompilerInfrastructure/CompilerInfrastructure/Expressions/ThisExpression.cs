@@ -15,6 +15,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     [Serializable]
     public class ThisExpression : ExpressionImpl {
         public ThisExpression(Position pos, IType retTy) : base(pos) {

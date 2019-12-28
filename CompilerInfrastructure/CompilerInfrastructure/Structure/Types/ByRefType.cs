@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using System.IO;
 
 namespace CompilerInfrastructure {
+    using Type = Structure.Types.Type;
+
     [Serializable]
     public class ByRefType : ModifierType {
         /*[Serializable]

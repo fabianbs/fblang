@@ -20,6 +20,8 @@ using System.Text;
 using static CompilerInfrastructure.Contexts.SimpleMethodContext;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     [Serializable]
     class RandomDeconstruction : StatementImpl {
         readonly IExpression[] lvalues;

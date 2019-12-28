@@ -21,7 +21,7 @@ using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Text;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
     /// <summary>

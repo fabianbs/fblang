@@ -14,7 +14,7 @@ using CompilerInfrastructure;
 using CompilerInfrastructure.Utils;
 using CompilerInfrastructure.Structure.Types;
 using static NativeManagedContext;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 using CompilerInfrastructure.Contexts;
 using CompilerInfrastructure.Semantics;
 using static CompilerInfrastructure.Structure.Types.ArrayType.ArrayContext;

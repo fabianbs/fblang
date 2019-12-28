@@ -1,0 +1,34 @@
+def void Point{
+    int x, y
+    
+    public init ctor(int x, y){ }
+    
+    public operator string(){
+        return "(" + x + ", " + y + ")"
+    }
+    public zint getHashCode(){
+        return ((zint)x << 32) | ((zint)y)
+    }
+    
+    public bool equals(Point! p){
+        return x == p.x && y == p.y
+    }
+}
+
+
+global main(){
+    int[Point] map = new ()
+    
+    map[new Point(2, 1)] = 3
+    map[new Point(2, 4)] = 4
+    map[new Point(2, 1)] = -3
+    
+    cprintln("map[(2, 1)] = " + map[new Point(2, 1)])
+    
+    
+    map.@forEach{
+        cprint(%key)
+        cprint(" => ")
+        cprintln(%value)
+    }
+} 

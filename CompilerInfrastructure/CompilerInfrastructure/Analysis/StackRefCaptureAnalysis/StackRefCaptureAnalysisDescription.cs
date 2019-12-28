@@ -5,6 +5,8 @@ using System.Text;
 using CompilerInfrastructure.Analysis.TaintAnalysis;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
+    using Structure.Types;
+
     public class StackRefCaptureAnalysisDescription : TaintAnalysis.TaintAnalysisDescription<StackCaptureFact> {
 
         private StackRefCaptureAnalysisDescription(StackRefCaptureDomain dom, StackRefCaptureSourceSinkDescription sourceSink)

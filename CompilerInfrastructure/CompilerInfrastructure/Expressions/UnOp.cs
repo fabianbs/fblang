@@ -16,6 +16,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Type = Structure.Types.Type;
+
     public static class UnOpOperatorKindHelper {
         public static bool IsOverloadable(this UnOp.OperatorKind op, out OverloadableOperator ov) {
             switch (op) {

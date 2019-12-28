@@ -12,6 +12,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     public struct EvaluationContext {
         Dictionary<IExpression, ILiteral> facts;
         MultiMap<IType,IType> isTypeFacts;

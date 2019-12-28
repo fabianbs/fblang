@@ -16,6 +16,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Type = Structure.Types.Type;
+
     [Serializable]
     public class DefaultValueExpression : ExpressionImpl, ICompileTimeEvaluable {
         static readonly LazyDictionary<IType, DefaultValueExpression> dfltCache = new LazyDictionary<IType, DefaultValueExpression>(x => new DefaultValueExpression(default, x));

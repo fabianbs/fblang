@@ -14,6 +14,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Structure {
+    using Type = Types.Type;
+
     public interface INameMangler {
         string MangleTypeName(IType ty);
         string MangleFunctionName(IMethod met);

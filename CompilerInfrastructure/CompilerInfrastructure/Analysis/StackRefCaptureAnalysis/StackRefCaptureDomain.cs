@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
+    using Structure.Types;
+
     public class StackRefCaptureDomain : ITaintAnalysisDomain<StackCaptureFact> {
         readonly InterMonoAnalysis<TaintAnalysisSummary<StackCaptureFact>, StackCaptureFact> analysis;
         public StackRefCaptureDomain(InterMonoAnalysis<TaintAnalysisSummary<StackCaptureFact>, StackCaptureFact> analysis) {

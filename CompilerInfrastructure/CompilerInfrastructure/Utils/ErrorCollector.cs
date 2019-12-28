@@ -6,6 +6,8 @@ using System.IO;
 using System.Text;
 
 namespace CompilerInfrastructure.Utils {
+    using Structure.Types;
+
     public enum WarningLevel {
         VeryLow,
         Low,

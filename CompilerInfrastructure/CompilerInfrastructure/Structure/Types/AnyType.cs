@@ -20,7 +20,7 @@ namespace CompilerInfrastructure.Structure.Types {
     /// <summary>
     /// A type providing a signature which matches all existing types as supertype
     /// </summary>
-    /// <seealso cref="CompilerInfrastructure.IType" />
+    /// <seealso cref="IType" />
     [Serializable]
     public class TopType : IType {
         private protected TopType() {
@@ -77,7 +77,7 @@ namespace CompilerInfrastructure.Structure.Types {
     /// <summary>
     /// A type providing a signature which matches all existing types as subtype
     /// </summary>
-    /// <seealso cref="CompilerInfrastructure.IType" />
+    /// <seealso cref="IType" />
     [Serializable]
     public class BottomType : IType {
         private protected BottomType() {

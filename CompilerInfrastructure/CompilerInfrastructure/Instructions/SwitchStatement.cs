@@ -18,6 +18,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Instructions {
+    using Type = Structure.Types.Type;
+
     [Serializable]
     public class SwitchStatement : StatementImpl {
         public interface IPattern : IExpressionContainer, IStatementContainer {

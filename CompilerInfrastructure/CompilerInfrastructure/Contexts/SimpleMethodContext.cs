@@ -15,6 +15,8 @@ using System.Text;
 using static CompilerInfrastructure.Context;
 
 namespace CompilerInfrastructure.Contexts {
+    using Structure.Types;
+
     [Serializable]
     public class SimpleMethodContext : HierarchialContext {
         [Flags]

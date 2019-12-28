@@ -1017,9 +1017,7 @@ namespace FBc {
         }
         public virtual IType VisitArgTypeIdent([NotNull] FBlangParser.ArgTypeIdentContext context, string fileName) {
             var ret = VisitLocalTypeIdent(context.localTypeIdent(), fileName);
-            if (context.Amp() != null) {
-                ret = ret.AsByRef();
-            }
+            
             if (context.Dots() != null) {
                 ret = ret.AsVarArg();
             }
@@ -1030,9 +1028,7 @@ namespace FBc {
                 ret = Type.Error;
                 return false;
             }
-            if (context.Amp() != null) {
-                ret = ret.AsByRef();
-            }
+            
             if (context.Dots() != null) {
                 ret = ret.AsVarArg();
             }
@@ -1043,6 +1039,9 @@ namespace FBc {
             if (context.Pointer() != null) {
                 ret = ret.AsSpan();
             }
+            if (context.Amp() != null) {
+                ret = ret.AsByRef();
+            }
             return ret;
         }
         public virtual bool TryVisitLocalTypeIdent([NotNull]FBlangParser.LocalTypeIdentContext context, out IType ret, ErrorBuffer err, string fileName) {
@@ -1052,6 +1051,9 @@ namespace FBc {
             }
             if (context.Pointer() != null) {
                 ret = ret.AsSpan();
+            }
+            if (context.Amp() != null) {
+                ret = ret.AsByRef();
             }
             return true;
         }

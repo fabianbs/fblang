@@ -18,6 +18,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace FBc {
+    using Type = CompilerInfrastructure.Structure.Types.Type;
+
     class IntegratedHashMap : ClassTypeTemplate {
         static IntegratedHashMap instance = null;
         readonly GenericTypeParameter T, U;
@@ -144,7 +146,7 @@ namespace FBc {
                 instance = new IntegratedHashMap(mod, new[] { keyTy, valTy }) {
                     Context = ttcx,
                     Visibility = Visibility.Public,
-                    TypeSpecifiers = CompilerInfrastructure.Type.Specifier.NoInheritance | CompilerInfrastructure.Type.Specifier.Builtin
+                    TypeSpecifiers = Type.Specifier.NoInheritance | Type.Specifier.Builtin
                 };
                 ttcx.TypeTemplate = instance;
 

@@ -19,7 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
     class ASTSerializer : AbstractASTSerializer {

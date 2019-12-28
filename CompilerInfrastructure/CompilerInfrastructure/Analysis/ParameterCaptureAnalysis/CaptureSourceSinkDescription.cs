@@ -8,6 +8,8 @@ using System.Text;
 
 
 namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
+    using Structure.Types;
+
     public class CaptureSourceSinkDescription : ITaintSourceDescription<IVariable>, ITaintSinkDescription<IVariable> {
         public static CaptureSourceSinkDescription Instance { get; } = new CaptureSourceSinkDescription();
         private CaptureSourceSinkDescription() { }

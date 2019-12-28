@@ -15,6 +15,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CompilerInfrastructure.Structure {
+    using Types;
+
     [Serializable]
     internal class ErrorMethod : IMethod {
         

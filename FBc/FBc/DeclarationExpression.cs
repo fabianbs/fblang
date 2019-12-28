@@ -14,7 +14,7 @@ using CompilerInfrastructure.Utils;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
     /*[Serializable]

@@ -14,6 +14,8 @@ using CompilerInfrastructure.Structure.Types;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Semantics {
+    using Type = Structure.Types.Type;
+
     public partial class BasicSemantics {
 
         public class CFGCreator {

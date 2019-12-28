@@ -20,6 +20,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Type = Structure.Types.Type;
+
     public interface ILiteral : IExpression, ITypeOrLiteral, SwitchStatement.IPattern {
         bool IsPositiveValue {
             get;

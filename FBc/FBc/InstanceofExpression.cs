@@ -16,7 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 
 namespace FBc {
     [Serializable]
@@ -24,7 +24,7 @@ namespace FBc {
         readonly IExpression[] inst;
         public InstanceofExpression(Position pos, IExpression lhs, IType rhs) : base(pos) {
             inst = new[] { lhs };
-            Type = rhs ?? CompilerInfrastructure.Type.Error;
+            Type = rhs ?? CompilerInfrastructure.Structure.Types.Type.Error;
         }
         public IExpression Instance => inst[0];
         public IType Type {

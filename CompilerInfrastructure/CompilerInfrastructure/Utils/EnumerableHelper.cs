@@ -123,6 +123,31 @@ namespace CompilerInfrastructure {
             }
             return count == 0 && !it.MoveNext();
         }
+
+        public static bool IsSingelton<T>(this IEnumerable<T> iter) {
+            using var it = iter.GetEnumerator();
+            if (!it.MoveNext()) // should have at least on element
+                return false;
+            if (it.MoveNext()) // should not have more than this one element
+                return false;
+            return true;
+        }
+        public static bool IsSingelton<T>(this IEnumerable<T> iter, out T res) {
+            using var it = iter.GetEnumerator();
+            if (!it.MoveNext()) {
+                // should have at least on element
+                res = default;
+                return false;
+            }
+
+            res = it.Current;
+            if (it.MoveNext()) {
+                // should not have more than this one element
+                return false;
+            }
+
+            return true;
+        }
         public static IReadOnlyCollection<T> AsReadOnly<T>(this ICollection<T> coll) {
             if (coll is IReadOnlyCollection<T> roc)
                 return roc;
@@ -168,7 +193,7 @@ namespace CompilerInfrastructure {
             }
         }*/
         public static int GetArrayHashCode<T>(this Span<T> arr) {
-            return GetArrayHashCode((ReadOnlySpan<T>)arr);
+            return GetArrayHashCode((ReadOnlySpan<T>) arr);
         }
         public static int GetArrayHashCode<T>(this ReadOnlySpan<T> arr) {
             if (typeof(T).IsPrimitive) {
@@ -199,7 +224,7 @@ namespace CompilerInfrastructure {
                 var comp = EqualityComparer<T>.Default;
                 //return arr.Aggregate(31, (acc, x) => unchecked(17 + acc * comp.GetHashCode(x)));
                 int hc = 31;
-                foreach(var x in arr) {
+                foreach (var x in arr) {
                     hc = 17 + hc * comp.GetHashCode(x);
                 }
                 return hc;

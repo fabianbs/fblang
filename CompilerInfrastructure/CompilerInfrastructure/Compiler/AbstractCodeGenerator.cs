@@ -13,6 +13,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Compiler {
+    using Structure.Types;
+
     /// <summary>
     /// An abstract class implementing the <see cref="ICodeGenerator"/> interface by
     /// specializing it to the structure of <see cref="Module"/>

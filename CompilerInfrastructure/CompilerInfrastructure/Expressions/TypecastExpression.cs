@@ -14,6 +14,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     [Serializable]
     public class TypecastExpression : ExpressionImpl, ICompileTimeEvaluable {
         readonly IExpression[] sub;

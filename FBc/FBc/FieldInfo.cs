@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     readonly struct FieldInfo {
         public readonly FBlangParser.ExprContext DefaultValue;
         public readonly bool IsIncluding;

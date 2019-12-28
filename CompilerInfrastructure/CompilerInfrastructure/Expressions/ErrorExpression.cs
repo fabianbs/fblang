@@ -16,6 +16,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Expressions {
+    using Structure.Types;
+
     [Serializable]
     class ErrorExpression : ExpressionImpl {
 

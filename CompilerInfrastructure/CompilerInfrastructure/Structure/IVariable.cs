@@ -19,6 +19,8 @@ using static CompilerInfrastructure.Utils.CoreExtensions;
 using System.Linq;
 
 namespace CompilerInfrastructure {
+    using Structure.Types;
+
     public interface IVariable : IVisible, ISourceElement, IReplaceableStructureElement<IVariable>, ISigned<Variable.Signature> {
 
         Variable.Specifier VariableSpecifiers {
@@ -68,7 +70,7 @@ namespace CompilerInfrastructure {
         }
         public Variable.Signature Signature {
             get;
-        } = new Variable.Signature("", CompilerInfrastructure.Type.Error.Signature);
+        } = new Variable.Signature("", Structure.Types.Type.Error.Signature);
         ISignature ISigned.Signature => Signature;
         public Variable.Specifier VariableSpecifiers {
             get;
@@ -93,10 +95,10 @@ namespace CompilerInfrastructure {
             get;
         } = new ErrorVariable();
         public IType Type {
-            get => CompilerInfrastructure.Type.Error;
+            get => Structure.Types.Type.Error;
         }
         public IType DefinedInType {
-            get => CompilerInfrastructure.Type.Error;
+            get => Structure.Types.Type.Error;
         }
     }
     [Serializable]
@@ -110,7 +112,7 @@ namespace CompilerInfrastructure {
         }
         public VariableImpl(Position pos, Visibility vis, Type.Signature type, Variable.Specifier specs, string name, IType definedIn)
             : this(pos, definedIn) {
-            Signature = new Variable.Signature(name, type ?? "A variable must have a type".Report(pos, CompilerInfrastructure.Type.Error.Signature));
+            Signature = new Variable.Signature(name, type ?? "A variable must have a type".Report(pos, Structure.Types.Type.Error.Signature));
             VariableSpecifiers = specs;
             Visibility = vis;
         }
@@ -184,7 +186,7 @@ IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();*/
         }
         public MutatingVariableImpl(Position pos, Visibility vis, Type.Signature type, Variable.Specifier specs, string name, IType definedIn)
             : this(pos, definedIn) {
-            Signature = new Variable.Signature(name, type ?? "A variable must have a type".Report(pos, CompilerInfrastructure.Type.Error.Signature));
+            Signature = new Variable.Signature(name, type ?? "A variable must have a type".Report(pos, Structure.Types.Type.Error.Signature));
             VariableSpecifiers = specs;
             Visibility = vis;
         }

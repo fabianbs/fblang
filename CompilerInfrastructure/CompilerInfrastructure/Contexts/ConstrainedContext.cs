@@ -16,6 +16,7 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Contexts {
+    using Structure.Types;
     using DefResult = BooleanResult<CannotDefine>;
     [Serializable]
     class ConstrainedContext : IWrapperContext {

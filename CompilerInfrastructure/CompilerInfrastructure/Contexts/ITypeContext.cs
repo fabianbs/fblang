@@ -13,6 +13,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Contexts {
+    using Structure.Types;
+
     public interface IStructTypeContext : IContext {
         IContext InstanceContext {
             get;

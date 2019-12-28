@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace FBc {
+    using CompilerInfrastructure.Structure.Types;
+
     class CmdLineArgument : BasicVariable {
         bool hasShortForm, hasLongForm;
         string shortForm=null, longForm=null;

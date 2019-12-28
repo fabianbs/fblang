@@ -17,7 +17,7 @@ namespace CompilerInfrastructure.Structure.Types {
     /// <summary>
     /// Wrappertype for dealing with namespaces in contexts
     /// </summary>
-    /// <seealso cref="CompilerInfrastructure.TypeImpl" />
+    /// <seealso cref="TypeImpl" />
     [Serializable]
     public class NamespaceType : TypeImpl {
         readonly LazyDictionary<(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent), IType> genericCache;

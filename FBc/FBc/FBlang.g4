@@ -74,8 +74,8 @@ assocArray: '[' typeIdent ']';
 genericActualParameters: LT genericActualParameter(',' genericActualParameter)* GT;
 genericActualParameter: Ident| typeIdent |BoolLit| Minus?(IntLit|FloatLit)| StringLit|CharLit;
 
-localTypeIdent: typeIdent Pointer?;
-argTypeIdent: localTypeIdent Amp? Dots?;
+localTypeIdent: typeIdent Pointer? Amp?;
+argTypeIdent: localTypeIdent Dots?;
 
 /**
  * MethodDef

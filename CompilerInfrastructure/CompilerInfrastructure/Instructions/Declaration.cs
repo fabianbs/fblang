@@ -16,6 +16,8 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure.Instructions {
+    using Structure.Types;
+
     [Serializable]
     public class Declaration : StatementImpl {
         public Declaration(Position pos, IType type, Variable.Specifier specs, IEnumerable<(string, IExpression)> names, Visibility vis = Visibility.Private)
@@ -89,7 +91,7 @@ namespace CompilerInfrastructure.Instructions {
             }).ToArray();
             if (changed) {
                 stmt = new Declaration(Position.Concat(args.Position),
-                    Type.IsTop() ? nwVariables.Aggregate(CompilerInfrastructure.Type.Top, (acc, x) => CompilerInfrastructure.Type.MostSpecialCommonSuperType(acc, x.Type)) : Type,
+                    Type.IsTop() ? nwVariables.Aggregate(Structure.Types.Type.Top, (acc, x) => Structure.Types.Type.MostSpecialCommonSuperType(acc, x.Type)) : Type,
                     VariableSpecifiers,
                     nwVariables//,
                                //nwDefaultValues

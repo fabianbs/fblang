@@ -18,6 +18,7 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure {
+    using Structure.Types;
     using DefResult = BooleanResult<CannotDefine>;
     
     public interface IContext : IPositional, IReplaceableStructureElement<IContext>/*,ISummarizable*/ {

@@ -10,6 +10,8 @@ using System.Linq;
 using CompilerInfrastructure.Semantics;
 
 namespace CompilerInfrastructure.Analysis.CFG {
+    using Structure.Types;
+
     public class ControlFlowGraph {
         LazyDictionary<IDeclaredMethod, ICFGNode> cache;
         Stack<(ICFGNode continueTarget, ICFGNode breakTarget)> controlRedirectTarget

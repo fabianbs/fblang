@@ -17,6 +17,7 @@ using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
 namespace CompilerInfrastructure {
+    using Structure.Types;
     using DefResult = BooleanResult<CannotDefine>;
     [Serializable]
     public class HierarchialContext : IContext/*, IEnumerable<IContext>*/, ISerializable {

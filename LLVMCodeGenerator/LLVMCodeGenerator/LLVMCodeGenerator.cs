@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using Module = CompilerInfrastructure.Module;
-using Type = CompilerInfrastructure.Type;
+using Type = CompilerInfrastructure.Structure.Types.Type;
 using CompilerInfrastructure.Utils;
 using System.Linq;
 using CompilerInfrastructure.Structure.Types;

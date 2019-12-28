@@ -15,6 +15,8 @@ using CompilerInfrastructure.Expressions;
 using CompilerInfrastructure.Structure.Macros;
 
 namespace CompilerInfrastructure.Structure {
+    using Types;
+
     /// <summary>
     /// The basic-implementation of <see cref="IVariable"/>. For most local variables and fields this class should be sufficient
     /// </summary>
@@ -84,7 +86,7 @@ namespace CompilerInfrastructure.Structure {
                 if (dflts.Length != 1)
                     "A variable cannot be initialized with multiple default-values".Report(Position.Concat(args.Position));
                 else {
-                    if (!CompilerInfrastructure.Type.IsAssignable(dflts[0].ReturnType, Type))
+                    if (!Types.Type.IsAssignable(dflts[0].ReturnType, Type))
                         $"The type {dflts[0].ReturnType.Signature} is incompatible with the variable-type {Type.Signature}".Report(Position.Concat(args.Position));
                     vr = new BasicVariable(Position, Type, VariableSpecifiers, Signature.Name, DefinedInType, Visibility) { DefaultValue = dflts[0] };
                     return true;
