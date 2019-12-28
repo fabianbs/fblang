@@ -433,7 +433,7 @@ namespace FBc {
                 var _args = new List<IType>(metSig.argTypeList().argTypeIdent().Length);
                 //int ind = 1;
                 foreach (var argTy in metSig.argTypeList().argTypeIdent()) {
-                    //_args.Add(new BasicVariable(argTy.Position(fileName), VisitArgTypeIdent(argTy, fileName), Variable.Specifier.LocalVariable, $"arg{ind}", null));
+                    //_args.Add(new BasicVariable(argTy.Position(fileName), VisitArgTypeIdent(argTy, fileName), Variable.Specifier.FormalArgument, $"arg{ind}", null));
                     _args.Add(VisitArgTypeIdent(argTy, fileName));
                 }
                 args = _args;
@@ -495,7 +495,7 @@ namespace FBc {
                 var _args = new List<IVariable>(metSig.argTypeList().argTypeIdent().Length);
                 int ind = 1;
                 foreach (var argTy in metSig.argTypeList().argTypeIdent()) {
-                    _args.Add(new BasicVariable(argTy.Position(fileName), VisitArgTypeIdent(argTy, fileName), Variable.Specifier.LocalVariable, $"arg{ind++}", null));
+                    _args.Add(new BasicVariable(argTy.Position(fileName), VisitArgTypeIdent(argTy, fileName), Variable.Specifier.FormalArgument, $"arg{ind++}", null));
                 }
                 args = _args;
             }

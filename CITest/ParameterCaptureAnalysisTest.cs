@@ -32,8 +32,8 @@ namespace CITest {
         public void TestSimpleFunction() {
 
             var met = new BasicMethod(default, "func", Visibility.Public, PrimitiveType.Int, new[]{
-                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.LocalVariable, "x", null),
-                new BasicVariable(default, PrimitiveType.Double,Variable.Specifier.LocalVariable, "y",null)
+                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.FormalArgument, "x", null),
+                new BasicVariable(default, PrimitiveType.Double,Variable.Specifier.FormalArgument, "y",null)
             }) {
                 NestedIn = mod
             };
@@ -50,8 +50,8 @@ namespace CITest {
         [Fact]
         public void TestSimpleLeak() {
             var met = new BasicMethod(default, "func", Visibility.Public, PrimitiveType.Void, new[]{
-                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.LocalVariable, "x", null),
-                new BasicVariable(default, PrimitiveType.Int.AsByRef(), Variable.Specifier.LocalVariable, "y",null)
+                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.FormalArgument, "x", null),
+                new BasicVariable(default, PrimitiveType.Int.AsByRef(), Variable.Specifier.FormalArgument, "y",null)
             }) {
                 NestedIn = mod
             };

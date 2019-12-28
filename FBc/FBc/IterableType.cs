@@ -92,7 +92,7 @@ namespace FBc {
             ItemType = itemTy;
             Signature = new Type.Signature("iterator " + itemTy.Signature.Name, null);
             Context = new SimpleTypeContext(itemTy.Context.Module) { Type = this };
-            Context.InstanceContext.DefineMethod(new BasicMethod(("", 0, 0), "tryGetNext", Visibility.Public, PrimitiveType.Bool, new[] { new BasicVariable(("", 0, 0), itemTy.AsByRef(), Variable.Specifier.LocalVariable, "ret", null) }) { Specifiers = Method.Specifier.Abstract, NestedIn = this.Context });
+            Context.InstanceContext.DefineMethod(new BasicMethod(("", 0, 0), "tryGetNext", Visibility.Public, PrimitiveType.Bool, new[] { new BasicVariable(("", 0, 0), itemTy.AsByRef(), Variable.Specifier.FormalArgument, "ret", null) }) { Specifiers = Method.Specifier.Abstract, NestedIn = this.Context });
         }
 
         public override IType ItemType {

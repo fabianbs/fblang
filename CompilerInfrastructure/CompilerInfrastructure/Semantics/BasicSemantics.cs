@@ -316,7 +316,7 @@ namespace CompilerInfrastructure.Semantics {
         }
         #region BestFittingMethod - Utilities
         public virtual bool IsCompatible(FunctionType actualFn, FunctionType formalFn, out int diff) {
-            var formalArgs = actualFn.ArgumentTypes.Select(x => new BasicVariable(formalFn.Position, x, Variable.Specifier.LocalVariable, "arg", null)).ToArray();
+            var formalArgs = actualFn.ArgumentTypes.Select(x => new BasicVariable(formalFn.Position, x, Variable.Specifier.FormalArgument, "arg", null)).ToArray();
             return IsCompatible(formalArgs, formalFn.ReturnType, actualFn.ArgumentTypes, actualFn.ReturnType, out diff);
         }
         public virtual bool IsCompatible(IVariable[] formalArgs, IType formalRetTy, ICollection<IType> actualArgTps, IType actualRetTy, out int diff) {

@@ -21,7 +21,6 @@ namespace CompilerInfrastructure.Expressions {
     public class VariableAccessExpression : ExpressionImpl, IMutableDataReadingExpression, SwitchStatement.IPattern, ICompileTimeEvaluable {
         readonly IExpression[] parEx = new IExpression[1];
         readonly IType returnTy;
-        //TODO remove retTy
         public VariableAccessExpression(Position pos, IType retTy, IVariable vr, IExpression parent = null) : base(pos) {
             parEx[0] = parent;
 
@@ -31,6 +30,17 @@ namespace CompilerInfrastructure.Expressions {
             }
             IsEphemeral = false;
             VariableName = Variable.Signature.Name;
+            if (!(retTy is null)) {
+                returnTy = retTy;
+            }
+            else {
+                var ty = Variable.Type.UnWrapNatural();
+                returnTy = ty switch {
+                    ByRefType brt => brt.UnderlyingType,
+                    ReferenceType rt => rt.UnderlyingType.AsByRef(),
+                    _ => Variable.Type,
+                };
+            }
         }
         public VariableAccessExpression(Position pos, IType expectedReturnType, string variableName, IExpression parent) : base(pos) {
             parEx[0] = parent ?? "A field cannot be inferred without a parent-expression".Report(pos, Expression.Error);
@@ -41,6 +51,7 @@ namespace CompilerInfrastructure.Expressions {
             if (!IsEphemeral && returnTy.IsTop()) {
                 returnTy = Variable.Type;
             }
+            
         }
         public string VariableName {
             get;
@@ -48,16 +59,8 @@ namespace CompilerInfrastructure.Expressions {
         public bool IsEphemeral {
             get;
         }
-        public override IType ReturnType {
-            get {
-                var ty= Variable.Type.UnWrapNatural();
-                if (ty is ByRefType brt)
-                    return brt.UnderlyingType;
-                if (ty is ReferenceType rt)
-                    return rt.UnderlyingType.AsByRef();
-                return Variable.Type;
-            }
-        }
+
+        public override IType ReturnType => returnTy;
         public IExpression ParentExpression => parEx[0];
         public IVariable Variable {
             get;
@@ -73,7 +76,7 @@ namespace CompilerInfrastructure.Expressions {
         public override bool IsLValue(IMethod met) {
             if (Variable.IsFinal()) {
                 return ParentExpression is ThisExpression && met != null && met.IsConstructor()
-                    ||ParentExpression is null && Variable.Type.IsRef();
+                    || ParentExpression is null && Variable.Type.IsRef();
             }
             return true;
         }

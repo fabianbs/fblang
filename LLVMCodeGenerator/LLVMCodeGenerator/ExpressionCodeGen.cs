@@ -199,10 +199,16 @@ namespace LLVMCodeGenerator {
                 case VariableAccessExpression vr: {
                     if (variables.TryGetValue(vr.Variable, out ret)) {// local variable
                         // the memory-location is the alloca
+                        if (vr.ReturnType.IsByRef()) {
+                            ret = ctx.Load(ret, irb);
+                        }
+
                         return true;
                     }
                     else if (coro.LocalVariableIndex != null && coro.LocalVariableIndex.TryGetValue(vr.Variable, out var ind)) {
                         ret = ctx.GetElementPtrConstIdx(ctx.GetArgument(fn, coro.MutableArgsIndex), new[] { 0u, ind }, irb);
+                        if (vr.ReturnType.IsByRef())
+                            ret = ctx.Load(ret, irb);
                         return true;
                     }
                     else if (vr.ParentExpression != null) {

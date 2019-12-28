@@ -47,26 +47,26 @@ namespace CompilerInfrastructure.Structure.Types {
                 DefineVariable(len);
 
                 var index = new BasicMethod(default, "operator " + OverloadableOperator.Indexer.OperatorName(), Visibility.Public, FromNameInternal(PrimitiveName.Char), new[] {
-                    new BasicVariable(default,FromNameInternal(PrimitiveName.SizeT),Variable.Specifier.LocalVariable,"index",null)
+                    new BasicVariable(default,FromNameInternal(PrimitiveName.SizeT),Variable.Specifier.FormalArgument,"index",null)
                 }) {
                     Specifiers = Method.Specifier.Internal | Method.Specifier.OperatorOverload | Method.Specifier.Readonly | Method.Specifier.Pure
                 };
                 DefineMethod(index);
                 /*var concat = new BasicMethod(default, "operator " + OverloadableOperator.Add.OperatorName(), Visibility.Public, FromNameInternal(PrimitiveName.String), new[] {
-                    new BasicVariable(default, FromNameInternal(PrimitiveName.String), Variable.Specifier.LocalVariable,"other",null)
+                    new BasicVariable(default, FromNameInternal(PrimitiveName.String), Variable.Specifier.FormalArgument,"other",null)
                 },internalName:"strconcat") {
                     Specifiers = Method.Specifier.Internal | Method.Specifier.OperatorOverload | Method.Specifier.Readonly | Method.Specifier.Pure
                 };
                 DefineMethod(concat);
                 var mulr = new BasicMethod(default, "operator " + OverloadableOperator.Mul.OperatorName(), Visibility.Public, FromNameInternal(PrimitiveName.String), new[] {
-                    new BasicVariable(default, FromNameInternal(PrimitiveName.UInt), Variable.Specifier.LocalVariable,"factor",null)
+                    new BasicVariable(default, FromNameInternal(PrimitiveName.UInt), Variable.Specifier.FormalArgument,"factor",null)
                 },internalName:"strmul") {
                     Specifiers = Method.Specifier.Internal | Method.Specifier.OperatorOverload | Method.Specifier.Readonly | Method.Specifier.Pure
                 };
                 DefineMethod(mulr);
                 var mull = new BasicMethod(default, "operator " + OverloadableOperator.Mul.OperatorName(), Visibility.Public, FromNameInternal(PrimitiveName.String), new[] {
-                    new BasicVariable(default, FromNameInternal(PrimitiveName.String),Variable.Specifier.LocalVariable,"_this",null),
-                    new BasicVariable(default, FromNameInternal(PrimitiveName.UInt), Variable.Specifier.LocalVariable,"factor",null)
+                    new BasicVariable(default, FromNameInternal(PrimitiveName.String),Variable.Specifier.FormalArgument,"_this",null),
+                    new BasicVariable(default, FromNameInternal(PrimitiveName.UInt), Variable.Specifier.FormalArgument,"factor",null)
                 }) {
                     Specifiers = Method.Specifier.Internal | Method.Specifier.OperatorOverload | Method.Specifier.Readonly | Method.Specifier.Pure | Method.Specifier.Static
                 };

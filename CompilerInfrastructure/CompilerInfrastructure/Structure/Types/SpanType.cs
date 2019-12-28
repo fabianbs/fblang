@@ -54,7 +54,7 @@ namespace CompilerInfrastructure.Structure.Types {
                     elemTp = elemType;
                     Signature = new Method.Signature("operator[]", elemType.AsByRef(), PrimitiveType.SizeT);
                     Context = SimpleMethodContext.GetImmutable(elemTp.Context.Module);
-                    Arguments = new[] { new BasicVariable(default, PrimitiveType.SizeT, Variable.Specifier.LocalVariable, "index", null) };
+                    Arguments = new[] { new BasicVariable(default, PrimitiveType.SizeT, Variable.Specifier.FormalArgument, "index", null) };
                 }
 
                 public override IType ReturnType {
@@ -88,8 +88,8 @@ namespace CompilerInfrastructure.Structure.Types {
                     // span.Context is not yet initialized, so use span.ItemType.Context
                     Context = SimpleMethodContext.GetImmutable(span.ItemType.Context.Module);
                     Arguments = new[] {
-                        new BasicVariable(default,PrimitiveType.UInt,Variable.Specifier.LocalVariable,"offset",null){ DefaultValue=Literal.UInt(0)},
-                        new BasicVariable(default,PrimitiveType.UInt,Variable.Specifier.LocalVariable,"length",null){ DefaultValue=Literal.UInt(uint.MaxValue)}
+                        new BasicVariable(default,PrimitiveType.UInt,Variable.Specifier.FormalArgument,"offset",null){ DefaultValue=Literal.UInt(0)},
+                        new BasicVariable(default,PrimitiveType.UInt,Variable.Specifier.FormalArgument,"length",null){ DefaultValue=Literal.UInt(uint.MaxValue)}
                     };
                 }
                 public override IType ReturnType {

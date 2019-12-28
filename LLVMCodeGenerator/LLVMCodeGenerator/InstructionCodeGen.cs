@@ -334,7 +334,13 @@ namespace LLVMCodeGenerator {
                     if (rbfloop.TryGetDeclaration(out var decl)) {
                         succ &= TryInstructionCodeGen(decl);
                         loopVrs = (decl as Declaration).Variables.Select(x => GetVariable(x)).ToArray();
-                        loopVariables = (decl as Declaration).Variables.Select(x => new VariableAccessExpression(decl.Position, x.Type, x)).ToArray();
+                        loopVariables = (decl as Declaration).Variables.Select(x => new VariableAccessExpression(
+                                                                                   decl.Position,
+                                                                                   x.Type.IsByRef(out var brt)
+                                                                                       ? brt.UnderlyingType.AsRef()
+                                                                                       : x.Type,
+                                                                                   x))
+                                                             .ToArray();
                         loopVrTps = (decl as Declaration).Variables.Select(x => x.Type).ToArray();
                     }
                     else if (rbfloop.TryGetLoopVariables(out var vrs)) {
@@ -420,7 +426,7 @@ namespace LLVMCodeGenerator {
                     ctx.Branch(endSwitch, irb);
 
             }
-            
+
             foreach (var (ast, cas) in caseAST.Distinct().Zip(cases.Distinct())) {
                 ctx.ResetInsertPoint(cas, irb);
                 succ &= TryInstructionCodeGen(ast.OnMatch);
@@ -1083,7 +1089,11 @@ namespace LLVMCodeGenerator {
 
 
             ctx.ResetInsertPoint(loopBlock, irb);
-            succ &= TryGetArrayElement(arrayTp, GetExpressionValue(rangeEx, range), ctx.Load(GetIPtr(), irb), out var elem);
+            IntPtr elem;
+            if (loopIVariables[0].ReturnType.IsByRef() || loopIVariables[0].ReturnType.IsRef())
+                succ &= TryGEPNthElement(arrayTp, GetExpressionValue(rangeEx, range), ctx.Load(GetIPtr(), irb), out elem);
+            else
+                succ &= TryGetArrayElement(arrayTp, GetExpressionValue(rangeEx, range), ctx.Load(GetIPtr(), irb), out elem);
             //ctx.Store(loopVariables[0], elem, irb);
             StoreExpressionValue(loopIVariables[0], loopVariables[0], elem);
             succ &= TryInstructionCodeGen(body);

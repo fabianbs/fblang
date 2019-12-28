@@ -35,7 +35,7 @@ namespace CITest {
         [Fact]
         public void TestSimpleFunction() {
             var met = new BasicMethod(default, "func", Visibility.Public, PrimitiveType.Int.AsReferenceType(), new[] {
-                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.LocalVariable, "x", null),
+                new BasicVariable(default, PrimitiveType.Int, Variable.Specifier.FormalArgument, "x", null),
             }) {
                 NestedIn = mod
             };

@@ -1125,7 +1125,7 @@ namespace FBc {
             if (expectedLambdaType != null) {
                 if (Module.Semantics.IsFunctional(expectedLambdaType, out retFnTy)) {
                     retTy = expectedLambdaType;
-                    //args = retFnTy.ArgumentTypes.Select(x => new BasicVariable(pos, x, Variable.Specifier.LocalVariable, "arg", null)).ToArray();
+                    //args = retFnTy.ArgumentTypes.Select(x => new BasicVariable(pos, x, Variable.Specifier.FormalArgument, "arg", null)).ToArray();
                     if (retFnTy.ArgumentTypes.Count == names.Length) {
                         return true;
                     }
@@ -1140,7 +1140,7 @@ namespace FBc {
                 }
             }
             else {
-                //args = //Enumerable.Range(0, names.Length).Select(x => new BasicVariable(pos, Type.Top, Variable.Specifier.LocalVariable, "arg" + x, null)).ToArray();
+                //args = //Enumerable.Range(0, names.Length).Select(x => new BasicVariable(pos, Type.Top, Variable.Specifier.FormalArgument, "arg" + x, null)).ToArray();
                 // Array.Empty<IVariable>();
                 retTy = retFnTy = new FunctionType(pos, Module, "lambda", Type.Top, Collection.Repeat(Type.Top, names.Length), Visibility.Internal);
                 return true;
@@ -1148,11 +1148,11 @@ namespace FBc {
         }
         private bool AnalyzeLambdaBody(FBlangParser.ExprContext context, FBlangParser.BlockInstructionContext biContext, LambdaExpression lambda, IType expectedReturnType, ErrorBuffer err) {
             bool succ = true;
-            var pos = context != null ? context.Position(fileName) : biContext.Position(fileName);
+            var pos = context?.Position(fileName) ?? biContext.Position(fileName);
             var ctx = lambda.Context;
             succ &= Module.Semantics.IsFunctional(expectedReturnType, out var retFnTy);
             int index = 0;
-            var args = retFnTy.ArgumentTypes.Select(x => new BasicVariable(pos, x, Variable.Specifier.LocalVariable, lambda.ArgumentNames[index++], null)).ToArray();
+            var args = retFnTy.ArgumentTypes.Select(x => new BasicVariable(pos, x, Variable.Specifier.FormalArgument, lambda.ArgumentNames[index++], null)).ToArray();
             lambda.Arguments = args;
             succ &= lambda.TryResetReturnType(expectedReturnType);
             foreach (var arg in args) {

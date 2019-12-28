@@ -53,7 +53,7 @@ namespace CompilerInfrastructure.Structure.Types {
                     Signature = new Method.Signature("operator[]", elemType.AsByRef(), PrimitiveType.SizeT);
                     Context = SimpleMethodContext.GetImmutable(elemType.Context.Module);
                     elemTp = elemType;
-                    Arguments = new[] { new BasicVariable(default, PrimitiveType.SizeT, Variable.Specifier.LocalVariable, "index", null) };
+                    Arguments = new[] { new BasicVariable(default, PrimitiveType.SizeT, Variable.Specifier.FormalArgument, "index", null) };
                 }
 
                 public override Method.Signature Signature {

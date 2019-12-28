@@ -29,7 +29,7 @@ namespace FBc {
         public FBModule(string moduleName = "the global context", string filename = "") : base(moduleName, filename) {
             var cprintln = new BasicMethod(("", 0, 0), "cprintln", Visibility.Public, PrimitiveType.Void, PrimitiveType.String) {
                 ReturnType = PrimitiveType.Void,
-                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.String, Variable.Specifier.LocalVariable, "msg", null) },
+                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.String, Variable.Specifier.FormalArgument, "msg", null) },
                 Specifiers = Method.Specifier.Internal | Method.Specifier.Static,
                 NestedIn = this
             };
@@ -41,20 +41,20 @@ namespace FBc {
 
             var cprint = new BasicMethod(("", 0, 0), "cprint", Visibility.Public, PrimitiveType.Void, PrimitiveType.String) {
                 ReturnType = PrimitiveType.Void,
-                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.String, Variable.Specifier.LocalVariable, "msg", null) },
+                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.String, Variable.Specifier.FormalArgument, "msg", null) },
                 Specifiers = Method.Specifier.Internal | Method.Specifier.Static,
                 NestedIn = this
             };
 
             var delay = new BasicMethod(("", 0, 0), "delay", Visibility.Public, PrimitiveType.Void.AsAwaitable(), PrimitiveType.UInt) {
                 ReturnType = PrimitiveType.Void.AsAwaitable(),
-                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.UInt, Variable.Specifier.LocalVariable, "millis", null) },
+                Arguments = new[] { new BasicVariable(("", 0, 0), PrimitiveType.UInt, Variable.Specifier.FormalArgument, "millis", null) },
                 Specifiers = Method.Specifier.Internal | Method.Specifier.Static,
                 NestedIn = this
             };
 
             var sleep = new BasicMethod(("", 0, 0), "sleep", Visibility.Public, PrimitiveType.Void, new[] {
-                    new BasicVariable(("",0, 0), PrimitiveType.UInt, Variable.Specifier.LocalVariable, "millis", null)
+                    new BasicVariable(("",0, 0), PrimitiveType.UInt, Variable.Specifier.FormalArgument, "millis", null)
                 }, internalName: "thread_sleep") {
                 Specifiers = Method.Specifier.Internal | Method.Specifier.Static,
                 NestedIn = this
@@ -65,8 +65,8 @@ namespace FBc {
                 NestedIn = this
             };
             var randomUIntRange = new BasicMethod(default, "randomUInt", Visibility.Public, PrimitiveType.UInt, new[] {
-                    new BasicVariable(default, PrimitiveType.UInt, Variable.Specifier.LocalVariable,"min",null),
-                    new BasicVariable(default, PrimitiveType.UInt, Variable.Specifier.LocalVariable,"max",null)
+                    new BasicVariable(default, PrimitiveType.UInt, Variable.Specifier.FormalArgument,"min",null),
+                    new BasicVariable(default, PrimitiveType.UInt, Variable.Specifier.FormalArgument,"max",null)
                 }, internalName: "randomUIntRange") {
                 Specifiers = Method.Specifier.Internal | Method.Specifier.Static,
                 NestedIn = this
