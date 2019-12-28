@@ -185,7 +185,7 @@ namespace CompilerInfrastructure.Structure {
         /// </summary>
         public IDeclaredMethod OverrideTarget => Overrides;
 
-        IEnumerable<IASTNode> Children() {
+        /*IEnumerable<IASTNode> Children() {
             //DOLATER Context?
             if (Context is SimpleMethodContext ctx) {
                 foreach (var arg in ctx.Arguments) {
@@ -194,7 +194,7 @@ namespace CompilerInfrastructure.Structure {
             }
             if (Body.HasValue)
                 yield return Body.Instruction;
-        }
+        }*/
         /*public IRefEnumerator<IASTNode> GetEnumerator() {
             return RefEnumerator.ConcatMany(Children());
         }

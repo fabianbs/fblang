@@ -156,8 +156,9 @@ namespace FBc {
                 : PrimitiveType.Void;
             var args = context.cmdLineParamList() != null ? VisitCmdLineParamList(context.cmdLineParamList(), fileName) : List.Empty<IVariable>();
 
-            var met = new BasicMethod(context.Position(fileName), "main", Visibility.Public, retTy, args);
-            met.Specifiers = Method.Specifier.Static;
+            var met = new BasicMethod(context.Position(fileName), "main", Visibility.Public, retTy, args) {
+                Specifiers = Method.Specifier.Static
+            };
             met.Context = new SimpleMethodContext(Module,
                         new[] { null, contextStack.Peek() },
                         SimpleMethodContext.VisibleMembers.Static,
@@ -395,7 +396,7 @@ namespace FBc {
             }
         }
         private Method.Signature VisitMethodSigAsSig(FBlangParser.MethodSigContext metSig, string fileName) {
-            var name = VisitMethodName(metSig.methodName(), out var isOperatorOverload);
+            var name = VisitMethodName(metSig.methodName(), out _);
             IReadOnlyList<IGenericParameter> genArgs = null;
             if (!(metSig.genericDef() is null)) {
                 genArgs = VisitGenericDef(metSig.genericDef(), fileName);

@@ -107,27 +107,26 @@ namespace CompilerInfrastructure.Utils {
             return EmptyRefEnumerable<T>.Instance;
         }
         public static ref T First<T>(this IRefEnumerable<T> it) {
-            using (var itit = it.GetEnumerator()) {
-                if (itit.MoveNext()) {
-                    return ref itit.Current;
-                }
-                throw new IndexOutOfRangeException();
-            }
-        }
-        public static ref T ElementAt<T>(this IRefEnumerable<T> it, int n) {
-            using (var itit = it.GetEnumerator()) {
-
-                for (int i = 0; i <= n; ++i) {
-                    if (!itit.MoveNext())
-                        throw new IndexOutOfRangeException();
-                }
+            using var itit = it.GetEnumerator();
+            if (itit.MoveNext()) {
                 return ref itit.Current;
             }
+            throw new IndexOutOfRangeException();
+        }
+        public static ref T ElementAt<T>(this IRefEnumerable<T> it, int n) {
+            using var itit = it.GetEnumerator();
+            for (int i = 0; i <= n; ++i) {
+                if (!itit.MoveNext())
+                    throw new IndexOutOfRangeException();
+            }
+            return ref itit.Current;
         }
     }
     public static class RefEnumerator {
         class EmptyRefEnumerator<T> : IRefEnumerator<T> {
-             T value;
+#pragma warning disable IDE0044 // Modifizierer "readonly" hinzufügen
+            T value;
+#pragma warning restore IDE0044 // Modifizierer "readonly" hinzufügen
             public ref T Current {
                 get => ref value;
             }

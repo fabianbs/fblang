@@ -25,7 +25,7 @@ namespace CompilerInfrastructure.Structure {
             }
         }
         public static string PrintString(this IPrintable p) {
-            var sw = new StringWriter();
+            using var sw = new StringWriter();
             p.PrintTo(sw);
             return sw.ToString();
         }

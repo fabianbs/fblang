@@ -36,14 +36,13 @@ namespace CompilerInfrastructure.Contexts {
                 yield return parentCtx.StaticContext;
         }
         static IEnumerable<IContext> Extract(IEnumerable<IContext> ctxs, VisibleMembers parentVis) {
-            using (var it = ctxs.GetEnumerator()) {
+            using var it = ctxs.GetEnumerator();
+            if (it.MoveNext()) {
+                if (parentVis.HasFlag(VisibleMembers.Instance))
+                    yield return it.Current;
                 if (it.MoveNext()) {
-                    if (parentVis.HasFlag(VisibleMembers.Instance))
+                    if (parentVis.HasFlag(VisibleMembers.Static))
                         yield return it.Current;
-                    if (it.MoveNext()) {
-                        if (parentVis.HasFlag(VisibleMembers.Static))
-                            yield return it.Current;
-                    }
                 }
             }
         }

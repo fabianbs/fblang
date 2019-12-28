@@ -25,7 +25,8 @@ namespace LLVMCodeGenerator {
             ensureCapacity,
             insertInternal
         }
-        LLVMCodeGenerator gen;
+
+        readonly LLVMCodeGenerator gen;
         readonly Dictionary<IType, (IntPtr, IntPtr)> slotBucketType= new Dictionary<IType, (IntPtr, IntPtr)>();
         //readonly LazyDictionary<IMethod, IntPtr> methods;
         readonly Dictionary<IMethod, IntPtr> methods;
@@ -674,8 +675,31 @@ namespace LLVMCodeGenerator {
             return true;
         }
         private IntPtr GetHashCodeFrom(IMethod getHashCode, IType keyTp, IntPtr obj, IntPtr irb, IntPtr fn) {
+            // TODO: second integer-hash composed with - whatever hash function is used here to make the hashmap more resistant against bad user-implemented hashcodes
+            // For example the following algo can be used:
+            /*
+            uint64_t hash(uint64_t x) {
+                x = (x ^ (x >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+                x = (x ^ (x >> 27)) * UINT64_C(0x94d049bb133111eb);
+                x = x ^ (x >> 31);
+                return x;
+            }
+            */
+            // Note: this is a bijective hash-function found on "https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key"
+            // Or the standard murmur finalizer can be used:
+            /*
+            long murmur64(long h) {
+                h ^= h >>> 33;
+                h *= 0xff51afd7ed558ccdL;
+                h ^= h >>> 33;
+                h *= 0xc4ceb9fe1a85ec53L;
+                h ^= h >>> 33;
+                return h;
+            }
+            */
             if (getHashCode is null) {
                 if (keyTp.IsIntegerType() || !keyTp.IsValueType()) {
+                    
                     return ctx.ForceCast(obj, ctx.GetSizeTType(), true, irb);
                 }
                 else if (keyTp.IsString()) {

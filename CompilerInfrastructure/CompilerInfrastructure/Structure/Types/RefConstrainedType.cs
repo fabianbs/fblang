@@ -26,20 +26,15 @@ namespace CompilerInfrastructure.Structure.Types {
     }
     public static class ReferenceCapabilityHelper {
         public static Type.Specifier AsTypeSpecifier(this ReferenceCapability cap) {
-            switch (cap) {
-                case ReferenceCapability.trn:
-                    return Type.Specifier.Transition;
-                case ReferenceCapability.iso:
-                    return Type.Specifier.Unique;
-                case ReferenceCapability.box:
-                    return Type.Specifier.Constant;
-                case ReferenceCapability.val:
-                    return Type.Specifier.Immutable;
-                case ReferenceCapability.tag:
-                    return Type.Specifier.Tag;
-                default:
-                    return Type.Specifier.None;
-            }
+            return cap switch
+            {
+                ReferenceCapability.trn => Type.Specifier.Transition,
+                ReferenceCapability.iso => Type.Specifier.Unique,
+                ReferenceCapability.box => Type.Specifier.Constant,
+                ReferenceCapability.val => Type.Specifier.Immutable,
+                ReferenceCapability.tag => Type.Specifier.Tag,
+                _ => Type.Specifier.None,
+            };
         }
         public static bool CanWrite(this ReferenceCapability cap) {
             switch (cap) {

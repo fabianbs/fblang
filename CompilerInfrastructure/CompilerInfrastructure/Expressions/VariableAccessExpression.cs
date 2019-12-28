@@ -12,6 +12,7 @@ using System.Text;
 using CompilerInfrastructure.Instructions;
 using CompilerInfrastructure.Structure;
 using CompilerInfrastructure.Structure.Macros;
+using CompilerInfrastructure.Structure.Types;
 using CompilerInfrastructure.Structure.Types.Generic;
 using CompilerInfrastructure.Utils;
 
@@ -48,7 +49,14 @@ namespace CompilerInfrastructure.Expressions {
             get;
         }
         public override IType ReturnType {
-            get => Variable.Type.TryCast<ByRefType>(out var brt) ? brt.UnderlyingType : Variable.Type;
+            get {
+                var ty= Variable.Type.UnWrapNatural();
+                if (ty is ByRefType brt)
+                    return brt.UnderlyingType;
+                if (ty is ReferenceType rt)
+                    return rt.UnderlyingType.AsByRef();
+                return Variable.Type;
+            }
         }
         public IExpression ParentExpression => parEx[0];
         public IVariable Variable {
@@ -64,7 +72,8 @@ namespace CompilerInfrastructure.Expressions {
 
         public override bool IsLValue(IMethod met) {
             if (Variable.IsFinal()) {
-                return ParentExpression is ThisExpression && met != null && met.IsConstructor();
+                return ParentExpression is ThisExpression && met != null && met.IsConstructor()
+                    ||ParentExpression is null && Variable.Type.IsRef();
             }
             return true;
         }

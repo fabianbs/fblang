@@ -54,7 +54,7 @@ namespace CompilerInfrastructure.Structure.Types {
             this.PrintTo(sw);
             return sw.ToString();
         }
-        IEnumerable<IASTNode> Children() {
+        /*IEnumerable<IASTNode> Children() {
             foreach (var x in Context.Variables) {
                 yield return x.Value;
             }
@@ -64,7 +64,7 @@ namespace CompilerInfrastructure.Structure.Types {
             foreach (var x in Context.Types) {
                 yield return x.Value;
             }
-        }
+        }*/
         /*public virtual IRefEnumerator<IASTNode> GetEnumerator() {
             return RefEnumerator.ConcatMany(Children());
         }*/

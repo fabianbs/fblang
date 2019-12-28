@@ -535,7 +535,7 @@ namespace FBc {
                 succ &= gen.TryGetType(newObj.ReturnType.AsValueType(), out var objTy);
                 var sz = ctx.GetI32SizeOf(objTy);
                 ret = ctx.GetCall(malloc, new[] { sz }, irb);
-                objTy = ctx.GetPointerType(objTy);
+                //objTy = ctx.GetPointerType(objTy);
                 if (!TryCast(newObj.Position, ret, PrimitiveType.Handle, newObj.ReturnType, out ret, false))
                     return false;
 
@@ -740,7 +740,7 @@ namespace FBc {
             return succ;
         }
 
-        Dictionary<(BinOp.OperatorKind, IType), IntPtr> reducerCache
+       readonly Dictionary<(BinOp.OperatorKind, IType), IntPtr> reducerCache
             = new Dictionary<(BinOp.OperatorKind, IType), IntPtr>();
         IntPtr GetOrCreateReducer(BinOp.OperatorKind op, IType ty) {
             if (reducerCache.TryGetValue((op, ty), out var ret)) {

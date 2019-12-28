@@ -17,14 +17,14 @@ using System.IO;
 namespace CompilerInfrastructure {
     [Serializable]
     public class ByRefType : ModifierType {
-        [Serializable]
+        /*[Serializable]
         class ByRefSignature : Type.Signature {
             readonly Type.Signature underlying;
             public ByRefSignature(Type.Signature underlying) : base(underlying?.Name ?? "", underlying?.GenericActualArguments) {
                 this.underlying = underlying ?? throw new System.ArgumentNullException(nameof(underlying));
             }
             public override string Name => base.Name + "&";
-        }
+        }*/
         static readonly LazyDictionary<IType, ByRefType> byrefTps = new LazyDictionary<IType, ByRefType>(x => new ByRefType(x));
 
         public ByRefType(IType underlying)

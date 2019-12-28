@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release;Release_DLL</Configurations>
   </PropertyGroup>
@@ -10,6 +10,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;3021</NoWarn>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <Optimize>false</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -43,12 +44,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\CompilerInfrastructure\CompilerInfrastructure\CompilerInfrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="LLVMCodeGenerator">
-      <HintPath>..\..\LLVMCodeGenerator\LLVMCodeGenerator\bin\Debug\netcoreapp2.1\LLVMCodeGenerator.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\LLVMCodeGenerator\LLVMCodeGenerator\LLVMCodeGenerator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

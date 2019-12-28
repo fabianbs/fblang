@@ -125,14 +125,12 @@ namespace CompilerInfrastructure {
                 return null;
             if (met.IsError())
                 return "<error-method>";
-            switch (met.NestedIn) {
-                case ITypeContext tctx when tctx.Type != null:
-                    return tctx.Type.FullName() + "." + met.Signature.QualifiedName();
-                case ITypeTemplateContext ttctx when ttctx.TypeTemplate != null:
-                    return ttctx.TypeTemplate.BuildType().FullName() + "." + met.Signature.QualifiedName();
-                default:
-                    return met.Signature.QualifiedName();
-            }
+            return met.NestedIn switch
+            {
+                ITypeContext tctx when tctx.Type != null => tctx.Type.FullName() + "." + met.Signature.QualifiedName(),
+                ITypeTemplateContext ttctx when ttctx.TypeTemplate != null => ttctx.TypeTemplate.BuildType().FullName() + "." + met.Signature.QualifiedName(),
+                _ => met.Signature.QualifiedName(),
+            };
         }
     }
     /// <summary>
@@ -170,7 +168,8 @@ namespace CompilerInfrastructure {
                 : this(name, retType, args, null) {
 
             }
-            string _internalName ;
+
+            readonly string _internalName ;
             /// <summary>
             /// The 'mangled' name of the method in the case, that it is an imported C-function, else <see cref="Name"/>
             /// </summary>

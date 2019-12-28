@@ -15,9 +15,8 @@ namespace CompilerInfrastructure.Utils {
                     value = _value;
                 }
                 internal static VariantCase Create<T>(Func<T, U> fn, Variant vr) {
-                    bool hasValue = false;
-                    U value = default;
-
+                    bool hasValue;
+                    U value;
                     if (vr.TryCast(out T val)) {
                         hasValue = true;
                         value = fn(val);

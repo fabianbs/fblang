@@ -44,7 +44,7 @@ namespace CompilerInfrastructure.Structure.Types {
             get;
         }
         public override IContext DefinedIn { get; }
-        public override Position  Position {
+        public override Position Position {
             get;
         }
         public IType Parent {

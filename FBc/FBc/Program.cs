@@ -66,7 +66,7 @@ namespace FBc {
                 }
                 else {
                     bool isProbFile = Path.HasExtension(f);
-                    $"The given source-{(isProbFile ? "file" : "directory")} does not exist".Report();
+                    $"The given source-{(isProbFile ? "file" : "directory")} {f} does not exist".Report();
                     return Array.Empty<string>();
                 }
             });

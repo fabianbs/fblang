@@ -94,7 +94,8 @@ namespace CompilerInfrastructure.Expressions {
             get => Operator.IsAssignment() && Left.ReadsMutableData();
         }
 
-
+        public bool IsAssignment => Operator.IsAssignment();
+        public bool IsRefReassignment => IsAssignment && Right is ReferenceExpression;
         //public override IRefEnumerator<IASTNode> GetEnumerator() => RefEnumerator.FromArray<IASTNode>(content);
         protected override IExpression ReplaceImpl(GenericParameterMap<IGenericParameter, ITypeOrLiteral> genericActualParameter, IContext curr, IContext parent) {
             return new BinOp(Position,
@@ -222,6 +223,7 @@ namespace CompilerInfrastructure.Expressions {
                     return null;
             }
         }
+        public override string ToString() => Left + " " + BinOpOperatorKindHelper.ToString(Operator) + " " + Right;
     }
     public static class BinOpOperatorKindHelper {
         public static bool IsOverloadable(this OperatorKind op, out OverloadableOperator ov) {
@@ -308,5 +310,31 @@ namespace CompilerInfrastructure.Expressions {
         public static bool IsAssignment(this OperatorKind op) {
             return op == OperatorKind.ASSIGN_NEW || op == OperatorKind.ASSIGN_OLD;
         }
+        public static string ToString(this OperatorKind op) => op switch
+        {
+            OperatorKind.ASSIGN_NEW => "=",
+            OperatorKind.ASSIGN_OLD => ":=",
+            OperatorKind.LOR => "||",
+            OperatorKind.LAND => "&&",
+            OperatorKind.OR => "|",
+            OperatorKind.XOR => "^",
+            OperatorKind.EQ => "==",
+            OperatorKind.NEQ => "!=",
+            OperatorKind.LT => "<",
+            OperatorKind.LE => "<=",
+            OperatorKind.GE => ">=",
+            OperatorKind.GT => ">",
+            OperatorKind.LSHIFT => "<<",
+            OperatorKind.SRSHIFT => ">>",
+            OperatorKind.URSHIFT => ">>>",
+            OperatorKind.AND => "&",
+            OperatorKind.ADD => "+",
+            OperatorKind.SUB => "-",
+            OperatorKind.MUL => "*",
+            OperatorKind.DIV => "/",
+            OperatorKind.REM => "%",
+            _ => throw new ArgumentException(),
+        };
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CompilerInfrastructure.Analysis;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,12 @@ namespace CompilerInfrastructure.Utils {
         }
         public static ISet<T> Empty<T>() {
             return EmptySet<T>.Instance;
+        }
+        public static ISet<T> Of<T>(T val, bool isReadonly = false) {
+            if (isReadonly) 
+                return MonoSet.Of(val);
+            else
+                return new HashSet<T> { val };
         }
     }
 }

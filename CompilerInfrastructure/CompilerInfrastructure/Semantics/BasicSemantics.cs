@@ -72,24 +72,23 @@ namespace CompilerInfrastructure.Semantics {
             }
 
 
-            using (var it = firstFilter.GetEnumerator()) {
-                it.MoveNext();
-                var _ret = it.Current;
-                var ret2 = new List<IMethod>();
-                while (it.MoveNext() && it.Current.Item2 == _ret.Item2) {
-                    ret2.Add(it.Current.Item1);
-                }
-                if (ret2.Any()) {
-                    /*return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
-                        string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
-                    ), pos, Method.Error);*/
-                    ret = Method.Error;
-                    return Error.AmbiguousTarget;
-                }
-                else {
-                    ret = _ret.Item1;
-                    return Error.None;
-                }
+            using var it = firstFilter.GetEnumerator();
+            it.MoveNext();
+            var _ret = it.Current;
+            var ret2 = new List<IMethod>();
+            while (it.MoveNext() && it.Current.Item2 == _ret.Item2) {
+                ret2.Add(it.Current.Item1);
+            }
+            if (ret2.Any()) {
+                /*return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
+                    string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                ), pos, Method.Error);*/
+                ret = Method.Error;
+                return Error.AmbiguousTarget;
+            }
+            else {
+                ret = _ret.Item1;
+                return Error.None;
             }
         }
         internal protected IEnumerable<IMethod> DidYouMean(IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType) {
@@ -131,21 +130,20 @@ namespace CompilerInfrastructure.Semantics {
                 var dym = DidYouMean(mets, argTypes, retType);
                 return err.Report($"The callee for the method call {(retType.IsTop() ? "" : retType.ToString())} {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved. Did you mean {(!dym.Any() ? "" : string.Join(", or ", dym))}", pos, Method.Error);
             }
-            using (var it = firstFilter.GetEnumerator()) {
-                it.MoveNext();
-                var ret = it.Current;
-                var ret2 = new List<IMethod>();
-                while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
-                    ret2.Add(it.Current.Item1);
-                }
-                if (ret2.Any()) {
-                    return err.Report(string.Format("The method-call is ambiguous. Possible callees are: {0}",
-                        string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
-                    ), pos, Method.Error);
-                }
-                else {
-                    return ret.Item1;
-                }
+            using var it = firstFilter.GetEnumerator();
+            it.MoveNext();
+            var ret = it.Current;
+            var ret2 = new List<IMethod>();
+            while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
+                ret2.Add(it.Current.Item1);
+            }
+            if (ret2.Any()) {
+                return err.Report(string.Format("The method-call is ambiguous. Possible callees are: {0}",
+                    string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                ), pos, Method.Error);
+            }
+            else {
+                return ret.Item1;
             }
         }
         public virtual Error BestFittingMethod<T>(Position pos, IEnumerable<IMethodTemplate<T>> mets, ICollection<IType> argTypes, IType retType, out IMethod ret) where T : IMethod {
@@ -167,24 +165,23 @@ namespace CompilerInfrastructure.Semantics {
                 return Error.NoValidTarget;
                 //return err.Report($"The callee for the method call {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved", pos, Method.Error);
             }
-            using (var it = firstFilter.GetEnumerator()) {
-                it.MoveNext();
-                var _ret = it.Current;
-                var ret2 = new List<IMethod>();
-                while (it.MoveNext() && it.Current.Item2 == _ret.Item2) {
-                    ret2.Add(it.Current.Item1);
-                }
-                if (ret2.Any()) {
-                    /*return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
-                        string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
-                    ), pos, Method.Error);*/
-                    ret = Method.Error;
-                    return Error.AmbiguousTarget;
-                }
-                else {
-                    ret = _ret.Item1;
-                    return Error.None;
-                }
+            using SortedSet<(IMethod, int)>.Enumerator it = firstFilter.GetEnumerator();
+            it.MoveNext();
+            var _ret = it.Current;
+            var ret2 = new List<IMethod>();
+            while (it.MoveNext() && it.Current.Item2 == _ret.Item2) {
+                ret2.Add(it.Current.Item1);
+            }
+            if (ret2.Any()) {
+                /*return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
+                    string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                ), pos, Method.Error);*/
+                ret = Method.Error;
+                return Error.AmbiguousTarget;
+            }
+            else {
+                ret = _ret.Item1;
+                return Error.None;
             }
         }
         public virtual IMethod BestFittingMethod<T>(Position pos, IEnumerable<IMethodTemplate<T>> mets, ICollection<IType> argTypes, IType retType, ErrorBuffer err = null) where T : IMethod {
@@ -206,21 +203,20 @@ namespace CompilerInfrastructure.Semantics {
                 return err.Report($"The callee for the method call {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved. Did you mean {(!dym.Any() ? "" : string.Join(", or ", dym))}", pos, Method.Error);
 
             }
-            using (var it = firstFilter.GetEnumerator()) {
-                it.MoveNext();
-                var ret = it.Current;
-                var ret2 = new List<IMethod>();
-                while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
-                    ret2.Add(it.Current.Item1);
-                }
-                if (ret2.Any()) {
-                    return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
-                        string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
-                    ), pos, Method.Error);
-                }
-                else {
-                    return ret.Item1;
-                }
+            using var it = firstFilter.GetEnumerator();
+            it.MoveNext();
+            var ret = it.Current;
+            var ret2 = new List<IMethod>();
+            while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
+                ret2.Add(it.Current.Item1);
+            }
+            if (ret2.Any()) {
+                return err.Report(string.Format("The method-call is ambigious. Possible callees are: {0}",
+                    string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                ), pos, Method.Error);
+            }
+            else {
+                return ret.Item1;
             }
         }
         public virtual IMethod BestFittingMethod(Position pos, IEnumerable<IDeclaredMethod> mets, ICollection<IType> argTypes, IType retType, ErrorBuffer err = null) {
@@ -302,21 +298,19 @@ namespace CompilerInfrastructure.Semantics {
             if (!firstFilter.Any()) {
                 return err.Report<ITypeTemplate<IType>>($"The type-template for the substitution {types.First().Signature.Name}<{string.Join(", ", genArgs)}> cannot be resolved", pos, null);
             }
-            using (var it = firstFilter.GetEnumerator()) {
-                it.MoveNext();
-                var ret = it.Current;
-                var other = new List<ITypeTemplate<IType>>();
-                while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
-                    other.Add(it.Current.Item1);
-                }
-                if (other.Any())
-                    return err.Report<ITypeTemplate<IType>>(string.Format("The type-template specialization is ambigious. Possible templates are {0}",
-                        string.Join(",\r\n", other.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
-                    ), pos, null);
-
-                return ret.Item1;
-
+            using var it = firstFilter.GetEnumerator();
+            it.MoveNext();
+            var ret = it.Current;
+            var other = new List<ITypeTemplate<IType>>();
+            while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
+                other.Add(it.Current.Item1);
             }
+            if (other.Any())
+                return err.Report<ITypeTemplate<IType>>(string.Format("The type-template specialization is ambigious. Possible templates are {0}",
+                    string.Join(",\r\n", other.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                ), pos, null);
+
+            return ret.Item1;
         }
         #region BestFittingMethod - Utilities
         public virtual bool IsCompatible(FunctionType actualFn, FunctionType formalFn, out int diff) {
@@ -365,9 +359,9 @@ namespace CompilerInfrastructure.Semantics {
                     }
                 }
 
-                if (formalArgs[formalArgs.Length - 1].Type.IsVarArg()) {
+                if (formalArgs[^1].Type.IsVarArg()) {
 
-                    var varArgTy = (formalArgs[formalArgs.Length - 1].Type as IWrapperType).ItemType;
+                    var varArgTy = (formalArgs[^1].Type as IWrapperType).ItemType;
                     while (actArgs.MoveNext()) {
                         if (actArgs.Current.IsVarArg()) {
                             var itemTy = (actArgs.Current as IWrapperType).ItemType;
@@ -406,10 +400,10 @@ namespace CompilerInfrastructure.Semantics {
                         diff += MISSING_ARG_COST;
                         succ = false;
                     }
-                    if (CanBePassedAsParameterTo(actArgs.Current, formalArgs[formalArgs.Length - 1].Type, out int localDiff)) {
+                    if (CanBePassedAsParameterTo(actArgs.Current, formalArgs[^1].Type, out int localDiff)) {
                         diff += localDiff * localDiff;
                     }
-                    else if (IsFunctional(actArgs.Current, out var actFnTy) && IsFunctional(formalArgs[formalArgs.Length - 1].Type, out var formFnTy) && IsCompatible(actFnTy, formFnTy, out int fnDiff)) {
+                    else if (IsFunctional(actArgs.Current, out var actFnTy) && IsFunctional(formalArgs[^1].Type, out var formFnTy) && IsCompatible(actFnTy, formFnTy, out int fnDiff)) {
                         diff += fnDiff * fnDiff;
                     }
                     else {
@@ -472,7 +466,7 @@ namespace CompilerInfrastructure.Semantics {
             }
             dic = new Dictionary<IGenericParameter, ITypeOrLiteral>();
 
-            bool AddSubstitution(GenericParameterMap<IGenericParameter, ITypeOrLiteral> _dic, IEnumerable<(IGenericParameter, ITypeOrLiteral)> ret) {
+            static bool AddSubstitution(GenericParameterMap<IGenericParameter, ITypeOrLiteral> _dic, IEnumerable<(IGenericParameter, ITypeOrLiteral)> ret) {
                 foreach (var kvp in ret) {
                     var gen = kvp.Item1;
                     var subs = kvp.Item2;
@@ -505,8 +499,8 @@ namespace CompilerInfrastructure.Semantics {
                     else
                         return false;
                 }
-                if (formalArgs[formalArgs.Length - 1].Type.IsVarArg()) {
-                    var varArgTy = (formalArgs[formalArgs.Length - 1].Type as IWrapperType).ItemType;
+                if (formalArgs[^1].Type.IsVarArg()) {
+                    var varArgTy = (formalArgs[^1].Type as IWrapperType).ItemType;
                     while (actArgs.MoveNext()) {
                         if (actArgs.Current.IsVarArg()) {
                             var itemTy = (actArgs.Current as IWrapperType).ItemType;
@@ -530,7 +524,7 @@ namespace CompilerInfrastructure.Semantics {
                 else {
                     if (!actArgs.MoveNext())
                         return false;
-                    if (TryGetSubstitution(formalArgs[formalArgs.Length - 1].Type, actArgs.Current, out var ret)) {
+                    if (TryGetSubstitution(formalArgs[^1].Type, actArgs.Current, out var ret)) {
                         if (!AddSubstitution(dic, ret))
                             return false;
                     }
@@ -655,9 +649,9 @@ namespace CompilerInfrastructure.Semantics {
         public virtual IExpression CreateBinOp(Position pos, IType retTy, IExpression lhs, BinOp.OperatorKind op, IExpression rhs, ErrorBuffer err = null) {
             retTy = BinOp.InferredReturnType(op, lhs.ReturnType, rhs.ReturnType, retTy);
             if (retTy.IsString() && op == BinOp.OperatorKind.ADD) {
-                if (lhs is StringLiteral slit && slit.Value == "")
+                if (lhs is StringLiteral slit && string.IsNullOrEmpty(slit.Value))
                     return rhs.ReturnType.IsString() ? rhs : new TypecastExpression(pos, rhs, PrimitiveType.String);
-                else if (rhs is StringLiteral slit2 && slit2.Value == "")
+                else if (rhs is StringLiteral slit2 && string.IsNullOrEmpty(slit2.Value))
                     return lhs.ReturnType.IsString() ? lhs : new TypecastExpression(pos, lhs, PrimitiveType.String);
             }
             else if (retTy.IsString() && op == BinOp.OperatorKind.MUL) {
@@ -907,5 +901,11 @@ namespace CompilerInfrastructure.Semantics {
         }
 
         public virtual bool CanBePassedAsParameterTo(IType actualTy, IType formalTy, out int diff) => Type.IsAssignable(actualTy, formalTy, out diff);
+        public virtual bool IsTriviallyIterable(IType tp, IType over) {
+            if (tp.IsArray() || tp.IsArraySlice() || tp.IsVarArg()) {
+                return over == tp.Cast<AggregateType>().ItemType;
+            }
+            return false;
+        }
     }
 }

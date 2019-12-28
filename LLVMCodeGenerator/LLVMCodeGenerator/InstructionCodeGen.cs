@@ -420,7 +420,7 @@ namespace LLVMCodeGenerator {
                     ctx.Branch(endSwitch, irb);
 
             }
-
+            
             foreach (var (ast, cas) in caseAST.Distinct().Zip(cases.Distinct())) {
                 ctx.ResetInsertPoint(cas, irb);
                 succ &= TryInstructionCodeGen(ast.OnMatch);
@@ -945,7 +945,7 @@ namespace LLVMCodeGenerator {
             }
             ctx.Store(dest, val, irb);
         }
-        [Obsolete]
+        /*[Obsolete]
         bool TryGetArrayLength(IType arrayTp, IntPtr arr, out IntPtr arrLen) {
             // array:  {i32, [0 x T]}*
             // fsArray:{i32, [length x T]}
@@ -972,7 +972,7 @@ namespace LLVMCodeGenerator {
                 return false;
             }
             return true;
-        }
+        }*/
         bool TryGetArrayElement(IType arrayTp, IntPtr arr, IntPtr index, out IntPtr elem) {
             // array:  {i32, [0 x T]}*
             // fsArray:{i32, [length x T]}

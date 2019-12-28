@@ -122,7 +122,7 @@ namespace FBc {
             return //ret.AsReadOnly();
                 ret;
         }
-        public bool ContainVariable(IVariable vr, IEnumerable<IContext> ctxs) {
+        public static bool ContainVariable(IVariable vr, IEnumerable<IContext> ctxs) {
             //DOLATER Geht das auch effizienter?
             return ctxs.Any(x => x.LocalContext.Variables.ContainsKey(vr.Signature));
         }
@@ -201,47 +201,46 @@ namespace FBc {
             }
             return ret;
         }
-        bool IsVariadicUnpackDistribution(IMethod callee, ICollection<IExpression> args, out IExpression[] expandedArgs) {
+        static bool IsVariadicUnpackDistribution(IMethod callee, ICollection<IExpression> args, out IExpression[] expandedArgs) {
             if (callee.IsVariadic() && callee is BasicMethod met) {
 
-                using (var it = args.GetEnumerator()) {
-                    var nwArgs = Vector<IExpression>.Reserve(met.Arguments.Length);
-                    bool distributeUnpack = false;
-                    IExpression range = null;
-                    int i;
-                    for (i = 0; i < met.Arguments.Length && it.MoveNext(); ++i) {
-                        if (it.Current.IsUnpack(out range)) {
-                            if (!met.Arguments[i].Type.IsVarArg()) {
-                                distributeUnpack = true;
-                                break;
-                            }
+                using var it = args.GetEnumerator();
+                var nwArgs = Vector<IExpression>.Reserve(met.Arguments.Length);
+                bool distributeUnpack = false;
+                IExpression range = null;
+                int i;
+                for (i = 0; i < met.Arguments.Length && it.MoveNext(); ++i) {
+                    if (it.Current.IsUnpack(out range)) {
+                        if (!met.Arguments[i].Type.IsVarArg()) {
+                            distributeUnpack = true;
+                            break;
                         }
-
-                        nwArgs.Add(it.Current);
-
                     }
-                    if (distributeUnpack) {
-                        uint j;
-                        for (j = 0; i < met.Arguments.Length - 1; ++i, ++j) {
-                            nwArgs.Add(new IndexerExpression(it.Current.Position, met.Arguments[i].Type, range, new[] { Literal.UInt(j) }));
-                        }
+
+                    nwArgs.Add(it.Current);
+
+                }
+                if (distributeUnpack) {
+                    uint j;
+                    for (j = 0; i < met.Arguments.Length - 1; ++i, ++j) {
+                        nwArgs.Add(new IndexerExpression(it.Current.Position, met.Arguments[i].Type, range, new[] { Literal.UInt(j) }));
+                    }
 
 
-                        nwArgs.Add(new UnOp(it.Current.Position,
+                    nwArgs.Add(new UnOp(it.Current.Position,
+                        null,
+                        UnOp.OperatorKind.UNPACK,
+                        new RangedIndexerExpression(it.Current.Position,
                             null,
-                            UnOp.OperatorKind.UNPACK,
-                            new RangedIndexerExpression(it.Current.Position,
-                                null,
-                                range,
-                                Literal.UInt(j))));
+                            range,
+                            Literal.UInt(j))));
 
-                        while (it.MoveNext()) {
-                            nwArgs.Add(it.Current);
-                        }
-                        expandedArgs = nwArgs.AsArray();
-
-                        return true;
+                    while (it.MoveNext()) {
+                        nwArgs.Add(it.Current);
                     }
+                    expandedArgs = nwArgs.AsArray();
+
+                    return true;
                 }
             }
             expandedArgs = null;
@@ -251,6 +250,12 @@ namespace FBc {
             if (!IsVariadicUnpackDistribution(met, _args, out var args))
                 args = _args.ToArray();
             return new CallExpression(pos, retTy, met, parent, args) { IsCallVirt = false };
+        }
+        public override bool IsTriviallyIterable(IType tp, IType over) {
+            if (tp is ContiguousRangeExpression rng) {
+                return rng.ReturnType.Cast<AggregateType>().ItemType == over;
+            }
+            return base.IsTriviallyIterable(tp, over);
         }
     }
 

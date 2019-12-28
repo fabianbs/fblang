@@ -532,7 +532,7 @@ namespace FBc {
             #endregion
         }
         protected virtual ILiteral FloatLiteral(Position pos, System.ReadOnlySpan<char> lit, bool negative, ErrorBuffer err = null, IType expectedReturnType = null) {
-            double ParseBaseDouble(System.ReadOnlySpan<char> hd, int bas) {
+            static double ParseBaseDouble(ReadOnlySpan<char> hd, int bas) {
                 double ret = 0;
                 double shift = ulong.MaxValue + 1.0;
                 while (hd.Length >= 16) {
@@ -542,7 +542,8 @@ namespace FBc {
                 }
                 return ret * (16 << hd.Length) + Convert.ToUInt64(hd.ToString(), bas);
             }
-            double ParseBaseExponent(System.ReadOnlySpan<char> x, int bas) {
+
+            static double ParseBaseExponent(ReadOnlySpan<char> x, int bas) {
                 if (x.StartsWith("-") || x.StartsWith("+")) {
                     var ret = ParseBaseDouble(x.Slice(1), bas);
                     if (x[0] == '-')

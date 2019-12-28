@@ -56,5 +56,21 @@ namespace CompilerInfrastructure.Utils {
                 end = start;
             ret = new Range(start, end - start);
         }
+
+        public static bool operator <(Range left, Range right) {
+            return left.CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(Range left, Range right) {
+            return left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >(Range left, Range right) {
+            return left.CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(Range left, Range right) {
+            return left.CompareTo(right) >= 0;
+        }
     }
 }

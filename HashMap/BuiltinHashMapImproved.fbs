@@ -1,7 +1,10 @@
 // Improvings: 
 //   - robin-hood hashing with backshift removal
 //   - nocopy bucket realloc => value-reference stability
-
+//
+// TODO:
+//   - apply a integer-hash function on the getHashCode(U) result
+//   - make capacity a power of 2
 def void HashMap<U, T>{
     def const void Slot{
         final internal zint hashCode
@@ -12,7 +15,7 @@ def void HashMap<U, T>{
         }
         internal copy ctor(const Slot& s){}
         internal bool isFull() -> hashCode & 1
-        internal bool clear(){
+        internal clear(){
             hashCode = 0
         }
     }

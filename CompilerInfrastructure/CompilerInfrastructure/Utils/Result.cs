@@ -66,12 +66,12 @@ namespace CompilerInfrastructure.Utils {
         }
 
     }
-    public readonly struct BooleanResult<U> {
+    public readonly struct BooleanResult<U> : IEquatable<BooleanResult<U>> {
         private readonly U failure;
 
-        public BooleanResult(bool _result, U _failure) {
-            IsSuccess = _result;
-            failure = _failure;
+        public BooleanResult(bool result, U failure) {
+            IsSuccess = result;
+            this.failure = failure;
         }
         public static bool operator true(BooleanResult<U> res) => res.IsSuccess;
         public static bool operator false(BooleanResult<U> res) => !res.IsSuccess;
@@ -86,11 +86,16 @@ namespace CompilerInfrastructure.Utils {
             fail = Failure;
             return IsSuccess;
         }
+
+        public override bool Equals(object obj) => obj is BooleanResult<U> result && Equals(result);
+        public bool Equals(BooleanResult<U> other) => IsSuccess == other.IsSuccess && EqualityComparer<U>.Default.Equals(Failure, other.Failure);
+        public override int GetHashCode() => HashCode.Combine(IsSuccess, Failure);
+
         /// <summary>
         /// Replace the failure with new reason
         /// </summary>
         public static BooleanResult<U> operator |(BooleanResult<U> bl, U fail) {
-            if (!bl.Get(out var innerFail))
+            if (!bl.Get(out _))
                 return fail;
             return true;
         }
@@ -100,5 +105,8 @@ namespace CompilerInfrastructure.Utils {
             else
                 return bl;
         }
+
+        public static bool operator ==(BooleanResult<U> left, BooleanResult<U> right) => left.Equals(right);
+        public static bool operator !=(BooleanResult<U> left, BooleanResult<U> right) => !(left == right);
     }
 }

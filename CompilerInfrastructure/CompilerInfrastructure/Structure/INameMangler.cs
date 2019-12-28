@@ -39,7 +39,7 @@ namespace CompilerInfrastructure.Structure {
     /// Also the mangled names should be a bit more readable
     /// </summary>
     public class DefaultNameMangler : INameMangler {
-        Dictionary<IMethod, string> cache = new Dictionary<IMethod, string>();
+        readonly Dictionary<IMethod, string> cache = new Dictionary<IMethod, string>();
         public string MangleFunctionName(IMethod met) {
             if (cache.TryGetValue(met, out var ret))
                 return ret;

@@ -140,7 +140,17 @@ namespace CompilerInfrastructure.Structure.Types {
         public override bool IsSubTypeOf(IType other) => IsSubTypeOf(other, out _);
 
         public static IType Get(IType elemTp) {
-            return elemTp.IsError() ? Type.Error : arrTps[elemTp];
+            if (elemTp.IsError())
+                return Type.Error;
+            if (elemTp.IsNotNullable()) {
+                if (elemTp is NotNullableType nn) {
+                    "Not-nullability of array-elements will be discarded".Warn(WarningLevel.Medium);
+                    elemTp = nn.UnderlyingType;
+                }
+                else if (elemTp is ReferenceType rf)
+                    elemTp = rf.AsNullable();
+            }
+            return arrTps[elemTp];
         }
 
 

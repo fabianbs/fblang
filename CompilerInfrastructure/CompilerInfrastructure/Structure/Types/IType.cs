@@ -244,6 +244,9 @@ namespace CompilerInfrastructure {
             brt = null;
             return false;
         }
+        public static bool IsRef(this IType tp) {
+            return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Ref);
+        }
         public static bool IsByConstRef(this IType tp) {
             return tp.IsByRef() && tp.IsConstant() && tp.TryCastWhere<RefConstrainedType>(out _, rct => !rct.ReferenceCapability.CanWrite());
         }
@@ -269,6 +272,9 @@ namespace CompilerInfrastructure {
         }
         public static bool IsIntegerType(this IType tp) {
             return tp.IsPrimitive() && tp.TryCast<PrimitiveType>(out var prim) && prim.IsInteger;
+        }
+        public static bool IsEnum(this IType tp) {
+            return tp != null && tp.TypeSpecifiers.HasFlag(Type.Specifier.Enum);
         }
         public static bool IsUnsignedNumericType(this IType tp) {
             return tp.IsPrimitive() && tp.TryCast<PrimitiveType>(out var prim) && prim.IsUnsignedInteger;
@@ -306,6 +312,9 @@ namespace CompilerInfrastructure {
         }
         public static ByRefType AsByRef(this IType tp) {
             return ByRefType.Get(tp);
+        }
+        public static ReferenceType AsRef(this IType tp) {
+            return ReferenceType.Get(tp);
         }
         public static SpanType AsSpan(this IType tp) {
             return SpanType.Get(tp);
@@ -362,6 +371,8 @@ namespace CompilerInfrastructure {
             return ReferenceValueType.Get(tp, false);
         }
         public static IType AsNotNullable(this IType tp) {
+            if (tp is ReferenceType rty)
+                return rty.AsNotNullable();
             return NotNullableType.Get(tp);
         }
         public static IType UnWrap(this IType tp) {
@@ -600,15 +611,16 @@ namespace CompilerInfrastructure {
             Primitive = 0x800 | NoInheritance | Immutable,
             ByRef = 0x1000,
             VarArg = 0x2000,
-            Enum = 0x4000 | Immutable | NoInheritance,
+            Enum = 0x4000 | Immutable | ValueType,
             Awaitable = 0x8000,
             Transition = 0x10000,
             Tag = 0x20000,
             Import = 0x40000,
             Function = 0x80000,
             NotNullable = 0x100000,
-            ValueType = 0x200000 | NotNullable,
+            ValueType = 0x200000 | NotNullable | NoInheritance,
             Builtin = 0x400000,
+            Ref = 0x800000,
         }
         public static IType GetPrimitive(string name) {
             if (Enum.TryParse<PrimitiveName>(name, out var pname)) {

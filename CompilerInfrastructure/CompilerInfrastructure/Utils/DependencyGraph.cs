@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace CompilerInfrastructure.Utils{
     public class DependencyGraph<TModule>{
-        Dictionary<TModule, Node> nodeCache = new Dictionary<TModule, Node>();
+        readonly Dictionary<TModule, Node> nodeCache = new Dictionary<TModule, Node>();
         class Node : IEnumerable<Node>{
             readonly HashSet<Node> directDependencies = new HashSet<Node>();
             readonly TModule module;
@@ -75,7 +75,7 @@ namespace CompilerInfrastructure.Utils{
                     yield return set;
                 else{
                     throw new Exception("Circular dependency detected");
-                    yield break;
+                    //yield break;
                 }
                 foreach(var nod in set){
                     deg.Remove(NodeFromModule(nod));

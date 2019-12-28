@@ -157,9 +157,8 @@ namespace FBc {
                 $"The executable must have a main-method{(hasMain ? "The exisiting main-methods have the wrong signature: The return-type must be int or void and the arguments must be primitive of a single string-array" : "")}".Report();
             }
             else if (IsLibrary && !ErrorCollector.HasErrors) {
-                using (var file = File.OpenWrite(mod.ModuleName + ".fbl")) {
-                    new FBSerializer().Serialize(module, file);
-                }
+                using var file = File.OpenWrite(mod.ModuleName + ".fbl");
+                new FBSerializer().Serialize(module, file);
             }
 
             NumErrors = ErrorCollector.NumErrors;
