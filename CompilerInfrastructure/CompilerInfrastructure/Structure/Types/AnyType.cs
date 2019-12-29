@@ -35,7 +35,7 @@ namespace CompilerInfrastructure.Structure.Types {
         } = SimpleTypeContext.GetImmutable(new Module());
         public Type.Specifier TypeSpecifiers {
             get;
-        } = (Type.Specifier) ~0;
+        } = Type.Specifier.None;
         public Visibility Visibility {
             get;
         } = Visibility.Public;
@@ -92,7 +92,7 @@ namespace CompilerInfrastructure.Structure.Types {
         } = SimpleTypeContext.GetImmutable(new Module());
         public Type.Specifier TypeSpecifiers {
             get;
-        } = (Type.Specifier) ~0;
+        } = Type.Specifier.All;
         public Visibility Visibility {
             get;
         } = Visibility.Public;

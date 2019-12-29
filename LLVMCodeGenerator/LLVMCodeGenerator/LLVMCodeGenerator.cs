@@ -520,8 +520,17 @@ namespace LLVMCodeGenerator {
                     var sz = ctx.GetI32SizeOf(frameTy);
                     var mem = ctx.GetCall(malloc, new[] { sz }, irb);
                     var fram = ctx.ForceCast(mem, ctx.GetPointerType(frameTy), false, irb);
-                    var iterableBase_raw = ctx.GetArgument(getIteratorFn, 0);
-                    var iterableBase = ctx.ForceCast(iterableBase_raw, ctx.GetPointerType(iterableTy), false, irb);
+
+
+                    IntPtr iterableBase;
+                    if (kind == CoroutineInfo.Kind.Iterable) {
+                        var iterableBase_raw = ctx.GetArgument(getIteratorFn, 0);
+                        iterableBase = ctx.ForceCast(iterableBase_raw, ctx.GetPointerType(iterableTy), false, irb);
+                    }
+                    else {
+                        iterableBase = ctx.GetNullPtr();
+                    }
+
                     uint frameIndex = 0;
                     {
                         // start with state 0

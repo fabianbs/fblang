@@ -642,6 +642,7 @@ namespace CompilerInfrastructure.Structure.Types {
             ValueType = 0x200000 | NotNullable | NoInheritance,
             Builtin = 0x400000,
             Ref = 0x800000,
+            All = ~0
         }
         public static IType GetPrimitive(string name) {
             if (Enum.TryParse<PrimitiveName>(name, out var pname)) {

@@ -194,7 +194,7 @@ namespace LLVMCodeGenerator {
         }
         protected virtual bool TryGetMemoryLocation(IExpression exp, out IntPtr ret) {
             bool succ = true;
-            
+
             switch (exp) {
                 case VariableAccessExpression vr: {
                     if (variables.TryGetValue(vr.Variable, out ret)) {// local variable
@@ -1065,9 +1065,14 @@ namespace LLVMCodeGenerator {
             else
                 succ &= TryExpressionCodeGen(actualArg, out ret);
             if (succ && actualArg.ReturnType != formalArg.Type.UnWrap()) {
-                succ &= gen.TryGetType(formalArg.Type.UnWrap(), out var formTp);
-                //succ &= ctx.TryCast(ret, formTp, ref ret, actualArg.ReturnType is PrimitiveType prim && prim.IsUnsignedInteger, irb);
-                succ &= TryCast(actualArg.Position, ret, actualArg.ReturnType, formalArg, out ret);
+                if (actualArg.ReturnType.IsByRef(out var brt) && brt.UnderlyingType == formalArg.Type) {
+                    ret = ctx.Load(ret, irb);
+                }
+                else {
+                    succ &= gen.TryGetType(formalArg.Type.UnWrap(), out var formTp);
+                    //succ &= ctx.TryCast(ret, formTp, ref ret, actualArg.ReturnType is PrimitiveType prim && prim.IsUnsignedInteger, irb);
+                    succ &= TryCast(actualArg.Position, ret, actualArg.ReturnType, formalArg, out ret);
+                }
             }
             return succ;
         }

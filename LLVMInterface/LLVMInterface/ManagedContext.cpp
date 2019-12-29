@@ -1358,7 +1358,7 @@ EXTERN_API(llvm::Value) *marshalMainMethodCMDLineArgs(ManagedContext *ctx, llvm:
 }
 EXTERN_API(llvm::Constant) *getInt128(ManagedContext *ctx, uint64_t hi, uint64_t lo) {
     short test = 1;
-    char *testp = (char *)& test;
+    char *testp = (char *)&test;
     bool isBigEndian = testp[0] == 0;
     if (isBigEndian)
         return llvm::Constant::getIntegerValue(llvm::Type::getInt128Ty(*ctx->context), llvm::APInt(128, { hi, lo }));
@@ -1465,7 +1465,7 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
                         if (has)
                             pm.add(llvm::createAlwaysInlinerLegacyPass());
                     }
-                    else if (it == maxIterations - 1)
+                    if (it > 7)
                         pm.add(llvm::createLoadStoreVectorizerPass());
                 }
 
@@ -1591,7 +1591,7 @@ llvm::GlobalVariable *createGlobalVTable(ManagedContext *ctx, const char *typeNa
         llvm::errs() << "the vtable is of a structtype\r\n";
     }*/
     auto vtableTy = llvm::cast<llvm::StructType>(_vtableTy);
-    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtualMethods, virtualMethodc));
+    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant **)virtualMethods, virtualMethodc));
 
     auto glob = llvm::dyn_cast<llvm::GlobalVariable>(ctx->M->getOrInsertGlobal((llvm::StringRef(typeName) + "_vtable").str(), vtableTy));
     if (!glob) {
@@ -1617,7 +1617,7 @@ EXTERN_API(llvm::Value) *createVTable(ManagedContext *ctx, const char *typeName,
         llvm::errs() << "the vtable is of a structtype\r\n";
     }*/
     auto vtableTy = llvm::cast<llvm::StructType>(_vtableTy);
-    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtualMethods, virtualMethodc));
+    auto vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant **)virtualMethods, virtualMethodc));
 
     auto glob = llvm::dyn_cast<llvm::GlobalVariable>(ctx->M->getOrInsertGlobal((llvm::StringRef(typeName) + "_vtable").str(), vtableTy));
     if (!glob) {
@@ -1649,7 +1649,7 @@ EXTERN_API(llvm::Value) *getVTable(ManagedContext *ctx, const char *typeName, ll
     if (auto vtableTy = llvm::dyn_cast<llvm::StructType>(_vtableTy)) {
 
 
-        auto virtMetConstants = (llvm::Constant * *)virtualMethods;
+        auto virtMetConstants = (llvm::Constant **)virtualMethods;
         virtualMethodc = std::min(virtualMethodc, vtableTy->getNumElements());
         {
             uint32_t ind = 0;
@@ -1660,7 +1660,7 @@ EXTERN_API(llvm::Value) *getVTable(ManagedContext *ctx, const char *typeName, ll
                 ind++;
             }
         }
-        vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant * *)virtMetConstants, virtualMethodc));
+        vtableVal = llvm::ConstantStruct::get(vtableTy, llvm::ArrayRef<llvm::Constant *>((llvm::Constant **)virtMetConstants, virtualMethodc));
     }
     else {
         vtableVal = getNullPtr(ctx);
