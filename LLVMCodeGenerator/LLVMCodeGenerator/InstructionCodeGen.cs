@@ -98,7 +98,7 @@ namespace LLVMCodeGenerator {
         protected readonly LLVMCodeGenerator gen;
         //protected readonly Dictionary<IVariable, IntPtr> variables = new Dictionary<IVariable, IntPtr>();
         protected readonly StackedDictionary<IVariable, IntPtr> variables = new StackedDictionary<IVariable, IntPtr>();
-        protected readonly Vector <Vector<IntPtr>> locallyDefinedVariables = new Vector<Vector<IntPtr>>();
+        protected Vector <Vector<IntPtr>> locallyDefinedVariables = new Vector<Vector<IntPtr>>(); // NOT READONLY
         protected readonly Dictionary<IStatement, RedirectTarget> breakableStmts = new Dictionary<IStatement, RedirectTarget>();
         protected readonly IntPtr fn;
         protected readonly IntPtr irb;
