@@ -189,3 +189,4 @@ EXTERN_API(llvm::Value)* getVTable(ManagedContext* ctx, const char* name, llvm::
 EXTERN_API(llvm::Type)* getImplicitVTableType(ManagedContext* ctx, const char* name, llvm::Function** virtualMethods, uint32_t virtualMethodc);
 EXTERN_API(llvm::Type)* getVTableType(ManagedContext* ctx, const char* name, llvm::Type** fnTypes, uint32_t fnTypec);
 EXTERN_API(llvm::Value)* isInst(ManagedContext* ctx, llvm::Value* vtablePtr, const char* typeName, llvm::IRBuilder<>* irb);
+EXTERN_API(bool) isAlloca(ManagedContext *ctx, llvm::Value *val);

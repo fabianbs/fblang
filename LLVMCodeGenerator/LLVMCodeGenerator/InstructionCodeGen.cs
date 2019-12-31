@@ -620,17 +620,26 @@ namespace LLVMCodeGenerator {
                         succ = $"The void-method {methodTp.Signature} must not return a value".Report(dflt.Position, false);
                     }
                 }
-                else
-                    succ &= TryExpressionCodeGen(retStmt.ReturnValue, out retVal);
-                if (succ) {
-                    if (coro.IsAsynchronousCoroutine) {
-                        retVal = gen.GetVoidPtrFromValue(retVal, retStmt.ReturnValue.ReturnType, irb);
-                        ctx.Store(ctx.GetArgument(fn, 1), retVal, irb);
-                        ctx.ReturnValue(ctx.True(), irb);
+                else {
+                    if (method.ReturnType.IsByRef()) {
+                        succ &= TryGetMemoryLocation(retStmt.ReturnValue, out retVal);
+                        if (ctx.IsAlloca(retVal)) {
+                            succ = "Cannot return locally allocated data beyond the local stack frame".Report(retStmt.Position, false);
+                        }
                     }
-                    else {
-                        ctx.ReturnValue(retVal, irb);
-                    }
+                    else
+                        succ &= TryExpressionCodeGen(retStmt.ReturnValue, out retVal);
+                }
+
+                if (!succ)
+                    return false;
+                if (coro.IsAsynchronousCoroutine) {
+                    retVal = gen.GetVoidPtrFromValue(retVal, retStmt.ReturnValue.ReturnType, irb);
+                    ctx.Store(ctx.GetArgument(fn, 1), retVal, irb);
+                    ctx.ReturnValue(ctx.True(), irb);
+                }
+                else {
+                    ctx.ReturnValue(retVal, irb);
                 }
             }
             else {

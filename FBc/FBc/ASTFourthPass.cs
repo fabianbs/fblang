@@ -1598,6 +1598,8 @@ namespace FBc {
             }
             else if (lit.Default() != null) {
                 //TODO infer default-type
+                if (expectedReturnType.IsByRef())
+                    "ByRef types do not have a default value".Report(lit.Position(fileName));
                 ret = new DefaultValueExpression(lit.Position(fileName), expectedReturnType ?? Type.Top);
             }
             else if (lit.MacroLocalIdent() != null) {
@@ -1621,6 +1623,7 @@ namespace FBc {
                 //Ident
                 var vr = contextStack.Peek().VariableByName(lit.Ident().GetText());
                 if (vr != null) {
+
                     if (vr.IsStatic() || !vr.IsStatic() && vr.IsLocalVariable()) {
                         ret = CreateVariableAccessExpression(lit.Position(fileName), null, vr);
                         if (IsLambdaCapture(vr, out var cap))
@@ -2615,7 +2618,10 @@ namespace FBc {
             return new YieldStatement(context.Position(fileName), expr);
         }
         public ReturnStatement VisitReturnStmt([NotNull] FBlangParser.ReturnStmtContext context) {
-            var expr = context.expr() != null ? VisitExpression(context.expr(), currentReturnType) : null;
+            var expr = context.expr() != null ? VisitExpression(context.expr(), currentReturnType) : Expression.Error;
+            if (!expr.IsError() && currentReturnType.IsByRef() && !expr.IsLValue(currMet)) {
+                "Cannot return an rvalue as lvalue".Report(expr.Position);
+            }
             return new ReturnStatement(context.Position(fileName), expr);
         }
         public Declaration VisitDeclaration([NotNull] FBlangParser.DeclarationContext context) {

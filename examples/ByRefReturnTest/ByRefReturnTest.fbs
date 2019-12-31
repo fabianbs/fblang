@@ -1,0 +1,20 @@
+def void Box{
+    int val
+    
+    public ctor(int val){
+        this.val = val
+    }
+    
+    public int & value(){
+        return val
+        //return 42
+    }
+}
+
+global main(){
+    var b = new Box(42)
+    
+    cprintln(b.value())
+    b.value() = 43
+    cprintln(b.value())
+}

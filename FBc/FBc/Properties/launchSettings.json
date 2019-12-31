@@ -2,7 +2,7 @@
   "profiles": {
     "FBc": {
       "commandName": "Project",
-      "commandLineArgs": "ByRefForTest2.fbs --emit-llvm -O3",
+      "commandLineArgs": "ByRefReturnTest.fbs --emit-llvm ",
       "workingDirectory": "D:\\Besitzer\\Desktop",
       "nativeDebugging": false
     }

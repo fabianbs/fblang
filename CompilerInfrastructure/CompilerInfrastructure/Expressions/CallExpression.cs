@@ -215,5 +215,10 @@ namespace CompilerInfrastructure.Expressions {
             return false;
         }
         public override string ToString() => "call " + Callee.Signature.ToString();
+
+        /// <inheritdoc />
+        public override bool IsLValue(IMethod met) {
+            return ReturnType.IsByRef();
+        }
     }
 }

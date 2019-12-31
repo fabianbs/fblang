@@ -1743,3 +1743,11 @@ EXTERN_API(llvm::Value) *isInst(ManagedContext *ctx, llvm::Value *vtablePtr, con
 
     return irb->CreateCall(typeTest, { asVoidPtr, llvm::MetadataAsValue::get(*ctx->context, llvm::MDString::get(*ctx->context,typeName)) });
 }
+
+#pragma optimize( "", off )
+EXTERN_API(bool) isAlloca(ManagedContext *ctx, llvm::Value *val) {
+    auto ret = llvm::dyn_cast<llvm::AllocaInst>(val) != nullptr;
+    //llvm::errs() << "Is Alloca(" << *val << ") = " << (ret ? "true" : "false") << "\n";
+    return ret;
+}
+#pragma optimize( "", on )
