@@ -93,9 +93,9 @@ namespace FBc {
             else {
                 Console.WriteLine("Build finished successfully");
             }
-#if DEBUG
-            Console.ReadKey(true);
-#endif
+//#if DEBUG
+//            Console.ReadKey(true);
+//#endif
             return compiler.NumErrors;
         }
     }

@@ -166,7 +166,7 @@ namespace CompilerInfrastructure {
         public virtual DefResult DefineVariable(IVariable vr) {
             //return CanDefineVariables && variables.Add(vr.Signature, vr);
             if (CanDefineVariables)
-                return (variables.Add(vr.Signature, vr), CannotDefine.NotAllowedInCurrentContext);
+                return (variables.Add(vr.Signature, vr), CannotDefine.AlreadyExisting);
             return CannotDefine.NotAllowedInCurrentContext;
         }
         public virtual IEnumerable<IMethod> MethodsByName(string name) {

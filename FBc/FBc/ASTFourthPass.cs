@@ -2627,7 +2627,9 @@ namespace FBc {
         public Declaration VisitDeclaration([NotNull] FBlangParser.DeclarationContext context) {
             var (varTy, specs, names, vis) = DeclarationInfos(context.decl());
             Declaration ret;
+            bool hasDefault = false;
             if (context.expr() != null && context.LeftArrow() is null) {
+                hasDefault = true;
                 // one default value for all variables
                 var dflt = VisitExpression(context.expr(), varTy);
                 if (varTy.IsTop())
@@ -2637,8 +2639,10 @@ namespace FBc {
                 if (!dflt.IsNotNullable() && varTy.IsNotNullable()) {
                     $"The non-nullable variables {string.Join(", ", ret.Variables.Select(x => x.Signature))} cannot be initialized with the nullable value{dflt}".Report(context.Position(fileName));
                 }
+
             }
             else if (context.LeftArrow() != null) {
+                hasDefault = true;
                 if (context.expr() != null) {
                     var range = VisitExpression(context.expr());
                     if (range.ReturnType.UnWrap() is AggregateType agg) {
@@ -2658,6 +2662,12 @@ namespace FBc {
                 if (varTy.IsTop())
                     $"The type of the variable{(names.Length > 1 ? "s" : "")} {string.Join(", ", names)} cannot be inferred".Report(context.Position(fileName));
                 ret = new Declaration(context.Position(fileName), varTy, specs, names, vis: vis);
+            }
+
+            if (ret.Type.IsByRef() ||ret.Type.IsRef()) {
+                //if (!hasDefault)
+                //    "References must be initialized on declaration".Report(ret.Position);
+                "Reference-variables are not supported yet. They will be added in a future version of the language".Report(ret.Position);
             }
             DoDefineVariables(ret, contextStack.Peek());
             return ret;

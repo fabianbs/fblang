@@ -173,8 +173,8 @@ deconstructStmt: actualArglist LeftArrow (expr|typeIdent);
 callStmt:  ex '('actualArglist?NewLines?')'												#normalCallStmt
 		| ('['(InternalCall|ExternalCall)']')? Ident '(' actualArglist?NewLines? ')'	#internalExternalCallStmt
 		;
-macroStmt: (ex '.')? At Ident '(' actualArglist?NewLines?')'							#macroCall
-		  |(ex '.')? At Ident instruction												#macroCapture
+macroStmt: (ex Dot)? At Ident '(' actualArglist?NewLines?')'							#macroCall
+		  |(ex Dot)? At Ident instruction												#macroCapture
 		  ;
 shiftStmt: ex (LShift|srShift|urShift) ex;
 incStmt: (pre=IncDec ex)|(ex post=IncDec);
@@ -193,7 +193,7 @@ ex:     NewLines?'(' expr NewLines?')'													#subExpr
 	  | NewLines?literal																#literalExpr
 	  | NewLines?This																	#thisExpr
 	  | NewLines?Super																	#superExpr
-	  |lhs=ex '.' rhs=ex																#memberAccessExpr//TODO typeIdent '.' ex
+	  |lhs=ex Dot rhs=ex																#memberAccessExpr//TODO typeIdent '.' ex
 	  | ex '(' actualArglist? NewLines? ')'												#callExpr
 	  | '['(InternalCall|ExternalCall)']' Ident '(' actualArglist? NewLines? ')'		#internalExternalCallExpr
 	  | ex '[' actualArglist NewLines?']'												#indexerExpr
@@ -298,6 +298,8 @@ GE:'>=';
 GT:'>';
 LShift:'<<';
 Div: '/';
+
+
 fragment NEW_LINE: ('\r'? '\n')|'\r';
 NewLines: NEW_LINE (WS* NEW_LINE)*;
 fragment L: 'l'|'L';
@@ -317,7 +319,10 @@ CharLit: '\'' ('\\\''|'\\'?.|'\\u'HexByte HexByte) '\'';
 FloatLit: ((DecimalInt?'.')?DecimalInt ([eE]('+'|Minus)?DecimalInt)[fF]?)
 		| ('0x' (HexByte+?'.')? HexByte+ ([eE]('+'|Minus)? HexByte+)[fF]?)
 		| ('0b' ([01]+?'.')? [01]+ ([eE]('+'|Minus)? [01]+)[fF]?);
+
+Dot: '.';
 IncDec:'++'|'--';
 ModifierAssignOp: '+='|'-='|'*='|'/='|'%='|'|='|'&='|'^='|'<<='|'>>='|'>>>=';
+
 LineComment: '//'.*?NEW_LINE->channel(HIDDEN);
 BlockComment: '/*' .*? '*/'->channel(HIDDEN);
