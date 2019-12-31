@@ -159,7 +159,7 @@ casePatternList: casePattern (',' casePattern)*;
 nonRecursiveCasePattern: literal | sdecl | Percent;
 casePattern: nonRecursiveCasePattern|recursiveCasePattern;
 
-localVarTy: (Final|Volatile)? (localTypeIdent|Var);
+localVarTy: (Final|Volatile)? (localTypeIdent|Var Amp?);
 localVarName: Ident|MacroLocalIdent;
 sdecl: Public? localVarTy localVarName ('=' ex)?;
 decl: Public? localVarTy localVarName (',' localVarName)*;

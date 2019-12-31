@@ -1,0 +1,20 @@
+global iterator int iota(){
+    int i = 0
+    while(true){
+        yield i++
+    }
+}
+
+global main(){
+    var arr = new int [12]
+    
+    var it = iota()
+    
+    for (var & x : arr){
+        it.tryGetNext(x)
+    }
+    
+    for (var x : arr){
+        cprintln(x)
+    }
+}

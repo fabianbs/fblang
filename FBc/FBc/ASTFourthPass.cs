@@ -2275,7 +2275,7 @@ namespace FBc {
                         if (over.IsSingelton(out ty)) {
                             if (isByRef) {
                                 ty = isByConstRef ? ty.AsByConstRef() : ty.AsByRef();
-                               
+
                             }
 
                             decl = new Declaration(context.Position(fileName), ty, spec, names, vis: vis);
@@ -2657,7 +2657,16 @@ namespace FBc {
             return ret;
         }
         public (IType, Variable.Specifier, string[], Visibility) DeclarationInfos([NotNull] FBlangParser.DeclContext context) {
-            var varTy = context.localVarTy().Var() != null ? Type.Top : VisitLocalTypeIdent(context.localVarTy().localTypeIdent(), fileName);
+            IType varTy;
+            if (context.localVarTy().Var() != null) {
+                varTy = Type.Top;
+                if (context.localVarTy().Amp() != null)
+                    varTy = varTy.AsByRef();
+            }
+            else {
+                varTy = VisitLocalTypeIdent(context.localVarTy().localTypeIdent(), fileName);
+            }
+
             Variable.Specifier specs = Variable.Specifier.LocalVariable;
             if (context.localVarTy().Final() != null)
                 specs |= Variable.Specifier.Final;

@@ -1419,7 +1419,15 @@ EXTERN_API(void) optimize(ManagedContext *ctx, uint8_t optLvl, uint8_t maxIterat
             pm.add(llvm::createLoopInterchangePass());
             pm.add(llvm::createIndVarSimplifyPass());
             pm.add(llvm::createLoopUnswitchPass());
-            pm.add(llvm::createLoopUnrollPass(optLvl));
+            pm.add(llvm::createLoopUnrollPass(optLvl, -1, -1, 1, 1));
+            pm.add(llvm::createLoopRerollPass());
+            pm.add(llvm::createLoopInstSimplifyPass());
+            pm.add(llvm::createLoopPredicationPass());
+            pm.add(llvm::createLoopInstSimplifyPass());
+            pm.add(llvm::createLoopInterchangePass());
+            pm.add(llvm::createLoopLoadEliminationPass());
+            pm.add(llvm::createLoopUnrollAndJamPass(optLvl));
+            pm.add(llvm::createLoopVectorizePass());
         });
         builder.addExtension(llvm::PassManagerBuilder::EP_OptimizerLast, [ctx, &it, maxIterations] (const llvm::PassManagerBuilder &builder, llvm::legacy::PassManagerBase &pm) {
 
