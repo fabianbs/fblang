@@ -660,9 +660,9 @@ namespace FBc {
                 }
                 else {
 
-                    if (float.TryParse(lit, out var fret))
-                        return new FloatLiteral(pos, fret);
-                    if (!double.TryParse(lit, out var ret)) {
+                    //if (float.TryParse(lit, NumberStyles.Float, CultureInfo.InvariantCulture, out var fret))
+                    //    return new FloatLiteral(pos, fret);
+                    if (!double.TryParse(lit, NumberStyles.Float, CultureInfo.InvariantCulture, out var ret)) {
                         err.Report($"Die Fließkommazahl {lit.ToString()} ist zu groß für ein double-Literal", pos);
                     }
                     return new DoubleLiteral(pos, ret);
@@ -735,7 +735,7 @@ namespace FBc {
             }
             else if (context.assocArray() != null) {
                 var keyTy = VisitTypeIdent(context.assocArray().typeIdent(), fileName);
-                tp = IntegratedHashMap.GetOrCreateIntegratedHashMap(Module).BuildType(new[] {  keyTy, tp });
+                tp = IntegratedHashMap.GetOrCreateIntegratedHashMap(Module).BuildType(new[] { keyTy, tp });
                 if (context.ExclamationMark() != null) {
                     tp = tp.AsNotNullable();
                 }

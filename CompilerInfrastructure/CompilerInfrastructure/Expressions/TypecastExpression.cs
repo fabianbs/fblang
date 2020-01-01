@@ -59,11 +59,16 @@ namespace CompilerInfrastructure.Expressions {
                     "A typecast cannot be applied to a variable number of arguments".Report(SubExpression.Position.Concat(args.Position));
                     nwSub = sub;
                 }
-                expr = new[] { new TypecastExpression(Position.Concat(args.Position), nwSub[0], ReturnType) };
+                expr = new IExpression[] { new TypecastExpression(Position.Concat(args.Position), nwSub[0], ReturnType) };
                 return true;
             }
-            expr = new[] { this };
+            expr = new IExpression[] { this };
             return false;
+        }
+
+        /// <inheritdoc />
+        public override bool IsLValue(IMethod met) {
+            return ReturnType.IsByRef();
         }
     }
 }

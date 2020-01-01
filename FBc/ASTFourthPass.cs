@@ -1522,7 +1522,7 @@ namespace FBc {
                 ret = Expression.Error;
                 return false;
             }
-            ret = new TypecastExpression(ex.Position(fileName), sub, tp);
+            ret = sub.ReturnType == tp ? sub : new TypecastExpression(ex.Position(fileName), sub, tp);
             return CheckReturnType(ref ret, expectedReturnType, err);
         }
         private bool TryVisitAsTypeExpr(FBlangParser.AsTypeExprContext ex, out IExpression ret, IType expectedReturnType, ErrorBuffer err) {
@@ -2664,7 +2664,7 @@ namespace FBc {
                 ret = new Declaration(context.Position(fileName), varTy, specs, names, vis: vis);
             }
 
-            if (ret.Type.IsByRef() ||ret.Type.IsRef()) {
+            if (ret.Type.IsByRef() || ret.Type.IsRef()) {
                 //if (!hasDefault)
                 //    "References must be initialized on declaration".Report(ret.Position);
                 "Reference-variables are not supported yet. They will be added in a future version of the language".Report(ret.Position);

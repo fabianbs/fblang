@@ -1236,11 +1236,11 @@ namespace LLVMCodeGenerator {
                     }
                 }
             }
-            else {
+            /*else {
                 if (callee.ReturnType.IsByRef()) {
                     ret = ctx.Load(ret, irb);
                 }
-            }
+            }*/
 
             return succ;
         }
