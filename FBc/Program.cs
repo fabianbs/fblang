@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Copyright (c) 2019 Fabian Schiebel.
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of LICENSE.txt.
@@ -19,7 +19,7 @@ namespace FBc {
         static int Main(string[] args) {
 
             string destFile = null;
-            IEnumerable<string> filenames = Enumerable.Empty<string>();
+            var filenames = Enumerable.Empty<string>();
             byte optLevel = 1;
             bool doCodeGen = true;
             bool emitLLVM = false;
@@ -93,9 +93,9 @@ namespace FBc {
             else {
                 Console.WriteLine("Build finished successfully");
             }
-//#if DEBUG
-//            Console.ReadKey(true);
-//#endif
+            //#if DEBUG
+            //            Console.ReadKey(true);
+            //#endif
             return compiler.NumErrors;
         }
     }

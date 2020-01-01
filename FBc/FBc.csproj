@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>FBc2</RootNamespace>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <Antlr4 Include="FBlang.g4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.7.2" />
+    <PackageReference Include="Antlr4BuildTasks" Version="1.0.8" />
+    <PackageReference Include="CommandLineParser" Version="2.6.0" />
+    <PackageReference Include="System.CodeDom" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\SimpleClangCompilerInterface\x64\Release\SimpleClangCompilerInterface.dll" Link="SimpleClangCompilerInterface.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\x64\Release\LLVMInterface.dll" Link="LLVMInterface.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CompilerInfrastructure\CompilerInfrastructure\CompilerInfrastructure.csproj" />
+    <ProjectReference Include="..\LLVMCodeGenerator\LLVMCodeGenerator\LLVMCodeGenerator.csproj" />
+  </ItemGroup>
+
+ 
+</Project>

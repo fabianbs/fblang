@@ -1,10 +1,9 @@
 {
   "profiles": {
-    "FBc": {
+    "FBc2": {
       "commandName": "Project",
       "commandLineArgs": "ByRefReturnTest.fbs --emit-llvm ",
-      "workingDirectory": "D:\\Besitzer\\Desktop",
-      "nativeDebugging": false
+      "workingDirectory": "D:\\Besitzer\\Desktop"
     }
   }
 }

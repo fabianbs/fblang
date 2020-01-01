@@ -76,7 +76,8 @@ namespace FBc {
                 inp = new StreamReader(filename);
                 var input = new AntlrInputStream(inp);
                 var lex = new FBlangLexer(input);
-                lex.AddErrorListener(ConsoleErrorListener<int>.Instance);
+
+                lex.AddErrorListener(new ErrorListener<int>(filename));
                 /*if (filename.Contains("VectorTest")) {
 
                     Console.WriteLine(string.Join(" ", lex.GetAllTokens().Select(x => {
@@ -85,7 +86,7 @@ namespace FBc {
                     })));
                 }*/
                 var par = new FBlangParser(new CommonTokenStream(lex));
-                par.AddErrorListener(ConsoleErrorListener<IToken>.Instance);
+                par.AddErrorListener(new ErrorListener<IToken>(filename));
                 var root = par.program();
                 numErrors = par.NumberOfSyntaxErrors;
                 return root;
@@ -96,9 +97,7 @@ namespace FBc {
                 return null;
             }
             finally {
-                if (inp != null) {
-                    inp.Close();
-                }
+                inp?.Close();
             }
         }
         bool IsValidMainMethod(IMethod main) {

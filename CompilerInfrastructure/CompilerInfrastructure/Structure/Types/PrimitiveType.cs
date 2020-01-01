@@ -244,7 +244,8 @@ namespace CompilerInfrastructure.Structure.Types {
         }
         public override IContext DefinedIn => Context.Module;
 
-        public override string ToString() => name.ToString();
+        public override string ToString() => name.ToString().ToLower();
+
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         private static PrimitiveType FromNameInternal(PrimitiveName name) {
             return prim[name];

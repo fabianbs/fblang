@@ -119,7 +119,12 @@ namespace CompilerInfrastructure.Semantics {
                 return Method.Error;
             if (retType is null)
                 retType = Type.Top;
-            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => x.Item2 - y.Item2));
+            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => {
+                if (x.Item1 == y.Item1)
+                    return 0;
+                var ret= x.Item2 - y.Item2;
+                return ret + (ret < 0 ? -1 : 1);
+            }));
             foreach (var met in mets) {
                 if (met is null)
                     continue;
@@ -141,7 +146,7 @@ namespace CompilerInfrastructure.Semantics {
             }
             if (ret2.Any()) {
                 return err.Report(string.Format("The method-call is ambiguous. Possible callees are: {0}",
-                    string.Join(",\r\n", ret2.Concat(new[] { ret.Item1 }).Select(x => x.Signature))
+                    string.Join(", ", ret2.Concat(new[] { ret.Item1 }))
                 ), pos, Method.Error);
             }
             else {
@@ -692,9 +697,20 @@ namespace CompilerInfrastructure.Semantics {
             }
             return Expression.Error;
         }
+
+        IExpression CreateCallExpression(Position pos, IType retTy, IMethod callee, IExpression parent,
+                                         ICollection<IExpression> args, bool isCallVirt) {
+            if (retTy != null && retTy.IsError())
+                return Expression.Error;
+            if (callee.IsError())
+                return Expression.Error;
+            if (parent != null && parent.IsError())
+                return Expression.Error;
+            return new CallExpression(pos, retTy, callee, parent, args) { IsCallVirt = isCallVirt };
+        }
         public virtual IExpression CreateCall(Position pos, IType retTy, IType parentTy, IExpression parent, string name, ICollection<IExpression> args, ErrorBuffer err = null) {
             // call + fnCallOperatorOverload (is overload <=> name==null)
-            CallExpression ret = null;
+            IExpression ret = null;
             if (name is null) {
                 if (parent is null) {
                     if (parentTy is null)
@@ -716,9 +732,7 @@ namespace CompilerInfrastructure.Semantics {
                             else {
 
                                 var callee = BestFittingMethod(pos, mets, args.Select(x => x.MinimalType()).AsCollection(args.Count), retTy, err);
-                                ret = new CallExpression(pos, callee.ReturnType, callee, parent, args) {
-                                    IsCallVirt = IsCallVirt(callee, parent)
-                                };
+                                ret = CreateCallExpression(pos, callee.ReturnType, callee, parent, args, IsCallVirt(callee, parent));
                             }
                         }
                         else {
@@ -756,16 +770,15 @@ namespace CompilerInfrastructure.Semantics {
                     }
                 }
                 if (ret is null)
-                    ret = new CallExpression(pos, callee.ReturnType, callee, parent, args) {
-                        IsCallVirt = IsCallVirt(callee, parent)
-                    };
+                    ret = CreateCallExpression(pos, callee.ReturnType, callee, parent, args, IsCallVirt(callee, parent));
             }
 
             if (!ret.IsError()) {
+                var call = (CallExpression) ret;
                 int i = 0;
                 foreach (var arg in args) {
                     if (arg is DefaultValueExpression dflt && dflt.ReturnType.IsTop()) {
-                        dflt.ResetReturnType(ret.Callee.Arguments[i].Type);
+                        dflt.ResetReturnType(call.Callee.Arguments[i].Type);
                     }
                     i++;
                 }

@@ -20,6 +20,8 @@ using System.Text;
 using static CompilerInfrastructure.Utils.CoreExtensions;
 
 namespace CompilerInfrastructure {
+    using System.IO;
+
     /// <summary>
     /// Union of <see cref="IMethod"/>, <see cref="IMethodTemplate{T}"/> and <see cref="Structure.Macros.MacroFunction"/>
     /// </summary>
@@ -141,7 +143,7 @@ namespace CompilerInfrastructure {
         /// A method-signature
         /// </summary>
         [Serializable]
-        public struct Signature : ISignature, IEquatable<Signature> {
+        public struct Signature : ISignature, IEquatable<Signature>, IPrintable {
             /// <summary>
             /// Initializes this method-signature with the given information
             /// </summary>
@@ -276,6 +278,23 @@ namespace CompilerInfrastructure {
                 return sb.ToString();
             }
 
+            /// <inheritdoc />
+            public void PrintPrefix(TextWriter tw) {
+                tw.Write(ReturnTypeSignature);
+                tw.Write(" ");
+            }
+
+            /// <inheritdoc />
+            public void PrintValue(TextWriter tw) {
+                tw.Write(QualifiedName());
+            }
+
+            /// <inheritdoc />
+            public void PrintSuffix(TextWriter tw) {
+                tw.Write('(');
+                tw.Write(string.Join(", ", ArgTypeSignatures));
+                tw.Write(')');
+            }
         }
         /// <summary>
         /// A bitset, which contains additional specifiers/attributes of a method

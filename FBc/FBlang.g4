@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  * Copyright (c) 2019 Fabian Schiebel.
  * All rights reserved. This program and the accompanying materials are made
  * available under the terms of LICENSE.txt.
@@ -135,7 +135,7 @@ tryCatchStmt:'try' blockInstruction ('catch' ('(' decl ')')? blockInstruction)+ 
 			|'try' blockInstruction Finally blockInstruction
 ;
 stmt: declaration|assignExp|awaitStmt|deferStmt|deconstructStmt|shiftStmt|superStmt|callStmt|macroStmt|incStmt|returnStmt|yieldStmt|breakStmt|continueStmt|identStmt;
-stmtEnd: ';'|NewLines ';'|{_input.La(1)==NewLines||_input.La(1)==OpenBracket}?;
+stmtEnd: ';'|NewLines ';'|{InputStream.LA(1)==NewLines||InputStream.LA(1)==OpenBracket}?;
 identStmt: Ident;
 ifNoElseStmt:'if' NewLines* '(' expr NewLines* ')'NewLines* instruction NewLines*;
 ifStmt: ifNoElseStmt (Else instruction NewLines*)?;
@@ -180,6 +180,7 @@ shiftStmt: ex (LShift|srShift|urShift) ex;
 incStmt: (pre=IncDec ex)|(ex post=IncDec);
 breakStmt:'break';
 continueStmt:'continue';
+
 
 /**
  * Expressions
@@ -234,6 +235,9 @@ literal:  Ident|MacroLocalIdent|StringLit|CharLit|Minus?(IntLit|FloatLit)|BoolLi
 actualArglist: expr (',' expr)*;
 reductionOperator: '+'|Minus|Pointer|Div|Percent|Amp|'|'|Xor;
 reduction: reductionOperator|Ident;
+
+
+
 /*
  * Lexer Rules
  */
@@ -312,15 +316,20 @@ fragment DecimalInt: (([1-9][0-9]*)|'0')(L|S|B|U L|U S|U|Z)?;
 fragment HexByte: [0-9a-fA-F][0-9a-fA-F];
 fragment HexInt: '0'X HexByte+;
 fragment BinInt: '0'B [01]+;
+fragment Dott: '.';
+
+//SciEndingDec: [eE]('+'|Minus)?DecimalInt[fF]?;
+
 IntLit: DecimalInt | HexInt | BinInt;
 StringLit: '"' (~["\\] | '\\"')*? '"';
 CharLit: '\'' ('\\\''|'\\'?.|'\\u'HexByte HexByte) '\'';
 
-FloatLit: ((DecimalInt?'.')?DecimalInt ([eE]('+'|Minus)?DecimalInt)[fF]?)
-		| ('0x' (HexByte+?'.')? HexByte+ ([eE]('+'|Minus)? HexByte+)[fF]?)
-		| ('0b' ([01]+?'.')? [01]+ ([eE]('+'|Minus)? [01]+)[fF]?);
+FloatLit: ((DecimalInt?Dott)?DecimalInt ([eE]('+'|Minus)?DecimalInt)?[fF]?)
+		| ('0x' (HexByte+?Dott)? HexByte+ ([eE]('+'|Minus)? HexByte+)?[fF]?)
+		| ('0b' ([01]+?Dott)? [01]+ ([eE]('+'|Minus)? [01]+)?[fF]?)
+		;
 
-Dot: '.';
+Dot: Dott;
 IncDec:'++'|'--';
 ModifierAssignOp: '+='|'-='|'*='|'/='|'%='|'|='|'&='|'^='|'<<='|'>>='|'>>>=';
 

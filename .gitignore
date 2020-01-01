@@ -32,3 +32,6 @@ CITest/bin/
 CITest/obj/
 .editorconfig
 FB_Language.sln.DotSettings.user
+FBc/bin/
+FBc_old/
+FBc/obj/

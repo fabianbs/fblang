@@ -18,12 +18,16 @@ using System.Runtime.Serialization;
 using System.Text;
 
 namespace CompilerInfrastructure.Structure {
+    using System.IO;
+
     /// <summary>
     /// The basic implementation of the <see cref="IMethod"/> interface. For most purposes this is sufficient
     /// </summary>
     [Serializable]
     public class BasicMethod : IMethod, ISerializable {
         Method.Signature mSignature;
+
+        private ValueLazy<string> tos;
         //InstructionBox mBody;
         // besser wäre mit friend class BasicMethodTemplate
         internal readonly Dictionary<GenericParameterMap<IGenericParameter, ITypeOrLiteral>, BasicMethod> genericCache
@@ -53,6 +57,7 @@ namespace CompilerInfrastructure.Structure {
             Visibility = vis;
             Position = pos;
             ReturnType = retType ?? PrimitiveType.Void;
+            tos = new ValueLazy<string>(ToStringInternal);
         }
         /// <summary>
         /// Initializes this method with the given properties. Do not forget to assign <see cref="Context"/> and <see cref="NestedIn"/>
@@ -72,7 +77,9 @@ namespace CompilerInfrastructure.Structure {
             Arguments = args.ToArray();
             if (body != null)
                 Body = body;
+            tos = new ValueLazy<string>(ToStringInternal);
         }
+
         protected BasicMethod(SerializationInfo info, StreamingContext context) {
             Context = info.GetT<SimpleMethodContext>(nameof(Context));
             Parent = info.GetT<IContext>(nameof(Parent));
@@ -259,7 +266,22 @@ namespace CompilerInfrastructure.Structure {
             }
             return ret;
         }
-        public override string ToString() => Signature.ToString();
+
+        string ToStringInternal() {
+            var sw = new StringWriter();
+            mSignature.PrintPrefix(sw);
+            if (NestedIn is ITypeContext tcx && tcx.Type != null) {
+                sw.Write(tcx.Type);
+                sw.Write("::");
+            }
+            mSignature.PrintValue(sw);
+            mSignature.PrintSuffix(sw);
+            return sw.ToString();
+        }
+        public override string ToString() {
+            return tos.Value;
+        }
+
         public virtual bool IsVariadic() => Arguments.Any() && Arguments.Last().Type.IsVarArg();
     }
     [Serializable]
