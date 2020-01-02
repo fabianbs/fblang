@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
+    using Structure;
     using Structure.Types;
 
     public class StackRefCaptureDomain : ITaintAnalysisDomain<StackCaptureFact> {

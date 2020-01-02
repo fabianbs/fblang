@@ -61,7 +61,14 @@ namespace FBc {
                     "A field can only have one parent".Report(ParentExpression.Position.Concat(args.Position));
                     nwPar = new[] { ParentExpression };
                 }
-                expr = new[] { new CaptureAccessExpression(Position.Concat(args.Position), null, new LambdaCapture(nwPar.First().ReturnType.Context.InstanceContext.VariableByName(VariableName)), nwPar.First()) };
+                expr = new[] {
+                    new CaptureAccessExpression(Position.Concat(args.Position),
+                                                null,
+                                                new LambdaCapture(nwPar.First()
+                                                                       .ReturnType.Context.InstanceContext
+                                                                       .TryGetVariableByName(VariableName, Position.Concat(args.Position))),
+                                                nwPar.First())
+                };
                 return true;
             }
             expr = new[] { this };

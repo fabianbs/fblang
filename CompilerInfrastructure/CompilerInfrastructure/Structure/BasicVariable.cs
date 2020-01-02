@@ -15,6 +15,8 @@ using CompilerInfrastructure.Expressions;
 using CompilerInfrastructure.Structure.Macros;
 
 namespace CompilerInfrastructure.Structure {
+    using System.IO;
+    using Contexts;
     using Types;
 
     /// <summary>
@@ -95,7 +97,21 @@ namespace CompilerInfrastructure.Structure {
             vr = this;
             return false;
         }
-        public override string ToString() => Signature.ToString();
+
+        public override string ToString() {
+            if (DefinedInType != null) {
+                var sw= new StringWriter();
+                Signature.PrintPrefix(sw);
+                sw.Write(DefinedInType);
+                sw.Write("::");
+                Signature.PrintValue(sw);
+                Signature.PrintSuffix(sw);
+                return sw.ToString();
+            }
+
+            return Signature.PrintString();
+        }
+
         public override IExpression DefaultValue {
             get => base.DefaultValue;
             set {
@@ -129,5 +145,6 @@ namespace CompilerInfrastructure.Structure {
             }
             return ret;
         }
+
     }
 }

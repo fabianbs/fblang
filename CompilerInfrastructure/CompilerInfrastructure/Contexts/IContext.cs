@@ -20,7 +20,7 @@ using System.Text;
 namespace CompilerInfrastructure {
     using Structure.Types;
     using DefResult = BooleanResult<CannotDefine>;
-    
+
     public interface IContext : IPositional, IReplaceableStructureElement<IContext>/*,ISummarizable*/ {
 
         IReadOnlyDictionary<Type.Signature, IType> Types {
@@ -163,6 +163,17 @@ namespace CompilerInfrastructure {
     public static class ContextHelper {
         public static IVariable VariableByName(this IContext ctx, string name) {
             return ctx.VariablesByName(name).FirstOrDefault();
+        }
+
+        public static IVariable TryGetVariableByName(this IContext ctx, string name, Position pos) {
+
+            var vrs = ctx.VariablesByName(name);
+            return vrs.IsSingeltonOrEmpty(out var val) switch
+            {
+                true => val,
+                false => $"The actual variable is ambiguous for the name '{name}'. Possible variables are: {string.Join(", ", vrs)}".Report(pos, val),
+                null => null
+            };
         }
         public static MacroFunction MacroByName(this IContext ctx, string name) {
             return ctx.MacrosByName(name).FirstOrDefault();

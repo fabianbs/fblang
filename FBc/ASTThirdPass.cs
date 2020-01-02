@@ -670,7 +670,7 @@ namespace FBc {
 
             else {
                 //Ident
-                var vr = contextStack.Peek().VariableByName(lit.Ident().GetText());
+                var vr = contextStack.Peek().TryGetVariableByName(lit.Ident().GetText(), lit.Position(fileName));
                 if (vr != null) {
                     if (vr.IsStatic() || !vr.IsStatic() && vr.IsLocalVariable()) {
                         ret = new VariableAccessExpression(lit.Position(fileName), null, vr);

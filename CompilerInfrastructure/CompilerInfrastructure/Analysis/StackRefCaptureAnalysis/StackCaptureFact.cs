@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 
 namespace CompilerInfrastructure.Analysis.StackRefCaptureAnalysis {
+    using Structure;
+
     public readonly struct StackCaptureFact : IEquatable<StackCaptureFact> {
         public readonly IVariable Variable;
         public readonly bool FirstClass;

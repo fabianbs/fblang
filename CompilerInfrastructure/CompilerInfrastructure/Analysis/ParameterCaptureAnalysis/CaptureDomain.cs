@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace CompilerInfrastructure.Analysis.ParameterCaptureAnalysis {
+    using Structure;
+
     public class CaptureDomain : TaintAnalysisVariableDomain {
         public CaptureDomain(InterMonoAnalysis<TaintAnalysisSummary<IVariable>, IVariable> analysis) 
             : base(analysis) {

@@ -22,7 +22,7 @@ namespace CompilerInfrastructure {
     [Serializable]
     public class HierarchialContext : IContext/*, IEnumerable<IContext>*/, ISerializable {
         [Serializable]
-        class HierarchialDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, ISerializable/* where TValue : IVisible*/ where TKey : ISignature {
+        class HierarchialDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue>, ISerializable, IValueFilterableByName<TKey,TValue>/* where TValue : IVisible*/ where TKey : ISignature {
             readonly IEnumerable<IReadOnlyDictionary<TKey, TValue>> underlying;
             [NonSerialized]
             readonly SignatureMultiMap<TKey, TValue> cache = new SignatureMultiMap<TKey, TValue>();
@@ -86,21 +86,27 @@ namespace CompilerInfrastructure {
             }
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-            public IEnumerable<TValue> FilterByName(string name) {
+            public IEnumerable<TValue> FilterValuesByName(string name) {
                 //TODO geht das auch effizienter?
 
                 //return cache.FilterByName(name).Values
-                //    .Concat(underlying.SelectMany(x => x.FilterByName(name)).Except(cache.FilterByName(name).Values));
-                var seen = new HashSet<TKey>();
-                foreach (var x in cache.FilterByName(name)) {
-                    seen.Add(x.Key);
-                    yield return x.Value;
+                //    .Concat(underlying.SelectMany(x => x.FilterValuesByName(name)).Except(cache.FilterValuesByName(name).Values));
+                bool seen = false;
+                foreach (var x in cache.FilterValuesByName(name)) {
+                    seen = true;
+                    yield return x;
                 }
+
+                if (seen)
+                    yield break;
                 foreach (var dic in underlying) {
-                    foreach (var kvp in dic.FilterByName(name)) {
-                        if (seen.Add(kvp.Key))
-                            yield return kvp.Value;
+                    foreach (var x in dic.FilterValuesByName(name)) {
+                        seen = true;
+                        yield return x;
                     }
+
+                    if (seen)
+                        yield break;
                 }
             }
 
@@ -250,28 +256,28 @@ namespace CompilerInfrastructure {
             return (CanDefineMethods && contexts.First().DefineMethodTemplate(met)) | CannotDefine.NotAllowedInCurrentContext;
         }
         public IEnumerable<IMethod> MethodsByName(string name) {
-            return methods.FilterByName(name);
+            return methods.FilterValuesByName(name);
         }
         public IEnumerable<MacroFunction> MacrosByName(string name) {
-            return macros.FilterByName(name);
+            return macros.FilterValuesByName(name);
         }
         public IEnumerable<IType> TypesByName(string name) {
-            return types.FilterByName(name);
+            return types.FilterValuesByName(name);
         }
         public IEnumerable<IVariable> VariablesByName(string name) {
-            return variables.FilterByName(name);
+            return variables.FilterValuesByName(name);
         }
 
         public IEnumerable<IMethodTemplate<IMethod>> MethodTemplatesByName(string name) {
-            return methodTemplates.FilterByName(name);
+            return methodTemplates.FilterValuesByName(name);
         }
 
         public IEnumerable<object> IdentifiersByName(string name) {
-            return idents.FilterByName(name);
+            return idents.FilterValuesByName(name);
         }
 
         public IEnumerable<ITypeTemplate<IType>> TypeTemplatesByName(string name) {
-            return typeTemplates.FilterByName(name);
+            return typeTemplates.FilterValuesByName(name);
         }
         public IEnumerable<IContext> Underlying => contexts;
         public IEnumerator<IContext> GetEnumerator() => contexts.GetEnumerator();

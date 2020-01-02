@@ -19,6 +19,7 @@ using CompilerInfrastructure.Utils;
 using static CompilerInfrastructure.Contexts.SimpleMethodContext;
 
 namespace CompilerInfrastructure.Semantics {
+    using Imms;
     using Type = Structure.Types.Type;
 
     public partial class BasicSemantics : ISemantics {
@@ -33,6 +34,7 @@ namespace CompilerInfrastructure.Semantics {
                          && met.NestedIn is ITypeContext tcx
                          && tcx.Type != null
                          && tcx.Type.CanBeInherited();*/
+
         public virtual bool IsCallVirt(IMethod met, IExpression par) {
             return
                 met.IsVirtual() &&
@@ -53,6 +55,47 @@ namespace CompilerInfrastructure.Semantics {
             return false;
         }
 
+        public virtual IVariable BestFittingVariable(Position pos, IEnumerable<IVariable> vrs,
+                                                     IType expectedVariableType) {
+            if (vrs is null)
+                return Variable.Error;
+            return vrs.IsSingeltonOrEmpty(out var singl) switch
+            {
+                true when Type.IsAssignable(singl?.Type ?? Type.Top, expectedVariableType ?? Type.Top) => singl,
+                null =>
+                Variable.Error,
+                _ => BestFittingHelper.BestFitting(pos, vrs, expectedVariableType ?? Type.Top,
+                                                   (IVariable vr, IType ty, out int diff) =>
+                                                       Type.IsAssignable(vr.Type, ty, out diff), Variable.Error,
+                                                   errorOnAmbiguity: vars =>
+                                                       $"The variable for the name {vrs.First().Signature.Name} is ambiguous. Possible variables are: {string.Join(", ", vars)}"
+                                                           .Report(pos, Variable.Error))
+            };
+        }
+        public virtual Error BestFittingVariable(Position pos, IEnumerable<IVariable> vrs,
+                                                     IType expectedVariableType, out IVariable result) {
+            if (vrs is null) {
+                result = Variable.Error;
+                return Error.NoValidTarget;
+            }
+
+            switch (vrs.IsSingeltonOrEmpty(out var singl)) {
+                case true when Type.IsAssignable(singl?.Type ?? Type.Top, expectedVariableType ?? Type.Top):
+                    result = singl;
+                    return Error.None;
+                case null:
+                    result = Variable.Error;
+                    return Error.NoValidTarget;
+                default:
+                    return BestFittingHelper.BestFitting(pos, vrs, expectedVariableType ?? Type.Top,
+                                                         (IVariable vr, IType ty, out int diff) =>
+                                                             Type.IsAssignable(vr.Type, ty, out diff), Variable.Error, out result,
+                                                         errorOnAmbiguity: vars =>
+                                                             $"The variable for the name {vrs.First().Signature.Name} is ambiguous. Possible variables are: {string.Join(", ", vars)}"
+                                                                 .Report(pos, Variable.Error));
+            }
+        }
+
         public virtual Error BestFittingMethod(Position pos, IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType, out IMethod ret) {
             if (mets is null || !mets.Any()) {
                 ret = Method.Error;
@@ -60,7 +103,7 @@ namespace CompilerInfrastructure.Semantics {
             }
             if (retType is null)
                 retType = Type.Top;
-            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => x.Item2 - y.Item2));
+            var firstFilter = new SortedSet<(IMethod, int)>(RefEqualsOrOrderTupleComparer<IMethod>.Instance);
             foreach (var met in mets) {
                 if (met is null)
                     continue;
@@ -93,7 +136,7 @@ namespace CompilerInfrastructure.Semantics {
                 return Error.None;
             }
         }
-        internal protected IEnumerable<IMethod> DidYouMean(IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType) {
+        protected internal IEnumerable<IMethod> DidYouMean(IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType) {
             var filter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => x.Item2 - y.Item2));
             foreach (var met in mets) {
                 if (met is null)
@@ -103,7 +146,7 @@ namespace CompilerInfrastructure.Semantics {
             }
             return filter.Select(x => x.Item1).Take(5);
         }
-        internal protected IEnumerable<IMethodTemplate<T>> DidYouMean<T>(IEnumerable<IMethodTemplate<T>> mets, ICollection<IType> argTypes, IType retType) where T : IMethod {
+        protected internal IEnumerable<IMethodTemplate<T>> DidYouMean<T>(IEnumerable<IMethodTemplate<T>> mets, ICollection<IType> argTypes, IType retType) where T : IMethod {
             var filter = new SortedSet<(IMethodTemplate<T>, int)>(new FunctionalComparer<(IMethodTemplate<T>, int)>((x, y) => x.Item2 - y.Item2));
             foreach (var met in mets) {
                 if (met is null)
@@ -114,44 +157,49 @@ namespace CompilerInfrastructure.Semantics {
             return filter.Select(x => x.Item1).Take(5);
         }
         public virtual IMethod BestFittingMethod(Position pos, IEnumerable<IMethod> mets, ICollection<IType> argTypes, IType retType, ErrorBuffer err = null) {
-
-            if (mets is null || !mets.Any())
-                return Method.Error;
-            if (retType is null)
-                retType = Type.Top;
-            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => {
-                if (x.Item1 == y.Item1)
-                    return 0;
-                var ret= x.Item2 - y.Item2;
-                return ret + (ret < 0 ? -1 : 1);
-            }));
-            foreach (var met in mets) {
-                if (met is null)
-                    continue;
-                if (IsCompatible(met, argTypes, retType, out int diff))
-                    firstFilter.Add((met, diff));
-            }
-            if (!firstFilter.Any()) {
-
-                // determine the nearest method to call
-                var dym = DidYouMean(mets, argTypes, retType);
-                return err.Report($"The callee for the method call {(retType.IsTop() ? "" : retType.ToString())} {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved. Did you mean {(!dym.Any() ? "" : string.Join(", or ", dym))}", pos, Method.Error);
-            }
-            using var it = firstFilter.GetEnumerator();
-            it.MoveNext();
-            var ret = it.Current;
-            var ret2 = new List<IMethod>();
-            while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
-                ret2.Add(it.Current.Item1);
-            }
-            if (ret2.Any()) {
-                return err.Report(string.Format("The method-call is ambiguous. Possible callees are: {0}",
-                    string.Join(", ", ret2.Concat(new[] { ret.Item1 }))
-                ), pos, Method.Error);
-            }
-            else {
-                return ret.Item1;
-            }
+            return BestFittingHelper.BestFitting(pos, mets, (argTypes, retType ?? Type.Top),
+                                                 (IMethod x, (ICollection<IType>, IType) y, out int z) => IsCompatible(x, y.Item1, y.Item2, out z),
+                                                 Method.Error, () => {
+                                                     // determine the nearest method to call
+                                                     var dym = DidYouMean(mets, argTypes, retType);
+                                                     return err.Report(
+                                                         $"The callee for the method call {(retType.IsTop() ? "" : retType.ToString())} {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved. Did you mean {(!dym.Any() ? "" : string.Join(", or ", dym))}",
+                                                         pos,
+                                                         Method.Error);
+                                                 },
+                callees => err.Report(
+                    $"The method-call is ambiguous. Possible callees are: {string.Join(", ", callees)}", pos, Method.Error));
+            /* if (mets is null || !mets.Any())
+                 return Method.Error;
+             if (retType is null)
+                 retType = Type.Top;
+             var firstFilter = new SortedSet<(IMethod, int)>(RefEqualsOrOrderTupleComparer<IMethod>.Instance);
+             foreach (var met in mets) {
+                 if (met is null)
+                     continue;
+                 if (IsCompatible(met, argTypes, retType, out int diff))
+                     firstFilter.Add((met, diff));
+             }
+             if (!firstFilter.Any()) {
+ 
+                 // determine the nearest method to call
+                 var dym = DidYouMean(mets, argTypes, retType);
+                 return err.Report($"The callee for the method call {(retType.IsTop() ? "" : retType.ToString())} {mets.First().Signature.Name}({string.Join(", ", argTypes.Select(x => x.Signature))}) cannot be resolved. Did you mean {(!dym.Any() ? "" : string.Join(", or ", dym))}", pos, Method.Error);
+             }
+             using var it = firstFilter.GetEnumerator();
+             it.MoveNext();
+             var ret = it.Current;
+             var ret2 = new List<IMethod>();
+             while (it.MoveNext() && it.Current.Item2 == ret.Item2) {
+                 ret2.Add(it.Current.Item1);
+             }
+             if (ret2.Any()) {
+                 return err.Report(string.Format("The method-call is ambiguous. Possible callees are: {0}",
+                     string.Join(", ", ret2.Concat(new[] { ret.Item1 }))
+                 ), pos, Method.Error);
+             }
+ 
+             return ret.Item1;*/
         }
         public virtual Error BestFittingMethod<T>(Position pos, IEnumerable<IMethodTemplate<T>> mets, ICollection<IType> argTypes, IType retType, out IMethod ret) where T : IMethod {
             if (mets is null || !mets.Any()) {
@@ -160,7 +208,7 @@ namespace CompilerInfrastructure.Semantics {
             }
             if (retType is null)
                 retType = Type.Top;
-            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => x.Item2 - y.Item2));
+            var firstFilter = new SortedSet<(IMethod, int)>(RefEqualsOrOrderTupleComparer<IMethod>.Instance);
             foreach (var tm in mets) {
                 if (tm is null)
                     continue;
@@ -196,7 +244,7 @@ namespace CompilerInfrastructure.Semantics {
                 return Method.Error;
             if (retType is null)
                 retType = Type.Top;
-            var firstFilter = new SortedSet<(IMethod, int)>(new FunctionalComparer<(IMethod, int)>((x, y) => x.Item2 - y.Item2));
+            var firstFilter = new SortedSet<(IMethod, int)>(RefEqualsOrOrderTupleComparer<IMethod>.Instance);
             foreach (var tm in mets) {
                 if (tm is null)
                     continue;
@@ -229,27 +277,19 @@ namespace CompilerInfrastructure.Semantics {
         public virtual IMethod BestFittingMethod(Position pos, IEnumerable<IDeclaredMethod> mets, ICollection<IType> argTypes, IType retType, ErrorBuffer err = null) {
             var met = BestFittingMethod(pos, mets.OfType<IMethod>(), argTypes, retType, err);
             var cmet = BestFittingMethod(pos, mets.OfType<IMethodTemplate<IMethod>>(), argTypes, retType, err);
-            if (!met.IsError()) {
-                if (!cmet.IsError()) {
-                    IsCompatible(met, argTypes, retType, out int metDiff);
-                    IsCompatible(cmet, argTypes, retType, out int cmetDiff);
-                    if (metDiff <= cmetDiff)
-                        return met;
-                    else
-                        return cmet;
-                }
-                else {
-                    return met;
-                }
-            }
-            else {
+            if (met.IsError())
                 return cmet;
-            }
+            if (cmet.IsError())
+                return met;
+            IsCompatible(met, argTypes, retType, out int metDiff);
+            IsCompatible(cmet, argTypes, retType, out int cmetDiff);
+            return metDiff <= cmetDiff ? met : cmet;
+
         }
         public virtual ITypeTemplate<IType> BestFittingTypeTemplate(Position pos, IEnumerable<ITypeTemplate<IType>> types, IReadOnlyList<ITypeOrLiteral> genArgs, ErrorBuffer err = null) {
             if (types is null || !types.Any())
                 return null;
-            var firstFilter = new SortedSet<(ITypeTemplate<IType>, int)>(new FunctionalComparer<(ITypeTemplate<IType>, int)>((x, y) => x.Item2 - y.Item2));
+            var firstFilter = new SortedSet<(ITypeTemplate<IType>, int)>(RefEqualsOrOrderTupleComparer<ITypeTemplate<IType>>.Instance);
             foreach (var ttp in types) {
                 if (ttp is null)
                     continue;

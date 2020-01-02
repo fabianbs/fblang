@@ -24,7 +24,7 @@ namespace CompilerInfrastructure.Expressions {
         public VariableAccessExpression(Position pos, IType retTy, IVariable vr, IExpression parent = null) : base(pos) {
             parEx[0] = parent;
 
-            Variable = vr ?? "The variable for a variable-access must not be null".Report(pos, CompilerInfrastructure.Variable.Error);
+            Variable = vr ?? "The variable for a variable-access must not be null".Report(pos, Structure.Variable.Error);
             if (parent is null && !Variable.IsLocalVariable()) {
                 $"The access of the variable {vr.Signature} must have a parent-expression".Report(pos);
             }
@@ -35,7 +35,8 @@ namespace CompilerInfrastructure.Expressions {
             }
             else {
                 var ty = Variable.Type.UnWrapNatural();
-                returnTy = ty switch {
+                returnTy = ty switch
+                {
                     ByRefType brt => brt.UnderlyingType,
                     ReferenceType rt => rt.UnderlyingType.AsByRef(),
                     _ => Variable.Type,
@@ -47,11 +48,11 @@ namespace CompilerInfrastructure.Expressions {
             Variable = null;
             //returnTy = expectedReturnType ?? Type.Top;
             VariableName = variableName ?? throw new ArgumentNullException(nameof(variableName));
-            IsEphemeral = parent.ReturnType.IsTop() || (Variable = parent.ReturnType.Context.InstanceContext.VariableByName(variableName)) is null;
+            IsEphemeral = parent.ReturnType.IsTop() || (Variable = parent.ReturnType.Context.InstanceContext.TryGetVariableByName(variableName, pos)) is null;
             if (!IsEphemeral && returnTy.IsTop()) {
-                returnTy = Variable.Type;
+                returnTy = Variable?.Type ?? expectedReturnType;
             }
-            
+
         }
         public string VariableName {
             get;
@@ -104,7 +105,9 @@ namespace CompilerInfrastructure.Expressions {
                     "A field can only have one parent".Report(ParentExpression.Position.Concat(args.Position));
                     nwPar = new[] { ParentExpression };
                 }
-                expr = new[] { new VariableAccessExpression(Position.Concat(args.Position), null, nwPar.First().ReturnType.Context.InstanceContext.VariableByName(VariableName), nwPar.First()) };
+
+                var nwPos = Position.Concat(args.Position);
+                expr = new[] { new VariableAccessExpression(nwPos, null, nwPar.First().ReturnType.Context.InstanceContext.TryGetVariableByName(VariableName, nwPos), nwPar.First()) };
                 return true;
             }
             else if (args.VariableReplace.TryGetValue(Variable, out var nwVar)) {

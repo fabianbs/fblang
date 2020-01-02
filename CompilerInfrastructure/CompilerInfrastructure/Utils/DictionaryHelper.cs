@@ -17,5 +17,13 @@ namespace CompilerInfrastructure.Utils {
             }
             return dic.Where(x => x.Key.Name == name);
         }
+        public static IEnumerable<TValue> FilterValuesByName<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dic, string name) where TKey : ISignature {
+            return dic switch {
+                IValueFilterableByName<TKey, TValue> filterable => filterable.FilterValuesByName(name),
+                SignatureMultiMap<TKey, TValue> smm             => smm.FilterByName(name).Values,
+                _ => dic.Where(x => x.Key.Name == name)
+                                                                      .Select(x => x.Value)
+            };
+        }
     }
 }

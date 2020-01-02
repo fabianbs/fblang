@@ -14,6 +14,8 @@ using System.Text;
 using static LLVMCodeGenerator.InstructionGenerator;
 
 namespace LLVMCodeGenerator {
+    using CompilerInfrastructure.Structure;
+
     public struct CoroutineFrameInfo {
         public uint numSuspendPoints;
         public uint thisInd;

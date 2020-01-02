@@ -5,21 +5,16 @@
  *
  *****************************************************************************/
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
-using CompilerInfrastructure.Contexts;
-using CompilerInfrastructure.Expressions;
-using CompilerInfrastructure.Structure;
-using CompilerInfrastructure.Structure.Macros;
-using CompilerInfrastructure.Structure.Types.Generic;
-using CompilerInfrastructure.Utils;
-using static CompilerInfrastructure.Utils.CoreExtensions;
-using System.Linq;
-
-namespace CompilerInfrastructure {
-    using Structure.Types;
+namespace CompilerInfrastructure.Structure {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using Expressions;
+    using Macros;
+    using Types;
+    using Types.Generic;
+    using Utils;
+    using Type = Types.Type;
 
     public interface IVariable : IVisible, ISourceElement, IReplaceableStructureElement<IVariable>, ISigned<Variable.Signature> {
 
@@ -250,7 +245,7 @@ IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();*/
     }
     public static class Variable {
         [Serializable]
-        public struct Signature : ISignature, IEquatable<Signature> {
+        public struct Signature : ISignature, IEquatable<Signature>, IPrintable {
 
             public Signature(string name, Type.Signature varType) {
                 Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -276,6 +271,22 @@ IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();*/
 
             public override string ToString() {
                 return $"{TypeSignature} {Name}";
+            }
+
+            /// <inheritdoc />
+            public void PrintPrefix(TextWriter tw) {
+                tw.Write(TypeSignature);
+                tw.Write(" ");
+            }
+
+            /// <inheritdoc />
+            public void PrintValue(TextWriter tw) {
+                tw.Write(Name);
+            }
+
+            /// <inheritdoc />
+            public void PrintSuffix(TextWriter tw) {
+               
             }
         }
         [Flags]

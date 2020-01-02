@@ -1096,7 +1096,7 @@ namespace FBc {
             if (ex.count != null)
                 succ &= TryVisitExpression(ex.count, out count, PrimitiveType.UInt, err);
             else
-                count = CreateVariableAccessExpression(ex.Position(fileName), PrimitiveType.UInt, parent.ReturnType.Context.VariableByName("length"), parent);
+                count = CreateVariableAccessExpression(ex.Position(fileName), PrimitiveType.UInt, parent.ReturnType.Context.TryGetVariableByName("length", ex.Position(fileName)), parent);
             var parentTy = parent.ReturnType is ModifierType mt ? mt.UnderlyingType : parent.ReturnType;
             if (parentTy.UnWrap() is AggregateType agg)
                 ret = new RangedIndexerExpression(ex.Position(fileName), agg.ItemType.AsSpan(), parent, offset, count);
@@ -1605,7 +1605,7 @@ namespace FBc {
             else if (lit.MacroLocalIdent() != null) {
                 if (currentMacro != null) {
                     var name = lit.MacroLocalIdent().GetText();
-                    var vr = currentMacro.LocalContext.VariableByName(name);
+                    var vr = currentMacro.LocalContext.TryGetVariableByName(name, lit.Position(fileName));
                     if (vr != null) {
                         ret = CreateVariableAccessExpression(lit.Position(fileName), null, vr);
                         if (IsLambdaCapture(vr, out var cap))
@@ -1621,8 +1621,11 @@ namespace FBc {
             }
             else {
                 //Ident
-                var vr = contextStack.Peek().VariableByName(lit.Ident().GetText());
-                if (vr != null) {
+                var vr= FBSemantics.Instance.BestFittingVariable(lit.Position(fileName),
+                                                         contextStack.Peek().VariablesByName(lit.Ident().GetText()),
+                                                         expectedReturnType);
+                // var vr = contextStack.Peek().TryGetVariableByName(lit.Ident().GetText(), lit.Position(fileName));
+                if (vr != null && !vr.IsError()) {
 
                     if (vr.IsStatic() || !vr.IsStatic() && vr.IsLocalVariable()) {
                         ret = CreateVariableAccessExpression(lit.Position(fileName), null, vr);
@@ -1716,7 +1719,7 @@ namespace FBc {
             {
                 if (context.lhs is FBlangParser.LiteralExprContext litEx && litEx.literal().Ident() != null) {
                     memberName = litEx.literal().GetText();
-                    var vr = memberContext.VariableByName(memberName);
+                    var vr = memberContext.TryGetVariableByName(memberName, litEx.literal().Position(fileName));
 
                     if (vr != null) {
                         memberParentType = vr.Type;
@@ -1744,7 +1747,7 @@ namespace FBc {
                     else {
 
                         //typename or namespacename
-                        var tp = memberContext.TypesByName(memberName).Where(x => !x.Signature.GenericActualArguments.Any()).FirstOrDefault();
+                        var tp = memberContext.TypesByName(memberName).FirstOrDefault(x => !x.Signature.GenericActualArguments.Any());
                         if (tp != null) {
                             memberParent = null;
                             memberParentType = tp;
@@ -1775,7 +1778,7 @@ namespace FBc {
                 else if (context.lhs is FBlangParser.LiteralExprContext _litEx && _litEx.literal().MacroLocalIdent() != null) {
                     memberName = _litEx.literal().GetText();
                     if (currentMacro != null) {
-                        var vr = currentMacro.LocalContext.VariableByName(memberName);
+                        var vr = currentMacro.LocalContext.TryGetVariableByName(memberName, _litEx.literal().Position(fileName));
                         if (vr != null) {
                             memberParentType = vr.Type;
                             memberParent = CreateVariableAccessExpression(_litEx.literal().Position(fileName), null, vr);
@@ -1808,7 +1811,7 @@ namespace FBc {
                 context = context.rhs as FBlangParser.MemberAccessExprContext;
                 if (context.lhs is FBlangParser.LiteralExprContext litEx && litEx.literal().Ident() != null) {
                     memberName = litEx.literal().Ident().GetText();
-                    var vr = memberContext.VariableByName(memberName);
+                    var vr = memberContext.TryGetVariableByName(memberName, litEx.literal().Position(fileName));
 
 
                     if (vr != null) {
@@ -1829,7 +1832,7 @@ namespace FBc {
                     else {
 
                         //typename or namespacename
-                        var tp = memberContext.TypesByName(memberName).Where(x => !x.Signature.GenericActualArguments.Any()).FirstOrDefault();
+                        var tp = memberContext.TypesByName(memberName).FirstOrDefault(x => !x.Signature.GenericActualArguments.Any());
                         if (tp != null) {
                             memberParent = null;
                             memberParentType = tp;
@@ -1877,10 +1880,16 @@ namespace FBc {
 
                 if (context.rhs is FBlangParser.LiteralExprContext litEx && litEx.literal().Ident() != null) {
                     memberName = litEx.literal().Ident().GetText();
-                    var vr = memberContext.VariableByName(memberName);
+                    /*var vr= FBSemantics.Instance.BestFittingVariable(litEx.literal().Position(fileName),
+                                                             memberContext.VariablesByName(memberName),
+                                                             expectedReturnType);*/
+                    //var vr = memberContext.TryGetVariableByName(memberName, litEx.literal().Position(fileName));
+                    var vrErr= FBSemantics.Instance.BestFittingVariable(litEx.literal().Position(fileName),
+                                                                      memberContext.VariablesByName(memberName),
+                                                                      expectedReturnType, out var vr);
                     var mets = memberContext.DeclaredMethodsByName(memberName);
 
-                    if (vr != null) {
+                    if (vrErr == Error.None) {
                         memberParentType = vr.Type;
                         IExpression membPar = CreateVariableAccessExpression(litEx.literal().Position(fileName), null, vr, memberParent);
                         if (IsLambdaCapture(vr, out var cap))
@@ -1904,12 +1913,12 @@ namespace FBc {
                     else if (memberParent != null) {
                         //ContextReplace cr;
                         memberContext.VariablesByName(memberName);
-                        return err.Report($"The instance-variable or instance-method '{memberName}' is not defined in {(memberParentType != null ? memberParentType.Context.Name : memberContext.Name)}", litEx.literal().Position(fileName), false);
+                        return vrErr == Error.NoValidTarget && err.Report($"The instance-variable or instance-method '{memberName}' is not defined in {(memberParentType != null ? memberParentType.Context.Name : memberContext.Name)}", litEx.literal().Position(fileName), false);
                     }
                     else {
 
                         //typename (namespacename is not allowed here)
-                        var tp = memberContext.TypesByName(memberName).Where(x => !x.Signature.GenericActualArguments.Any()).FirstOrDefault();
+                        var tp = memberContext.TypesByName(memberName).FirstOrDefault(x => !x.Signature.GenericActualArguments.Any());
                         if (tp != null) {
                             memberParent = null;
                             memberParentType = tp;

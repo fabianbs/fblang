@@ -11,10 +11,23 @@ namespace CompilerInfrastructure.Utils {
         }
 
         public int Compare(T x, T y) => compareTo(x, y);
-        
+
         public static implicit operator FunctionalComparer<T>(Comparison<T> cmp) {
             return new FunctionalComparer<T>(cmp);
         }
+    }
+
+    public class RefEqualsOrOrderTupleComparer<T> : IComparer<(T, int)> {
+        /// <inheritdoc />
+        public int Compare((T, int) x, (T, int) y) {
+            if (ReferenceEquals(x.Item1, y.Item1))
+                return 0;
+            var ret = x.Item2 - y.Item2;
+            return ret + (ret < 0 ? -1 : 1);
+        }
+
+        private static IComparer<(T, int)> instance = null;
+        public static IComparer<(T, int)> Instance => instance ??= new RefEqualsOrOrderTupleComparer<T>();
     }
     public class FunctionalEquiComparer<T> : IEqualityComparer<T> {
         readonly Func<T, T, bool> eq;

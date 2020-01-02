@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 
 namespace CompilerInfrastructure.Analysis.TaintAnalysis {
+    using Structure;
+
     public interface ITaintAnalysisDomain<D> : IDataFlowDomain<D> {
         bool ContainsFacts(IExpression expr, out ISet<D> facts);
         D FactFromVariable(IVariable vr);

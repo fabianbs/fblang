@@ -148,6 +148,17 @@ namespace CompilerInfrastructure {
 
             return true;
         }
+
+        public static bool? IsSingeltonOrEmpty<T>(this IEnumerable<T> iter, out T res) {
+            using var it = iter.GetEnumerator();
+            if (!it.MoveNext()) {
+                res = default;
+                return null;
+            }
+
+            res = it.Current;
+            return !it.MoveNext();
+        }
         public static IReadOnlyCollection<T> AsReadOnly<T>(this ICollection<T> coll) {
             if (coll is IReadOnlyCollection<T> roc)
                 return roc;

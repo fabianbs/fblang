@@ -19,6 +19,8 @@ using System.Collections.ObjectModel;
 using CompilerInfrastructure.Semantics;
 
 namespace LLVMCodeGenerator {
+    using CompilerInfrastructure.Structure;
+
     public partial class InstructionGenerator {
         protected readonly struct RedirectTarget : IEquatable<RedirectTarget> {
             public readonly BasicBlock Start;
