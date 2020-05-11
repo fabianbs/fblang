@@ -3,8 +3,7 @@ This repository contains the compiler and language-runtime for my own programmin
 
 News
 --------
-- I will upload the code soon.
-- The [issues](https://github.com/fabianbs/fblang/issues) now contain information about the planned enhancements of the language. Further information is available under [projects](https://github.com/fabianbs/fblang/projects)
+- The language is completely redesigned. Thus, most of the code in this repository is outdated. I will upload the specification of the new language design soon
 
 What is FB?
 ----------
